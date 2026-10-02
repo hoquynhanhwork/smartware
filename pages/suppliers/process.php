@@ -14,7 +14,6 @@ requireLogin();
 $csrf    = new CsrfService();
 $service = new SupplierService(new SupplierRepository($pdo));
 
-// ── Hàm helper nhất quán với products/process.php ────────────────────────────
 function isAjax(): bool
 {
     return !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
@@ -107,10 +106,104 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    // GET không khớp action nào → về index
+    // ── AJAX: Lấy số liệu biểu đồ nhập hàng theo Tháng / Năm ─────────────────
+    if ($action === 'get_inbound_chart') {
+        $supplierId = (int)($_GET['supplier_id'] ?? 0);
+        $period     = $_GET['period'] ?? 'month';
+        $year       = (int)($_GET['year'] ?? date('Y'));
+        $month      = (int)($_GET['month'] ?? date('n'));
+
+        header('Content-Type: application/json');
+
+        if (!$supplierId) {
+            echo json_encode(['labels' => [], 'values' => []]);
+            exit;
+        }
+
+        $labels = [];
+        $values = [];
+
+        if ($period === 'month') {
+            $monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            $mMap = array_fill(1, 12, 0);
+
+            $stmt = $pdo->prepare("
+                SELECT EXTRACT(MONTH FROM created) AS m, COALESCE(SUM(total_amount), 0) AS total 
+                FROM stock_inbounds 
+                WHERE supplier_id = ? AND deleted_at IS NULL AND EXTRACT(YEAR FROM created) = ?
+                GROUP BY EXTRACT(MONTH FROM created)
+            ");
+            $stmt->execute([$supplierId, $year]);
+            while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $mMap[(int)$r['m']] = (float)$r['total'];
+            }
+
+            $labels = $monthNames;
+            $values = array_values($mMap);
+
+        } elseif ($period === 'quarter') {
+            $qMap = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
+            $stmt = $pdo->prepare("
+                SELECT EXTRACT(QUARTER FROM created) AS q, COALESCE(SUM(total_amount), 0) AS total 
+                FROM stock_inbounds 
+                WHERE supplier_id = ? AND deleted_at IS NULL AND EXTRACT(YEAR FROM created) = ?
+                GROUP BY EXTRACT(QUARTER FROM created)
+            ");
+            $stmt->execute([$supplierId, $year]);
+            while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $qMap[(int)$r['q']] = (float)$r['total'];
+            }
+
+            $labels = ["Quý 1", "Quý 2", "Quý 3", "Quý 4"];
+            $values = array_values($qMap);
+
+        } elseif ($period === 'year') {
+            $yMap = [];
+            for ($y = $year - 4; $y <= $year; $y++) {
+                $yMap[$y] = 0;
+            }
+            $stmt = $pdo->prepare("
+                SELECT EXTRACT(YEAR FROM created) AS y, COALESCE(SUM(total_amount), 0) AS total 
+                FROM stock_inbounds 
+                WHERE supplier_id = ? AND deleted_at IS NULL AND EXTRACT(YEAR FROM created) >= ? AND EXTRACT(YEAR FROM created) <= ?
+                GROUP BY EXTRACT(YEAR FROM created)
+            ");
+            $stmt->execute([$supplierId, $year - 4, $year]);
+            while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $yKey = (int)$r['y'];
+                if (isset($yMap[$yKey])) $yMap[$yKey] = (float)$r['total'];
+            }
+
+            $labels = array_map('strval', array_keys($yMap));
+            $values = array_values($yMap);
+
+        } elseif ($period === 'week') {
+            $labels = ["Tuần 1", "Tuần 2", "Tuần 3", "Tuần 4"];
+            $wMap = [0, 0, 0, 0];
+            $stmt = $pdo->prepare("
+                SELECT EXTRACT(DAY FROM created) AS d, COALESCE(SUM(total_amount), 0) AS total 
+                FROM stock_inbounds 
+                WHERE supplier_id = ? AND deleted_at IS NULL 
+                  AND EXTRACT(YEAR FROM created) = ? AND EXTRACT(MONTH FROM created) = ?
+                GROUP BY EXTRACT(DAY FROM created)
+            ");
+            $stmt->execute([$supplierId, $year, $month]);
+            while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $day = (int)$r['d'];
+                $wIdx = min(3, (int)(($day - 1) / 7));
+                $wMap[$wIdx] += (float)$r['total'];
+            }
+            $values = $wMap;
+        }
+
+        echo json_encode(['labels' => $labels, 'values' => $values]);
+        exit;
+    }
+
     header('Location: index.php');
     exit;
 }
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: index.php');
     exit;
@@ -147,7 +240,8 @@ if ($action === 'add') {
 
 // ── CẬP NHẬT ĐỐI TÁC
 if ($action === 'edit') {
-    $result = $service->edit((int) ($_POST['id'] ?? 0), $_POST);
+    $supplierId = (int) ($_POST['id'] ?? 0);
+    $result     = $service->edit($supplierId, $_POST);
 
     if ($result['ok']) {
         setFlash('success', $result['message']);
@@ -155,11 +249,16 @@ if ($action === 'edit') {
         setFlash('error', $result['message']);
     }
 
-    header('Location: index.php');
+    $referer = $_SERVER['HTTP_REFERER'] ?? '';
+    if (str_contains($referer, 'detail.php')) {
+        header('Location: detail.php?id=' . $supplierId);
+    } else {
+        header('Location: index.php');
+    }
     exit;
 }
 
-// ── XÓA / NGỪNG HỢP TÁC ──────────────────────────────────────────────────────
+// ── XÓA / NGỪNG HỢP TÁC
 if ($action === 'delete') {
     $result = $service->delete((int) ($_POST['id'] ?? 0));
 
@@ -179,6 +278,5 @@ if ($action === 'delete') {
     exit;
 }
 
-// Fallback
 header('Location: index.php');
 exit;

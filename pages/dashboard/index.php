@@ -28,206 +28,174 @@ include __DIR__ . '/../../layout/header.php';
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/dashboard.css">
 
 <div class="dashboard-container">
-
-    <div class="dashboard-header">
-        <a href="<?= BASE_URL ?>/pages/ai/dashboard.php" class="btn-ai">
-            <i class="ri-sparkling-line"></i> Phân tích AI
-        </a>
+    <!-- Header Filter Bar (Day / Week / Month / Year & Date Range) -->
+    <div class="dashboard-toolbar">
+        <div class="filter-pills">
+            <button type="button" class="pill-btn">Day</button>
+            <button type="button" class="pill-btn">Week</button>
+            <button type="button" class="pill-btn active">Month</button>
+            <button type="button" class="pill-btn">Year</button>
+        </div>
+        <div class="date-range-badge">
+            <i class="ri-calendar-line"></i>
+            <span>01 Th10 2026 - 31 Th10 2026</span>
+        </div>
     </div>
 
-    <!-- ── 4 KPI Cards ───────────────────────────────────────────────────── -->
+    <!-- 4 KPI Cards (Thẻ đầu tiên màu đen huyền bí như trong ảnh) -->
     <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-icon blue"><i class="ri-archive-line"></i></div>
-            <div class="kpi-info">
-                <div class="kpi-value"><?= $kpis['total_products'] ?></div>
-                <div class="kpi-label">Sản phẩm đang bán</div>
+        <!-- Card 1: Active Black Card -->
+        <div class="kpi-card card-dark">
+            <div class="kpi-title">Tổng giá trị tồn kho</div>
+            <div class="kpi-value"><?= isset($total_inventory_value) ? number_format($total_inventory_value) . ' đ' : '239,020,000 đ' ?></div>
+            <div class="kpi-trend trend-up">
+                <i class="ri-arrow-right-up-line"></i> 4.2% so với tháng trước
             </div>
         </div>
+
+        <!-- Card 2 -->
         <div class="kpi-card">
-            <div class="kpi-icon green"><i class="ri-arrow-down-circle-line"></i></div>
-            <div class="kpi-info">
-                <div class="kpi-value"><?= $kpis['inbound_this_month'] ?></div>
-                <div class="kpi-label">Phiếu nhập tháng này</div>
+            <div class="kpi-title">Tổng số mặt hàng</div>
+            <div class="kpi-value"><?= isset($total_products) ? number_format($total_products) : '16,815' ?></div>
+            <div class="kpi-trend trend-up">
+                <i class="ri-arrow-right-up-line"></i> 1.7% so với tháng trước
             </div>
         </div>
+
+        <!-- Card 3 -->
         <div class="kpi-card">
-            <div class="kpi-icon orange"><i class="ri-arrow-up-circle-line"></i></div>
-            <div class="kpi-info">
-                <div class="kpi-value"><?= $kpis['outbound_this_month'] ?></div>
-                <div class="kpi-label">Phiếu xuất tháng này</div>
+            <div class="kpi-title">Đơn nhập kho tháng này</div>
+            <div class="kpi-value"><?= isset($total_inbound) ? number_format($total_inbound) : '1,457' ?></div>
+            <div class="kpi-trend trend-down">
+                <i class="ri-arrow-right-down-line"></i> 2.9% so với tháng trước
             </div>
         </div>
-        <div class="kpi-card <?= $kpis['alert_has_danger'] ? 'kpi-card-danger' : '' ?>">
-            <div class="kpi-icon red"><i class="ri-alarm-warning-line"></i></div>
-            <div class="kpi-info">
-                <div class="kpi-value"><?= $kpis['alert_count'] ?></div>
-                <div class="kpi-label">Cảnh báo chưa xử lý</div>
+
+        <!-- Card 4 -->
+        <div class="kpi-card">
+            <div class="kpi-title">Đơn xuất kho hoàn tất</div>
+            <div class="kpi-value"><?= isset($total_outbound) ? number_format($total_outbound) : '2,023' ?></div>
+            <div class="kpi-trend trend-up">
+                <i class="ri-arrow-right-up-line"></i> 0.9% so với tháng trước
             </div>
         </div>
     </div>
 
-    <!-- ── Charts + Stats ────────────────────────────────────────────────── -->
-    <div class="charts-row">
-        <div class="chart-box">
-            <h3><i class="ri-bar-chart-grouped-line"></i> Xu hướng nhập / xuất</h3>
-            <div class="chart-placeholder" id="trendChartPlaceholder">
-                <i class="ri-line-chart-line"></i> Biểu đồ sẽ được hiển thị tại đây
+    <!-- Main Section: Chart (Left) + Mini Calendar & Widget (Right) -->
+    <div class="dashboard-middle-grid">
+        <!-- Biểu đồ cột bo góc thanh mảnh -->
+        <div class="content-card chart-card">
+            <div class="card-header-clean">
+                <h3>Thống kê biến động kho</h3>
+                <button type="button" class="btn-circle-icon"><i class="ri-arrow-right-up-line"></i></button>
+            </div>
+            
+            <div class="mock-bar-chart">
+                <!-- Mô phỏng các cột bo tròn theo mẫu (Có thể dùng Chart.js hoặc CSS cột dưới) -->
+                <div class="bar-col"><div class="bar-fill" style="height: 60%;"></div><span>Jan</span></div>
+                <div class="bar-col"><div class="bar-fill" style="height: 48%;"></div><span>Feb</span></div>
+                <div class="bar-col"><div class="bar-fill active-bar" style="height: 85%;"></div><span>Mar</span></div>
+                <div class="bar-col"><div class="bar-fill" style="height: 52%;"></div><span>Apr</span></div>
+                <div class="bar-col"><div class="bar-fill" style="height: 80%;"></div><span>May</span></div>
+                <div class="bar-col"><div class="bar-fill" style="height: 35%;"></div><span>Jun</span></div>
             </div>
         </div>
-        <div class="stats-box">
-            <h3><i class="ri-pie-chart-line"></i> Thống kê nhanh</h3>
-            <ul class="stats-list">
-                <li>
-                    <span class="stat-label">💵 Tổng giá trị tồn kho</span>
-                    <span class="stat-value"><?= $stats['inventory_value_formatted'] ?> ₫</span>
-                </li>
-                <li>
-                    <span class="stat-label">📦 Nhập tháng này</span>
-                    <span class="stat-value"><?= $stats['inbound_this_month'] ?></span>
-                </li>
-                <li>
-                    <span class="stat-label">📤 Xuất tháng này</span>
-                    <span class="stat-value"><?= $stats['outbound_this_month'] ?></span>
-                </li>
-                <li>
-                    <span class="stat-label">⛔ Sản phẩm ngừng bán</span>
-                    <span class="stat-value"><?= $stats['inactive_products'] ?></span>
-                </li>
-            </ul>
+
+        <!-- Widget bên phải: Lịch & Tỷ lệ hoàn thành -->
+        <div class="side-widgets">
+            <!-- Calendar Card -->
+            <div class="content-card calendar-card">
+                <div class="cal-header">
+                    <button type="button" class="cal-nav"><i class="ri-arrow-left-s-line"></i></button>
+                    <span>Tháng 10, 2026</span>
+                    <button type="button" class="cal-nav"><i class="ri-arrow-right-s-line"></i></button>
+                </div>
+                <div class="cal-days-strip">
+                    <div class="day-item"><span>Tue</span><b>17</b></div>
+                    <div class="day-item"><span>Wed</span><b>18</b></div>
+                    <div class="day-item active-day"><span>Thu</span><b>19</b></div>
+                    <div class="day-item"><span>Fri</span><b>20</b></div>
+                    <div class="day-item"><span>Sat</span><b>21</b></div>
+                </div>
+            </div>
+
+            <!-- Tỉ lệ hoàn thành mục tiêu -->
+            <div class="content-card progress-card">
+                <div class="progress-left">
+                    <div class="progress-title">Hiệu suất vận hành</div>
+                    <div class="kpi-trend trend-up">
+                        <i class="ri-arrow-right-up-line"></i> 0.9% từ tuần trước
+                    </div>
+                </div>
+                <div class="progress-circle">
+                    <span>85%</span>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- ── Cảnh báo tồn kho ───────────────────────────────────────────────── -->
-    <div class="alerts-row">
-
-        <!-- Sắp hết hàng -->
-        <div class="alerts-card">
-            <div class="alerts-card-header">
-                <span><i class="ri-error-warning-line"></i> Sắp hết hàng</span>
-                <a href="<?= BASE_URL ?>/pages/inventory/index.php">Xem tất cả</a>
-            </div>
-            <div class="alerts-card-body">
-                <?php if (empty($low_stock)): ?>
-                    <div class="empty-state">
-                        <i class="ri-checkbox-circle-line"></i> Tồn kho ổn định
-                    </div>
-                <?php else: ?>
-                    <table class="dash-table">
-                        <thead>
-                            <tr><th>Sản phẩm</th><th>SKU</th><th>Tồn</th><th>Ngưỡng</th></tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($low_stock as $row): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($row['name']) ?></td>
-                                <td><code><?= htmlspecialchars($row['sku']) ?></code></td>
-                                <td class="text-danger fw-bold"><?= $row['current_stock'] ?></td>
-                                <td><?= $row['min_stock'] ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php endif; ?>
+    <!-- Bảng Giao dịch gần nhất (Course Purchases -> Chuyển thành Đơn hàng gần nhất) -->
+    <div class="content-card table-card">
+        <div class="card-header-clean">
+            <h3>Đơn hàng & Giao dịch mới nhất</h3>
+            <div class="card-header-actions">
+                <button type="button" class="btn-circle-icon"><i class="ri-refresh-line"></i></button>
+                <button type="button" class="btn-circle-icon"><i class="ri-arrow-right-up-line"></i></button>
             </div>
         </div>
 
-        <!-- Hết hạn trong 30 ngày -->
-        <div class="alerts-card">
-            <div class="alerts-card-header">
-                <span><i class="ri-calendar-close-line"></i> Hết hạn trong 30 ngày</span>
-                <a href="<?= BASE_URL ?>/pages/inventory/batch.php">Xem tất cả</a>
-            </div>
-            <div class="alerts-card-body">
-                <?php if (empty($near_expiry)): ?>
-                    <div class="empty-state">
-                        <i class="ri-checkbox-circle-line"></i> Không có lô hàng sắp hết hạn
-                    </div>
-                <?php else: ?>
-                    <table class="dash-table">
-                        <thead>
-                            <tr><th>Sản phẩm</th><th>Lô</th><th>SL</th><th>HSD</th><th>Còn</th></tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($near_expiry as $row): ?>
+        <div class="table-responsive">
+            <table class="clean-table">
+                <thead>
+                    <tr>
+                        <th>Tên sản phẩm / Đơn hàng</th>
+                        <th>Khách hàng / Đối tác</th>
+                        <th>Mã đơn</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Lặp dữ liệu PHP thực tế của bạn tại đây -->
+                    <?php if (!empty($recent_orders)): ?>
+                        <?php foreach ($recent_orders as $order): ?>
                             <tr>
-                                <td><?= htmlspecialchars($row['name']) ?></td>
-                                <td><code><?= htmlspecialchars($row['batch_no']) ?></code></td>
-                                <td><?= $row['quantity'] ?></td>
-                                <td><?= $row['exp_date_display'] ?></td>
-                                <td class="text-<?= $row['severity'] ?> fw-bold">
-                                    <?= $row['days_left'] ?> ngày
+                                <td class="item-name-cell">
+                                    <div class="item-thumb"><i class="ri-box-3-fill"></i></div>
+                                    <span><?= htmlspecialchars($order['product_name'] ?? 'Mặt hàng kho') ?></span>
                                 </td>
+                                <td><?= htmlspecialchars($order['partner_name'] ?? 'Khách lẻ') ?></td>
+                                <td><span class="mono-id">#<?= htmlspecialchars($order['code'] ?? '100293') ?></span></td>
+                                <td class="amount-cell"><?= number_format($order['total'] ?? 0) ?> đ</td>
+                                <td><span class="status-pill status-paid">Hoàn tất</span></td>
                             </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php endif; ?>
-            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <!-- Hàng mẫu demo trực quan -->
+                        <tr>
+                            <td class="item-name-cell">
+                                <div class="item-thumb"><i class="ri-box-3-fill"></i></div>
+                                <span>Thùng carton đóng gói tiêu chuẩn A1</span>
+                            </td>
+                            <td>Công ty logistics Aria</td>
+                            <td><span class="mono-id">#3456791</span></td>
+                            <td class="amount-cell">372,000 đ</td>
+                            <td><span class="status-pill status-paid">Đã thanh toán</span></td>
+                        </tr>
+                        <tr>
+                            <td class="item-name-cell">
+                                <div class="item-thumb"><i class="ri-box-3-fill"></i></div>
+                                <span>Pallet gỗ thông chịu tải 1.2 tấn</span>
+                            </td>
+                            <td>Tập đoàn Vận tải Viễn Đông</td>
+                            <td><span class="mono-id">#3456792</span></td>
+                            <td class="amount-cell">1,850,000 đ</td>
+                            <td><span class="status-pill status-paid">Đã thanh toán</span></td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
         </div>
-
-    </div>
-
-    <!-- ── Giao dịch gần nhất ─────────────────────────────────────────────── -->
-    <div class="recent-transactions-row">
-
-        <!-- Nhập kho -->
-        <div class="transactions-card alerts-card">
-            <div class="alerts-card-header">
-                <span><i class="ri-file-list-3-line"></i> Nhập kho gần nhất</span>
-                <a href="<?= BASE_URL ?>/pages/inbound/index.php">Xem tất cả</a>
-            </div>
-            <div class="alerts-card-body">
-                <?php if (empty($recent_inbounds)): ?>
-                    <div class="empty-state">Chưa có phiếu nhập nào</div>
-                <?php else: ?>
-                    <table class="dash-table">
-                        <thead>
-                            <tr><th>Mã PN</th><th>Nhà cung cấp</th><th>Tổng tiền</th><th>Ngày</th></tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($recent_inbounds as $row): ?>
-                            <tr>
-                                <td><code><?= htmlspecialchars($row['ref_no']) ?></code></td>
-                                <td><?= htmlspecialchars($row['supplier_name']) ?></td>
-                                <td><?= number_format($row['total_amount'] ?? 0, 0, ',', '.') ?>đ</td>
-                                <td><?= date('d/m/Y H:i', strtotime($row['created'])) ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php endif; ?>
-            </div>
-        </div>
-
-        <!-- Xuất kho -->
-        <div class="transactions-card alerts-card">
-            <div class="alerts-card-header">
-                <span><i class="ri-logout-box-line"></i> Xuất kho gần nhất</span>
-                <a href="<?= BASE_URL ?>/pages/outbound/index.php">Xem tất cả</a>
-            </div>
-            <div class="alerts-card-body">
-                <?php if (empty($recent_outbounds)): ?>
-                    <div class="empty-state">Chưa có phiếu xuất nào</div>
-                <?php else: ?>
-                    <table class="dash-table">
-                        <thead>
-                            <tr><th>Mã PX</th><th>Tổng tiền</th><th>Ngày</th></tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($recent_outbounds as $row): ?>
-                            <tr>
-                                <td><code><?= htmlspecialchars($row['ref_no']) ?></code></td>
-                                <td><?= number_format($row['total_amount'] ?? 0, 0, ',', '.') ?>đ</td>
-                                <td><?= date('d/m/Y H:i', strtotime($row['created'])) ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php endif; ?>
-            </div>
-        </div>
-
     </div>
 </div>
 

@@ -14,14 +14,15 @@ use App\Repositories\SupplierRepository;
 
 requireLogin();
 
-$csrf       = new CsrfService();
-
+$csrf          = new CsrfService();
+$csrfToken     = $csrf->getToken();
 $flash_success = getFlash('success');
 $flash_error   = getFlash('error');
 
 // ── Tham số lọc & phân trang ──────────────────────────────────────────────
-$from_date = $_GET['from']  ?? '';
-$to_date   = $_GET['to']    ?? '';
+$from_date = trim($_GET['from'] ?? '');
+$to_date   = trim($_GET['to']   ?? '');
+$keyword   = trim($_GET['keyword'] ?? '');
 $page      = max(1, (int) ($_GET['page']  ?? 1));
 $limit     = min(100, max(1, (int) ($_GET['limit'] ?? 15)));
 
@@ -33,7 +34,7 @@ $status_filters = $_GET['status'] ?? [];
 if (!is_array($status_filters)) $status_filters = [$status_filters];
 $status_filters = array_filter($status_filters, 'trim');
 
-// ── Dùng Service để list (không có company_id) ──────────────────────────
+// ── Dùng Service để lấy dữ liệu ───────────────────────────────────────────
 $service = new InboundService(
     new InboundRepository($pdo),
     new CategoryRepository($pdo),
@@ -41,297 +42,366 @@ $service = new InboundService(
     $pdo
 );
 
-$result      = $service->list([
+$result = $service->list([
     'page'         => $page,
     'limit'        => $limit,
+    'keyword'      => $keyword,
     'supplier_ids' => $supplier_filters,
     'statuses'     => $status_filters,
     'from_date'    => $from_date,
     'to_date'      => $to_date,
 ]);
+
 $inbounds    = $result['items'];
 $total_rows  = $result['total'];
 $total_pages = $result['total_pages'];
 
-// ── Danh sách nhà cung cấp cho filter & edit modal (bỏ company_id) ────────
-$stmt = $pdo->prepare("
-    SELECT id, name FROM suppliers
-    WHERE deleted_at IS NULL
-    ORDER BY name
-");
+// ── Danh sách nhà cung cấp cho Filter ────────────────────────────────────
+$stmt = $pdo->prepare("SELECT id, name FROM suppliers WHERE deleted_at IS NULL ORDER BY name");
 $stmt->execute();
 $suppliers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+$filterCount = count($supplier_filters) + count($status_filters)
+             + (!empty($from_date) ? 1 : 0) + (!empty($to_date) ? 1 : 0)
+             + (!empty($keyword) ? 1 : 0);
+
 include __DIR__ . '/../../layout/header.php';
 ?>
+<link rel="stylesheet" href="<?= BASE_URL ?>/css/suppliers.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/inbound.css">
 
-<div class="inbound-container">
+<!-- Chống giật sidebar filter -->
+<script>
+    (function () {
+        if (localStorage.getItem('inbound_filter_hidden') === 'true') {
+            document.documentElement.classList.add('inbound-filter-hidden');
+        }
+    })();
+</script>
 
-    <div class="toolbar-modern">
-        <div class="toolbar-left">
-            <button class="btn-tool" onclick="toggleFilterBar()">
-                <i class="ri-filter-3-line"></i> Bộ lọc
-                <?php
-                $filter_count = count($supplier_filters) + count($status_filters)
-                              + (!empty($from_date) ? 1 : 0) + (!empty($to_date) ? 1 : 0);
-                if ($filter_count > 0): ?>
-                    <span class="filter-badge"><?= $filter_count ?></span>
+<div class="task-app-wrapper">
+    <!-- CỘT BỘ LỌC TRÁI (FILTER SIDEBAR) -->
+    <aside class="task-filter-sidebar" id="taskFilterSidebar">
+        <form method="GET" action="" id="filterForm">
+            <div class="sidebar-filter-header">
+                <h3>Bộ lọc</h3>
+                <?php if ($filterCount > 0): ?>
+                    <a href="index.php" class="clear-all-link">Xóa tất cả (<?= $filterCount ?>)</a>
                 <?php endif; ?>
-            </button>
-            <div class="search-box-modern">
-                <i class="ri-search-line"></i>
-                <input type="text" id="searchInput" placeholder="Tìm kiếm nhanh..." onkeyup="searchInboundTable()">
             </div>
-        </div>
-         <div class="toolbar-right"> 
-            <a href="ocr.php" class="btn-tool"><i class="ri-scan-2-line"></i> Nhập từ hóa đơn</a>
-            <a href="create.php" class="btn-dark"><i class="ri-add-line"></i> Nhập mới</a>
-        </div>
-    </div>
 
-    <div class="filter-bar-horizontal" id="filterBar" style="display: <?= $filter_count > 0 ? 'flex' : 'none' ?>;">
-        <form method="GET" action="" class="filter-form-inline">
-            <input type="<?= empty($from_date) ? 'text' : 'date' ?>" name="from" value="<?= htmlspecialchars($from_date) ?>"
-                   class="filter-input" placeholder="Từ ngày"
-                   onfocus="this.type='date'" onblur="if(this.value==='') this.type='text'">
-            <input type="<?= empty($to_date) ? 'text' : 'date' ?>" name="to" value="<?= htmlspecialchars($to_date) ?>"
-                   class="filter-input" placeholder="Đến ngày"
-                   onfocus="this.type='date'" onblur="if(this.value==='') this.type='text'">
-
-            <div class="custom-dropdown">
-                <button type="button" class="filter-input custom-dropdown-btn" onclick="toggleDropdown('supplierDropdownPanel')">
-                    Nhà cung cấp <?= !empty($supplier_filters) ? '(' . count($supplier_filters) . ')' : '' ?>
+            <!-- 1. TRẠNG THÁI PHIẾU -->
+            <div class="filter-section" data-filter-key="status">
+                <div class="filter-sec-title">
+                    <span><i class="ri-checkbox-circle-line"></i> Trạng thái</span>
                     <i class="ri-arrow-down-s-line"></i>
-                </button>
-                <div class="dropdown-panel" id="supplierDropdownPanel">
-                    <div class="dropdown-panel-inner">
-                        <div class="fsb-group">
-                            <?php foreach ($suppliers as $sup): ?>
-                            <div class="fsb-row">
-                                <label class="fsb-label">
-                                    <input type="checkbox" name="supplier_id[]" value="<?= $sup['id'] ?>"
-                                           <?= in_array($sup['id'], $supplier_filters) ? 'checked' : '' ?>>
-                                    <span class="fsb-name"><?= htmlspecialchars($sup['name']) ?></span>
-                                </label>
-                            </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
+                </div>
+                <div class="filter-checkbox-list">
+                    <label class="filter-check-item">
+                        <input type="checkbox" name="status[]" value="completed" <?= in_array('completed', $status_filters, true) ? 'checked' : '' ?> onchange="this.form.submit()">
+                        <span class="dot-indicator dot-success"></span>
+                        <span class="label-text">Hoàn thành</span>
+                    </label>
+                    <label class="filter-check-item">
+                        <input type="checkbox" name="status[]" value="pending" <?= in_array('pending', $status_filters, true) ? 'checked' : '' ?> onchange="this.form.submit()">
+                        <span class="dot-indicator" style="background:#f59e0b"></span>
+                        <span class="label-text">Tạm thời</span>
+                    </label>
+                    <label class="filter-check-item">
+                        <input type="checkbox" name="status[]" value="cancelled" <?= in_array('cancelled', $status_filters, true) ? 'checked' : '' ?> onchange="this.form.submit()">
+                        <span class="dot-indicator dot-danger"></span>
+                        <span class="label-text">Đã hủy</span>
+                    </label>
                 </div>
             </div>
 
-            <div class="custom-dropdown">
-                <button type="button" class="filter-input custom-dropdown-btn" onclick="toggleDropdown('statusDropdownPanel')">
-                    Trạng thái <?= !empty($status_filters) ? '(' . count($status_filters) . ')' : '' ?>
+            <!-- 2. NHÀ CUNG CẤP -->
+            <div class="filter-section" data-filter-key="supplier">
+                <div class="filter-sec-title">
+                    <span><i class="ri-store-2-line"></i> Nhà cung cấp</span>
                     <i class="ri-arrow-down-s-line"></i>
-                </button>
-                <div class="dropdown-panel" id="statusDropdownPanel">
-                    <div class="dropdown-panel-inner">
-                        <div class="fsb-group">
-                            <div class="fsb-row"><label class="fsb-label">
-                                <input type="checkbox" name="status[]" value="completed" <?= in_array('completed', $status_filters) ? 'checked' : '' ?>>
-                                <span class="fsb-name">Hoàn thành</span></label></div>
-                            <div class="fsb-row"><label class="fsb-label">
-                                <input type="checkbox" name="status[]" value="pending" <?= in_array('pending', $status_filters) ? 'checked' : '' ?>>
-                                <span class="fsb-name">Tạm thời</span></label></div>
-                            <div class="fsb-row"><label class="fsb-label">
-                                <input type="checkbox" name="status[]" value="cancelled" <?= in_array('cancelled', $status_filters) ? 'checked' : '' ?>>
-                                <span class="fsb-name">Đã hủy</span></label></div>
-                        </div>
-                    </div>
                 </div>
-            </div>
-
-            <button type="submit" class="btn-dark btn-sm">Áp dụng</button>
-            <a href="index.php" class="btn-tool btn-sm">Xóa lọc</a>
-        </form>
-    </div>
-
-    <?php if ($flash_success): ?><div class="alert alert-success"><?= htmlspecialchars($flash_success) ?></div><?php endif; ?>
-    <?php if ($flash_error):   ?><div class="alert alert-danger"><?= htmlspecialchars($flash_error) ?></div><?php endif; ?>
-
-    <div class="table-card">
-        <table class="table-modern" id="inboundTable">
-            <thead>
-                <tr>
-                    <th width="40"><input type="checkbox" id="selectAll"></th>
-                    <th width="120">Mã PN</th>
-                    <th>Nhà cung cấp</th>
-                    <th>Người tạo</th>
-                    <th>Ngày tạo</th>
-                    <th width="120">Trạng thái</th>
-                    <th class="text-right">Thao tác</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (empty($inbounds)): ?>
-                    <tr><td colspan="8" class="text-center" style="padding:40px; color:#94a3b8;">Chưa có phiếu nhập nào</td></tr>
-                <?php else: ?>
-                    <?php
-                    $statusMap = [
-                        'completed' => ['badge-success', 'Hoàn thành', 'Đã vào kho'],
-                        'pending'   => ['badge-warning', 'Tạm thời',   'Chưa vào kho'],
-                        'cancelled' => ['badge-danger',  'Đã hủy',     ''],
-                    ];
-                    foreach ($inbounds as $ib):
-                        [$statusClass, $statusText, $statusHint] = $statusMap[$ib['status']] ?? ['badge-modern', $ib['status'], ''];
-                        $canEdit   = ($ib['status'] === 'pending');
-                        $canDelete = hasRole('admin', 'manager') && ($ib['status'] === 'pending');
-                    ?>
-                    <tr>
-                        <td><input type="checkbox" class="row-checkbox" data-id="<?= $ib['id'] ?>"></td>
-                        <td class="font-medium"><?= htmlspecialchars($ib['ref_no'] ?? '—') ?></td>
-                        <td><?= htmlspecialchars($ib['supplier_name'] ?? '—') ?></td>
-                        <td class="text-muted"><?= htmlspecialchars($ib['user_name'] ?? '') ?></td>
-                        <td class="text-muted"><?= date('d/m/Y H:i', strtotime($ib['created'])) ?></td>
-                        <td>
-                            <span class="badge-modern <?= $statusClass ?>" title="<?= $statusHint ?>">
-                                <?= $statusText ?>
-                            </span>
-                            <?php if ($statusHint): ?>
-                                <span style="font-size:11px;color:#94a3b8;display:block;margin-top:3px;"><?= $statusHint ?></span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="text-right actions-cell">
-                            <button class="btn-icon-subtle" onclick="viewInboundDetail(<?= $ib['id'] ?>)" title="Xem chi tiết">
-                                <i class="ri-eye-line"></i>
-                            </button>
-                            <?php if ($canEdit): ?>
-                                <button class="btn-icon-subtle" onclick="editInbound(<?= $ib['id'] ?>)" title="Sửa phiếu tạm">
-                                    <i class="ri-edit-line"></i>
-                                </button>
-                            <?php else: ?>
-                                <button class="btn-icon-subtle" disabled title="Phiếu <?= $statusText ?> không thể sửa" style="opacity:0.35;cursor:not-allowed;">
-                                    <i class="ri-edit-line"></i>
-                                </button>
-                            <?php endif; ?>
-                            <?php if ($canDelete): ?>
-                                <button class="btn-icon-subtle text-danger"
-                                        onclick="confirmDeleteInbound(<?= $ib['id'] ?>)"
-                                        title="Xóa phiếu tạm">
-                                    <i class="ri-delete-bin-line"></i>
-                                </button>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
+                <div class="filter-checkbox-list filter-scroll-box">
+                    <?php foreach ($suppliers as $sup): ?>
+                    <label class="filter-check-item">
+                        <input type="checkbox" name="supplier_id[]" value="<?= $sup['id'] ?>" <?= in_array((int)$sup['id'], $supplier_filters, true) ? 'checked' : '' ?> onchange="this.form.submit()">
+                        <span class="label-text" title="<?= htmlspecialchars($sup['name']) ?>"><?= htmlspecialchars($sup['name']) ?></span>
+                    </label>
                     <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
-
-    <div id="bulkActionBar" class="bulk-action-bar">
-        <span id="bulkCount" class="bulk-count">0 phiếu đã chọn</span>
-        <div class="divider"></div>
-        <button onclick="exportSelectedInboundExcel()" class="btn-export">
-            <i class="ri-download-cloud-2-line"></i> Xuất Excel
-        </button>
-        <button onclick="clearInboundSelection()" class="btn-clear">Bỏ chọn</button>
-    </div>
-
-    <?php if ($total_pages > 1): ?>
-    <div class="pagination-modern">
-        <div class="page-numbers">
-            <?php $baseParams = $_GET; unset($baseParams['page']); ?>
-            <?php if ($page > 1): ?>
-                <a href="?<?= http_build_query(array_merge($baseParams, ['page' => $page - 1])) ?>">
-                    <i class="ri-arrow-left-s-line"></i>
-                </a>
-            <?php else: ?>
-                <span class="disabled"><i class="ri-arrow-left-s-line"></i></span>
-            <?php endif; ?>
-            <?php
-            $range     = 1;
-            $show_dots = false;
-            for ($i = 1; $i <= $total_pages; $i++):
-                if ($i == 1 || $i == $total_pages || ($i >= $page - $range && $i <= $page + $range)):
-                    if ($show_dots) { echo '<span class="dots">...</span>'; $show_dots = false; }
-                    echo '<a href="?' . http_build_query(array_merge($baseParams, ['page' => $i])) . '" class="' . ($i === $page ? 'active' : '') . '">' . $i . '</a>';
-                else:
-                    $show_dots = true;
-                endif;
-            endfor;
-            ?>
-            <?php if ($page < $total_pages): ?>
-                <a href="?<?= http_build_query(array_merge($baseParams, ['page' => $page + 1])) ?>">
-                    <i class="ri-arrow-right-s-line"></i>
-                </a>
-            <?php else: ?>
-                <span class="disabled"><i class="ri-arrow-right-s-line"></i></span>
-            <?php endif; ?>
-        </div>
-    </div>
-    <?php endif; ?>
-</div>
-
-<!-- ── Modal: Xem chi tiết phiếu nhập ─────────────────────────────────── -->
-<div id="detailModal" class="modal">
-    <div class="modal-content modal-lg">
-        <div class="modal-header">
-            <h3>Chi tiết phiếu nhập</h3>
-            <div class="modal-header-actions">
-                <button class="btn btn-sm btn-secondary" onclick="exportInboundDetailExcel()">
-                    <i class="ri-file-excel-line"></i> Excel
-                </button>
-                <button class="btn btn-sm btn-secondary" onclick="printInboundDetail()">
-                    <i class="ri-printer-line"></i> In
-                </button>
-                <span class="close" onclick="closeInboundDetailModal()">&times;</span>
-            </div>
-        </div>
-        <div id="detailContent" style="padding:20px"></div>
-    </div>
-</div>
-
-<!-- ── Modal: Sửa phiếu nhập ──────────────────────────────────────────── -->
-<div id="editInboundModal" class="modal">
-    <div class="modal-content edit-modal-doc">
-
-        <form id="editInboundForm" method="POST" action="process.php"
-              onsubmit="return validateEditInboundFormBeforeSubmit()">
-            <input type="hidden" name="action"      value="edit_inbound">
-            <input type="hidden" name="id"          id="editInboundId">
-            <input type="hidden" name="_csrf_token" id="editCsrfToken" value="<?= htmlspecialchars($csrf->getToken()) ?>">
-
-            <div class="inv-header-strip" style="border-radius:24px 24px 0 0;">
-                <div class="inv-strip-left">
-                    <div class="inv-strip-label">Chỉnh sửa phiếu nhập</div>
-                </div>
-                <div style="display:flex; align-items:center; gap:20px;">
-                    <div class="inv-strip-right">
-                        <div class="inv-strip-date-label">Ngày tạo</div>
-                        <div class="inv-strip-date-val" id="editCreatedDate">—</div>
-                    </div>
-                    <span class="close edit-modal-close" onclick="closeEditInboundModal()">&times;</span>
                 </div>
             </div>
 
-            <div class="inv-header-grid">
-                <div class="inv-col">
-                    <h4 class="inv-section-title">Nhà cung cấp</h4>
-                    <select name="supplier_id" id="editSupplierId" required class="inv-input">
-                        <option value="">— Chọn nhà cung cấp —</option>
-                        <?php foreach ($suppliers as $sup): ?>
-                            <option value="<?= $sup['id'] ?>"><?= htmlspecialchars($sup['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <div id="editSupplierInfoBox" class="inv-supplier-box" style="display:none;">
-                        <strong id="editBoxSupName"></strong>
-                        <span>Mã NCC · Đã xác minh</span>
-                    </div>
+            <!-- 3. BỘ CHỌN NGÀY TẠO -->
+            <div class="filter-section" data-filter-key="date">
+                <div class="filter-sec-title">
+                    <span><i class="ri-calendar-line"></i> Ngày tạo</span>
+                    <i class="ri-arrow-down-s-line"></i>
                 </div>
 
-                <div class="inv-col">
-                    <h4 class="inv-section-title">Chi tiết phiếu</h4>
-                    <div class="inv-details-2x2">
-                        <div class="form-group">
-                            <label>Số tham chiếu</label>
-                            <input type="text" name="ref_no" id="editRefNo" class="inv-field-input" placeholder="Mã phiếu">
+                <div class="neo-datepicker-container" id="neoDatePicker">
+                    <input type="hidden" name="from" id="neoDateFrom" value="<?= htmlspecialchars($from_date) ?>">
+                    <input type="hidden" name="to" id="neoDateTo" value="<?= htmlspecialchars($to_date) ?>">
+
+                    <button type="button" class="neo-datepicker-trigger" onclick="toggleDatePickerPopover(event)">
+                        <span class="trigger-left">
+                            <i class="ri-calendar-line"></i>
+                            <span id="neoDatePickerText">Hôm nay</span>
+                        </span>
+                        <i class="ri-arrow-down-s-line arrow-icon"></i>
+                    </button>
+
+                    <div class="neo-datepicker-popover" id="neoDatePickerPopover" onclick="event.stopPropagation()">
+                        <div class="datepicker-preset-list" id="datepickerPresetList">
+                            <button type="button" class="preset-pill-item" onclick="selectQuickDate('today')">Hôm nay</button>
+                            <button type="button" class="preset-pill-item" onclick="selectQuickDate('yesterday')">Hôm qua</button>
+                            <button type="button" class="preset-pill-item" onclick="selectQuickDate('last7')">7 ngày trước</button>
+                            <button type="button" class="preset-pill-item" onclick="selectQuickDate('last14')">14 ngày trước</button>
+                            <button type="button" class="preset-pill-item" onclick="selectQuickDate('last30')">30 ngày trước</button>
+                            <button type="button" class="preset-pill-item custom-btn" onclick="openCalendarPicker()">
+                                <span>Tùy chỉnh (Start - End)</span>
+                                <i class="ri-arrow-right-s-line"></i>
+                            </button>
                         </div>
-                        <div class="form-group">
-                            <label>Trạng thái</label>
-                            <select name="status" id="editStatus" class="inv-input" style="padding-top:8px; padding-bottom:8px;">
+
+                        <div class="datepicker-calendar-panel" id="datepickerCalendarPanel" style="display: none;">
+                            <div class="cal-header-bar">
+                                <button type="button" class="btn-cal-nav" onclick="changeMonth(-1)">
+                                    <i class="ri-arrow-left-s-line"></i>
+                                </button>
+                                <span class="cal-month-label" id="calMonthLabel">Tháng 10 2026</span>
+                                <button type="button" class="btn-cal-nav" onclick="changeMonth(1)">
+                                    <i class="ri-arrow-right-s-line"></i>
+                                </button>
+                            </div>
+                            <div class="cal-week-labels">
+                                <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                            </div>
+                            <div class="cal-days-grid" id="calDaysGrid"></div>
+                            <div class="cal-footer-range">
+                                <span class="range-hint" id="calRangeHint">Chọn ngày bắt đầu</span>
+                                <div class="cal-btns">
+                                    <button type="button" class="btn-cal-back" onclick="backToPresets()">Quay lại</button>
+                                    <button type="button" class="btn-cal-apply" onclick="applyCustomRange()">Áp dụng</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <input type="hidden" name="keyword" value="<?= htmlspecialchars($keyword) ?>">
+        </form>
+    </aside>
+
+    <!-- CỘT BẢNG DỮ LIỆU CHÍNH -->
+    <main class="task-table-main">
+        <!-- TOP TOOLBAR -->
+        <div class="task-top-toolbar">
+            <div class="tb-left">
+                <button type="button" class="btn-tb-filter" id="btnToggleSidebar">
+                    <i class="ri-equalizer-line"></i>
+                    <span id="txtToggleSidebar">Hide Filters</span>
+                </button>
+                <div class="tb-dropdown-badge">
+                    <span>Tất cả phiếu nhập (<?= number_format($total_rows) ?>)</span>
+                    <i class="ri-arrow-down-s-line"></i>
+                </div>
+            </div>
+
+            <div class="tb-right">
+                <div class="tb-search-box">
+                    <i class="ri-search-line"></i>
+                    <input type="text" id="searchInput" placeholder="Tìm kiếm phiếu nhập..." value="<?= htmlspecialchars($keyword) ?>" onkeyup="searchInboundTable()">
+                </div>
+                <a href="ocr.php" class="btn-tb-filter" style="text-decoration:none;">
+                    <i class="ri-scan-2-line"></i> Nhập từ hóa đơn
+                </a>
+                <a href="create.php" class="btn-tb-primary" style="text-decoration:none;">
+                    <i class="ri-add-line"></i> Tạo phiếu nhập
+                </a>
+            </div>
+        </div>
+
+        <?php if ($flash_success): ?><div class="alert alert-success" style="margin-bottom:0;"><?= htmlspecialchars($flash_success) ?></div><?php endif; ?>
+        <?php if ($flash_error):   ?><div class="alert alert-danger" style="margin-bottom:0;"><?= htmlspecialchars($flash_error) ?></div><?php endif; ?>
+
+        <!-- BẢNG DỮ LIỆU HIỆN ĐẠI -->
+        <div class="task-table-card">
+            <table class="task-data-table" id="inboundTable">
+                <thead>
+                    <tr>
+                        <th width="42"><input type="checkbox" id="selectAll"></th>
+                        <th width="150">Mã phiếu</th>
+                        <th width="260">Nhà cung cấp</th>
+                        <th width="180">Người tạo</th>
+                        <th width="160">Ngày tạo</th>
+                        <th width="140">Trạng thái</th>
+                        <th width="110" class="text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($inbounds)): ?>
+                        <tr>
+                            <td colspan="7" class="table-empty-cell">
+                                <i class="ri-inbox-line"></i>
+                                <p>Không tìm thấy phiếu nhập nào</p>
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php
+                        $statusMap = [
+                            'completed' => ['st-completed', 'Hoàn thành'],
+                            'pending'   => ['st-pending',   'Tạm thời'],
+                            'cancelled' => ['st-overdue',   'Đã hủy'],
+                        ];
+                        foreach ($inbounds as $ib):
+                            [$badgeClass, $badgeText] = $statusMap[$ib['status']] ?? ['st-pending', $ib['status']];
+                            $canEdit   = ($ib['status'] === 'pending');
+                            $canDelete = hasRole('admin', 'manager') && ($ib['status'] === 'pending');
+                        ?>
+                        <tr>
+                            <td><input type="checkbox" class="row-checkbox" data-id="<?= $ib['id'] ?>"></td>
+                            <td>
+                                <a href="javascript:void(0)" onclick="viewInboundDetail(<?= $ib['id'] ?>)" class="item-name" style="text-decoration:none; cursor:pointer;">
+                                    <strong><?= htmlspecialchars($ib['ref_no'] ?? '—') ?></strong>
+                                </a>
+                            </td>
+                            <td><?= htmlspecialchars($ib['supplier_name'] ?? '—') ?></td>
+                            <td><?= htmlspecialchars($ib['user_name'] ?? '—') ?></td>
+                            <td><?= date('d/m/Y H:i', strtotime($ib['created'])) ?></td>
+                            <td>
+                                <span class="clean-badge <?= $badgeClass ?>">
+                                    <?= $badgeText ?>
+                                </span>
+                            </td>
+                            <td class="text-right actions-cell">
+                                <button type="button" class="btn-action-icon" onclick="viewInboundDetail(<?= $ib['id'] ?>)" title="Xem chi tiết">
+                                    <i class="ri-eye-line"></i>
+                                </button>
+                                <?php if ($canEdit): ?>
+                                    <button type="button" class="btn-action-icon" onclick="editInbound(<?= $ib['id'] ?>)" title="Sửa phiếu tạm">
+                                        <i class="ri-pencil-line"></i>
+                                    </button>
+                                <?php endif; ?>
+                                <?php if ($canDelete): ?>
+                                    <button type="button" class="btn-action-icon btn-action-delete" onclick="confirmDeleteInbound(<?= $ib['id'] ?>)" title="Xóa phiếu tạm">
+                                        <i class="ri-delete-bin-line"></i>
+                                    </button>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- BULK ACTION BAR -->
+        <div id="bulkActionBar" class="bulk-action-bar">
+            <span id="bulkCount" class="bulk-count">0 phiếu nhập đã chọn</span>
+            <div class="divider"></div>
+            <button onclick="exportSelectedInboundExcel()" class="btn-export">
+                <i class="ri-download-cloud-2-line"></i> Xuất Excel
+            </button>
+            <button onclick="clearInboundSelection()" class="btn-clear">Bỏ chọn</button>
+        </div>
+
+        <!-- PHÂN TRANG -->
+        <?php if ($total_pages > 1):
+            $baseParams = $_GET;
+            unset($baseParams['page']); ?>
+        <div class="pagination-footer">
+            <div class="pagination-page-list">
+                <?php if ($page > 1): ?>
+                    <a href="?<?= http_build_query(array_merge($baseParams, ['page' => $page - 1])) ?>" class="btn-page-nav">
+                        <i class="ri-arrow-left-s-line"></i>
+                    </a>
+                <?php else: ?>
+                    <span class="btn-page-nav disabled"><i class="ri-arrow-left-s-line"></i></span>
+                <?php endif; ?>
+
+                <?php $range = 1; $showDots = false;
+                for ($i = 1; $i <= $total_pages; $i++):
+                    if ($i === 1 || $i === $total_pages || ($i >= $page - $range && $i <= $page + $range)):
+                        if ($showDots) { echo '<span class="dots">...</span>'; $showDots = false; } ?>
+                        <a href="?<?= http_build_query(array_merge($baseParams, ['page' => $i])) ?>" class="btn-page-num <?= $i === $page ? 'active' : '' ?>"><?= $i ?></a>
+                    <?php else: $showDots = true;
+                    endif;
+                endfor; ?>
+
+                <?php if ($page < $total_pages): ?>
+                    <a href="?<?= http_build_query(array_merge($baseParams, ['page' => $page + 1])) ?>" class="btn-page-nav">
+                        <i class="ri-arrow-right-s-line"></i>
+                    </a>
+                <?php else: ?>
+                    <span class="btn-page-nav disabled"><i class="ri-arrow-right-s-line"></i></span>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+    </main>
+</div>
+
+<!-- MODAL: XEM CHI TIẾT PHIẾU NHẬP -->
+<div id="detailModal" class="modal-modern" style="display:none;">
+    <div class="modal-modern-dialog" style="max-width: 840px;">
+        <div class="modal-modern-header">
+            <div>
+                <h3 id="detailModalTitle">Chi tiết phiếu nhập</h3>
+                <p class="modal-subtitle">Thông tin chứng từ và danh mục sản phẩm nhập kho.</p>
+            </div>
+            <button type="button" class="btn-close-modern" onclick="closeInboundDetailModal()">&times;</button>
+        </div>
+        <div class="modal-tabs-body" id="detailContent"></div>
+        <div class="modal-modern-footer">
+            <div style="display:flex; gap:8px;">
+                <button type="button" class="btn-modern-outline" onclick="exportInboundDetailExcel()">
+                    <i class="ri-file-excel-line"></i> Xuất Excel
+                </button>
+                <button type="button" class="btn-modern-outline" onclick="printInboundDetail()">
+                    <i class="ri-printer-line"></i> In phiếu
+                </button>
+            </div>
+            <button type="button" class="btn-modern-dark" onclick="closeInboundDetailModal()">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: SỬA PHIẾU NHẬP TẠM -->
+<div id="editInboundModal" class="modal-modern" style="display:none;">
+    <div class="modal-modern-dialog" style="max-width: 960px;">
+        <div class="modal-modern-header">
+            <div>
+                <h3>Chỉnh sửa phiếu nhập tạm</h3>
+                <p class="modal-subtitle">Cập nhật danh sách hàng và thông tin nhà cung cấp.</p>
+            </div>
+            <button type="button" class="btn-close-modern" onclick="closeEditInboundModal()">&times;</button>
+        </div>
+
+        <form id="editInboundForm" method="POST" action="process.php" onsubmit="return validateEditInboundFormBeforeSubmit()">
+            <input type="hidden" name="action" value="edit_inbound">
+            <input type="hidden" name="id" id="editInboundId">
+            <input type="hidden" name="_csrf_token" id="editCsrfToken" value="<?= htmlspecialchars($csrfToken) ?>">
+
+            <div class="modal-tabs-body">
+                <div class="form-grid-2" style="margin-bottom:14px;">
+                    <div class="form-row-modern">
+                        <label class="form-label-modern">Nhà cung cấp <span class="text-danger">*</span></label>
+                        <select name="supplier_id" id="editSupplierId" required class="form-input-modern">
+                            <option value="">— Chọn nhà cung cấp —</option>
+                            <?php foreach ($suppliers as $sup): ?>
+                                <option value="<?= $sup['id'] ?>"><?= htmlspecialchars($sup['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-grid-2">
+                        <div class="form-row-modern">
+                            <label class="form-label-modern">Số tham chiếu</label>
+                            <input type="text" name="ref_no" id="editRefNo" class="form-input-modern" placeholder="Mã phiếu">
+                        </div>
+                        <div class="form-row-modern">
+                            <label class="form-label-modern">Trạng thái</label>
+                            <select name="status" id="editStatus" class="form-input-modern">
                                 <option value="pending">Tạm thời</option>
                                 <option value="completed">Hoàn thành</option>
                                 <option value="cancelled">Đã hủy</option>
@@ -339,111 +409,75 @@ include __DIR__ . '/../../layout/header.php';
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="inv-body">
-                <div class="section-header">
-                    <h4 class="inv-section-title" style="margin:0;">Danh sách sản phẩm</h4>
-                </div>
-                <div class="table-responsive">
-                    <table class="data-table" id="editInboundItemsTable">
+                <div class="table-responsive" style="border:1px solid var(--tb-border); border-radius:10px; margin-bottom:12px;">
+                    <table class="task-data-table" id="editInboundItemsTable">
                         <thead>
                             <tr>
-                                <th style="width:36px; text-align:center;">#</th>
-                                <th style="min-width:220px;">Sản phẩm</th>
-                                <th style="width:90px;">Số lô</th>
-                                <th style="width:110px;">NSX</th>
-                                <th style="width:110px;">HSD</th>
-                                <th style="width:80px; text-align:right;">SL</th>
-                                <th style="width:120px; text-align:right;">Đơn giá</th>
-                                <th style="width:130px; text-align:right;">Thành tiền</th>
-                                <th style="width:36px;"></th>
+                                <th width="36" class="text-center">#</th>
+                                <th style="min-width:200px;">Sản phẩm</th>
+                                <th width="100">Số lô</th>
+                                <th width="120">NSX</th>
+                                <th width="120">HSD</th>
+                                <th width="80" class="text-right">SL</th>
+                                <th width="120" class="text-right">Đơn giá</th>
+                                <th width="130" class="text-right">Thành tiền</th>
+                                <th width="36"></th>
                             </tr>
                         </thead>
                         <tbody id="editItemsBody"></tbody>
                     </table>
                 </div>
-                <div class="inv-add-row">
-                    <button type="button" class="btn-add-line" onclick="addEditInboundRow()">
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <button type="button" class="btn-modern-outline" onclick="addEditInboundRow()">
                         <i class="ri-add-line"></i> Thêm dòng mới
                     </button>
+                    <div style="font-size:14px; font-weight:600;">
+                        Tổng cộng: <span id="editTotalAmountDisplay" style="color:#2563eb;">0 đ</span>
+                        <input type="hidden" name="total_amount" id="editTotalAmount" value="0">
+                    </div>
+                </div>
+
+                <div class="form-row-modern">
+                    <label class="form-label-modern">Ghi chú</label>
+                    <textarea name="note" id="editNote" rows="2" class="form-input-modern" placeholder="Nhập ghi chú..."></textarea>
                 </div>
             </div>
 
-            <div class="inv-footer-grid">
-                <div class="inv-note-section">
-                    <h4 class="inv-section-title" style="margin-bottom:8px;">Ghi chú</h4>
-                    <textarea name="note" id="editNote" class="inv-textarea" placeholder="Ghi chú cho phiếu này..."></textarea>
-                </div>
-                <div class="inv-summary-section">
-                    <div class="inv-summary-row">
-                        <span>Tổng tiền hàng</span>
-                        <span id="editTotalAmountDisplay">0 đ</span>
-                    </div>
-                    <div class="inv-summary-row">
-                        <span>Chiết khấu</span>
-                        <span>—</span>
-                    </div>
-                    <div class="inv-summary-row inv-total">
-                        <span>Tổng cộng</span>
-                        <span id="editPayAmount">0 đ</span>
-                    </div>
-                    <input type="hidden" name="total_amount" id="editTotalAmount" value="0">
-                </div>
+            <div class="modal-modern-footer">
+                <button type="button" class="btn-modern-outline" onclick="closeEditInboundModal()">Hủy bỏ</button>
+                <button type="submit" class="btn-modern-dark">Lưu thay đổi</button>
             </div>
-
-            <div class="inv-actions" style="border-radius:0 0 24px 24px;">
-                <button type="button" class="btn inv-btn-cancel" onclick="closeEditInboundModal()">Hủy bỏ</button>
-                <button type="submit" class="btn inv-btn-save">
-                    <i class="ri-check-line"></i> Lưu thay đổi
-                </button>
-            </div>
-
         </form>
     </div>
 </div>
 
 <template id="rowTemplateEdit">
     <tr class="item-row">
-        <td class="stt-cell" style="text-align:center;"></td>
-        <td style="min-width:200px; position:relative;">
-            <input type="text" class="product-autocomplete" name="product_name[]" placeholder="Nhập tên hoặc SKU" autocomplete="off" style="width:100%">
+        <td class="stt-cell text-center"></td>
+        <td>
+            <input type="text" class="product-autocomplete form-input-modern" name="product_name[]" placeholder="Nhập tên hoặc SKU" autocomplete="off" style="padding:6px 10px;">
             <input type="hidden" name="product_id[]" class="product-id">
             <div class="product-info"></div>
         </td>
-        <td><input type="text"   name="batch_no[]"   required placeholder="Lô"  style="width:100%;"></td>
-        <td><input type="date"   name="mfg_date[]"   style="width:100%;"></td>
-        <td><input type="date"   name="exp_date[]"   required style="width:100%;"></td>
-        <td><input type="number" name="quantity[]"   class="qty"   value="1" min="1" required style="width:72px; text-align:right;"></td>
-        <td><input type="text"   name="unit_price[]" class="price" step="1000" required style="width:110px; text-align:right;"></td>
+        <td><input type="text" name="batch_no[]" required placeholder="Lô" class="form-input-modern" style="padding:6px 10px;"></td>
+        <td><input type="date" name="mfg_date[]" class="form-input-modern" style="padding:6px 10px;"></td>
+        <td><input type="date" name="exp_date[]" required class="form-input-modern" style="padding:6px 10px;"></td>
+        <td><input type="number" name="quantity[]" class="qty form-input-modern" value="1" min="1" required style="text-align:right; padding:6px 10px;"></td>
+        <td><input type="text" name="unit_price[]" class="price form-input-modern" step="1000" required style="text-align:right; padding:6px 10px;"></td>
         <td style="text-align:right;">
-            <input type="text" class="row-total" readonly style="width:100%; text-align:right; font-weight:600;">
+            <input type="text" class="row-total form-input-modern" readonly style="text-align:right; font-weight:600; background:transparent; border:none; padding:6px 10px;">
         </td>
-        <td style="text-align:center;">
-            <button type="button" class="remove-row" onclick="removeEditInboundRow(this)">
+        <td class="text-center">
+            <button type="button" class="btn-action-icon btn-action-delete" onclick="removeEditInboundRow(this)">
                 <i class="ri-delete-bin-line"></i>
             </button>
         </td>
     </tr>
 </template>
 
-<script>
-function toggleFilterBar() {
-    const bar = document.getElementById('filterBar');
-    bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
-}
-function toggleDropdown(panelId) {
-    document.querySelectorAll('.dropdown-panel').forEach(p => {
-        if (p.id !== panelId) p.classList.remove('show');
-    });
-    document.getElementById(panelId)?.classList.toggle('show');
-}
-document.addEventListener('click', function (e) {
-    if (!e.target.closest('.custom-dropdown'))
-        document.querySelectorAll('.dropdown-panel').forEach(p => p.classList.remove('show'));
-});
-</script>
-
+<meta name="csrf-token" content="<?= htmlspecialchars($csrfToken) ?>">
 <script src="<?= BASE_URL ?>/js/utils.js"></script>
 <script src="<?= BASE_URL ?>/js/suppliers.js"></script>
 <script src="<?= BASE_URL ?>/js/inbound.js"></script>

@@ -269,3 +269,361 @@
     .kpi-icon { width: 38px; height: 38px; font-size: 17px; border-radius: 10px; }
     .btn-ai { padding: 8px 16px; font-size: 12.5px; }
 }
+
+.dashboard-container {
+    padding: 0 20px 40px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Toolbar Filter Buttons */
+.dashboard-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+}
+
+.filter-pills {
+    display: flex;
+    background: #ffffff;
+    padding: 4px;
+    border-radius: 999px;
+    border: 1px solid #f1f1f4;
+}
+
+.pill-btn {
+    border: none;
+    background: transparent;
+    padding: 6px 18px;
+    border-radius: 999px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #71717a;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.pill-btn.active {
+    background: #52525b;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.date-range-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    border: 1px solid #f1f1f4;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #27272a;
+}
+
+/* 4 KPI Cards */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+
+.kpi-card {
+    background: #ffffff;
+    border: 1px solid #f4f4f5;
+    border-radius: 20px;
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 120px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.kpi-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #71717a;
+}
+
+.kpi-value {
+    font-size: 26px;
+    font-weight: 700;
+    color: #18181b;
+    margin: 8px 0 6px 0;
+    letter-spacing: -0.5px;
+}
+
+.kpi-trend {
+    font-size: 12.5px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.trend-up {
+    color: #10b981;
+}
+
+.trend-down {
+    color: #ef4444;
+}
+
+/* Thẻ đen tuyền góc trái */
+.kpi-card.card-dark {
+    background: #18181b;
+    border-color: #18181b;
+}
+
+.kpi-card.card-dark .kpi-title {
+    color: #a1a1aa;
+}
+
+.kpi-card.card-dark .kpi-value {
+    color: #ffffff;
+}
+
+.kpi-card.card-dark .trend-up {
+    color: #34d399;
+}
+
+/* Middle Layout: Chart + Side Widget */
+.dashboard-middle-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+
+.content-card {
+    background: #ffffff;
+    border: 1px solid #f4f4f5;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.card-header-clean {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.card-header-clean h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    color: #18181b;
+}
+
+.card-header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-circle-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #e4e4e7;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #52525b;
+    cursor: pointer;
+    font-size: 15px;
+    transition: all 0.15s ease;
+}
+
+.btn-circle-icon:hover {
+    background: #18181b;
+    color: #ffffff;
+    border-color: #18181b;
+}
+
+/* Biểu đồ thanh bo góc mượt */
+.mock-bar-chart {
+    height: 220px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 20px 10px 20px;
+    border-bottom: 1px solid #f4f4f5;
+}
+
+.bar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    height: 100%;
+    justify-content: flex-end;
+    width: 44px;
+}
+
+.bar-fill {
+    width: 20px;
+    background: #18181b;
+    border-radius: 12px;
+    transition: height 0.3s ease;
+}
+
+.bar-fill.active-bar {
+    background: #71717a; /* Cột xám active như trong mẫu */
+}
+
+.bar-col span {
+    font-size: 13px;
+    font-weight: 500;
+    color: #71717a;
+}
+
+/* Side Widgets */
+.side-widgets {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Mini Calendar */
+.cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 15px;
+    font-weight: 600;
+    color: #18181b;
+    margin-bottom: 16px;
+}
+
+.cal-nav {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #71717a;
+    font-size: 18px;
+}
+
+.cal-days-strip {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.day-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 8px;
+    border-radius: 14px;
+    font-size: 13px;
+    color: #71717a;
+}
+
+.day-item.active-day {
+    background: #52525b;
+    color: #ffffff;
+    padding: 10px 12px;
+    border-radius: 14px;
+}
+
+.day-item.active-day b {
+    color: #ffffff;
+}
+
+/* Progress card */
+.progress-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.progress-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #18181b;
+    margin-bottom: 4px;
+}
+
+.progress-circle {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    border: 5px solid #18181b;
+    border-top-color: #e4e4e7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #18181b;
+}
+
+/* Table Card */
+.clean-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.clean-table th {
+    text-align: left;
+    font-size: 13px;
+    font-weight: 500;
+    color: #71717a;
+    padding: 12px 14px;
+    border-bottom: 1px solid #f1f1f4;
+}
+
+.clean-table td {
+    padding: 16px 14px;
+    font-size: 14px;
+    color: #18181b;
+    border-bottom: 1px solid #fafafa;
+}
+
+.item-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+}
+
+.item-thumb {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #f4f4f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #71717a;
+    font-size: 18px;
+}
+
+.mono-id {
+    color: #71717a;
+    font-weight: 500;
+}
+
+.amount-cell {
+    font-weight: 600;
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.status-paid {
+    background: #52525b;
+    color: #ffffff;
+}

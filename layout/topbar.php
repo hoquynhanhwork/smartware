@@ -21,19 +21,23 @@ if (empty($user_name)) {
         ?? 'Người dùng';
 }
 ?>
+<?php
+// layout/topbar.php
+$title = $page_title ?? 'Dashboard';
+?>
 <header class="topbar">
     <div class="topbar-left">
-        <a href="<?= BASE_URL ?>/pages/dashboard/index.php" class="topbar-logo" title="Về trang chủ">
-            <img src="<?= BASE_URL ?>/img/Logo.png" alt="SmartWare Logo">
-        </a>
-        <h1 class="page-title"><?= htmlspecialchars(mb_strtoupper($title ?? '', 'UTF-8')) ?></h1>
+        <h1 class="page-title"><?= htmlspecialchars($title) ?></h1>
     </div>
 
     <div class="topbar-right">
-        <div class="topbar-item">
-            <i class="fa-solid fa-headset"></i>
-            <span>Hỗ trợ</span>
-        </div>
-        <!-- Đã chuyển Cài đặt, Avatar và Dropdown Hồ sơ vào sidebar bên trái -->
+        
+        <!-- Nút chuông thông báo -->
+        <button type="button" class="topbar-icon-btn" title="Thông báo">
+            <i class="ri-notification-3-line"></i>
+            <?php if (!empty($alert_count) && $alert_count > 0): ?>
+                <span class="badge-dot"></span>
+            <?php endif; ?>
+        </button>
     </div>
 </header>

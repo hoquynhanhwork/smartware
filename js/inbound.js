@@ -805,7 +805,349 @@ document.addEventListener('DOMContentLoaded', function () {
         if (e.target === document.getElementById('categoryModal') && typeof closeCategoryModal === 'function') closeCategoryModal();
     });
 });
+// js/inbound.js
+'use strict';
 
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
+function appendCsrf(formData) {
+    formData.set('_csrf_token', getCsrfToken());
+    return formData;
+}
+
+function getInboundAutocompleteOptions() {
+    return {
+        searchUrl: 'process.php?action=search_products',
+        onSelect: (product, row) => {
+            const priceEl = row.querySelector('.price');
+            if (priceEl && !unformatNumber(priceEl.value)) {
+                priceEl.value = formatNumberInput(product.price.toString());
+            }
+            calculateInboundRow(row);
+        },
+        position: 'above',
+        minChars: 2
+    };
+}
+
+function calculateInboundRow(row) {
+    calculateRow(row, {
+        qtySelector: '.qty',
+        priceSelector: '.price',
+        totalSelector: '.row-total',
+        onAfter: calculateInboundTotal
+    });
+}
+
+function calculateInboundTotal() {
+    calculateTotal({
+        bodySelector: '#itemsBody',
+        totalSelector: '.row-total',
+        displayId: 'totalAmountDisplay',
+        hiddenId: 'totalAmountInput'
+    });
+    const total = unformatNumber(document.getElementById('totalAmountDisplay')?.textContent || '0');
+    const payEl = document.getElementById('payAmount');
+    if (payEl) payEl.textContent = formatNumberInput(total.toString()) + ' ₫';
+}
+
+function getEmptyInboundRow() {
+    const template = document.getElementById('rowTemplate');
+    if (template) {
+        const newRow = template.content.cloneNode(true).querySelector('tr');
+        newRow.querySelectorAll('input, select').forEach(el => { el.value = ''; });
+        newRow.querySelector('.qty').value = '1';
+        return newRow;
+    }
+    return document.createElement('tr');
+}
+
+function addInboundRow() {
+    const tbody = document.getElementById('itemsBody');
+    if (!tbody) return;
+    const newRow = getEmptyInboundRow();
+    tbody.appendChild(newRow);
+    attachInboundRowEvents(newRow);
+    initAutocomplete(newRow.querySelector('.product-autocomplete'), getInboundAutocompleteOptions());
+    updateStt();
+}
+
+function removeInboundRow(btn) {
+    const rows = document.querySelectorAll('#itemsBody .item-row');
+    if (rows.length > 1) {
+        btn.closest('tr').remove();
+        updateStt();
+        calculateInboundTotal();
+    } else {
+        alert('Phải có ít nhất một dòng sản phẩm');
+    }
+}
+
+function attachInboundRowEvents(row) {
+    attachRowEvents(row, {
+        qtySelector: '.qty',
+        priceSelector: '.price',
+        totalSelector: '.row-total',
+        onAfterCalc: calculateInboundTotal,
+        onQtyBlur: (row, val) => val <= 0 ? 1 : val,
+        onPriceBlur: (row, val) => val
+    });
+}
+
+function updateStt() {
+    document.querySelectorAll('#itemsBody .item-row').forEach((row, i) => {
+        const cell = row.querySelector('.stt-cell');
+        if (cell) cell.textContent = i + 1;
+    });
+}
+
+function validateInboundFormBeforeSubmit() {
+    const supplier = document.querySelector('#inboundForm [name="supplier_id"]');
+    if (!supplier?.value) {
+        alert('Vui lòng chọn nhà cung cấp');
+        supplier?.focus();
+        return false;
+    }
+    const rows = document.querySelectorAll('#itemsBody .item-row');
+    if (rows.length === 0) {
+        alert('Phải có ít nhất một dòng sản phẩm');
+        return false;
+    }
+    return true;
+}
+
+// ── XỬ LÝ PHIẾU TẠM & MODAL EDIT ──────────────────────────────────────────
+function editInbound(id) {
+    fetch(`process.php?action=get_detail&id=${encodeURIComponent(id)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) {
+                alert('Không thể tải dữ liệu phiếu');
+                return;
+            }
+            document.getElementById('editInboundId').value = id;
+            document.getElementById('editRefNo').value     = data.ref_no || '';
+            document.getElementById('editNote').value      = data.note || '';
+            document.getElementById('editStatus').value    = data.status || 'pending';
+
+            const supSel = document.getElementById('editSupplierId');
+            if (supSel) supSel.value = data.supplier_id || '';
+
+            const tbody = document.getElementById('editItemsBody');
+            if (tbody) {
+                tbody.innerHTML = '';
+                if (data.items?.length) {
+                    data.items.forEach(item => addEditInboundRowWithData(item));
+                } else {
+                    addEditInboundRow();
+                }
+            }
+            calculateEditInboundTotal();
+            document.getElementById('editInboundModal').style.display = 'flex';
+        })
+        .catch(err => alert('Lỗi kết nối: ' + err.message));
+}
+
+function addEditInboundRow() {
+    const tbody = document.getElementById('editItemsBody');
+    const tpl   = document.getElementById('rowTemplateEdit');
+    if (!tbody || !tpl) return;
+    const newRow = tpl.content.cloneNode(true).querySelector('tr');
+    tbody.appendChild(newRow);
+    attachEditInboundRowEvents(newRow);
+    initAutocomplete(newRow.querySelector('.product-autocomplete'), getInboundAutocompleteOptions());
+    updateEditStt();
+}
+
+function addEditInboundRowWithData(item) {
+    const tbody = document.getElementById('editItemsBody');
+    const tpl   = document.getElementById('rowTemplateEdit');
+    if (!tbody || !tpl) return;
+    const newRow = tpl.content.cloneNode(true).querySelector('tr');
+    newRow.querySelector('.product-autocomplete').value    = item.product_name || '';
+    newRow.querySelector('.product-id').value              = item.product_id || '';
+    newRow.querySelector('input[name="batch_no[]"]').value = item.batch_no || '';
+    newRow.querySelector('input[name="mfg_date[]"]').value = item.mfg_date || '';
+    newRow.querySelector('input[name="exp_date[]"]').value = item.exp_date || '';
+    newRow.querySelector('.qty').value                     = item.quantity;
+    newRow.querySelector('.price').value                   = formatNumberInput(item.unit_price.toString());
+    tbody.appendChild(newRow);
+    attachEditInboundRowEvents(newRow);
+    calculateRow(newRow, { qtySelector: '.qty', priceSelector: '.price', totalSelector: '.row-total', onAfter: calculateEditInboundTotal });
+    initAutocomplete(newRow.querySelector('.product-autocomplete'), getInboundAutocompleteOptions());
+    updateEditStt();
+}
+
+function removeEditInboundRow(btn) {
+    btn.closest('tr').remove();
+    updateEditStt();
+    calculateEditInboundTotal();
+}
+
+function updateEditStt() {
+    document.querySelectorAll('#editItemsBody .item-row').forEach((row, i) => {
+        const cell = row.querySelector('.stt-cell');
+        if (cell) cell.textContent = i + 1;
+    });
+}
+
+function attachEditInboundRowEvents(row) {
+    attachRowEvents(row, {
+        qtySelector: '.qty',
+        priceSelector: '.price',
+        totalSelector: '.row-total',
+        onAfterCalc: calculateEditInboundTotal
+    });
+}
+
+function calculateEditInboundTotal() {
+    let total = 0;
+    document.querySelectorAll('#editItemsBody .row-total').forEach(el => {
+        total += unformatNumber(el.value || '0');
+    });
+    const formatted = formatNumberInput(total.toString());
+    const displayEl = document.getElementById('editTotalAmountDisplay');
+    const hiddenEl  = document.getElementById('editTotalAmount');
+    if (displayEl) displayEl.textContent = formatted + ' ₫';
+    if (hiddenEl)  hiddenEl.value        = total;
+}
+
+function closeEditInboundModal() {
+    document.getElementById('editInboundModal').style.display = 'none';
+}
+
+function validateEditInboundFormBeforeSubmit() {
+    return true;
+}
+
+// ── BULK ACTION & SEARCH TABLE ──────────────────────────────────────────
+let _searchTimer = null;
+function searchInboundTable() {
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(() => {
+        const keyword = document.getElementById('searchInput')?.value.trim() ?? '';
+        const params  = new URLSearchParams(window.location.search);
+        params.delete('page');
+        keyword !== '' ? params.set('keyword', keyword) : params.delete('keyword');
+        window.location.href = 'index.php?' + params.toString();
+    }, 350);
+}
+
+function confirmDeleteInbound(id) {
+    if (!confirm('Bạn có chắc muốn xóa phiếu nhập tạm này?')) return;
+    const formData = new FormData();
+    formData.append('action', 'delete_inbound');
+    formData.append('id', id);
+    formData.append('_csrf_token', getCsrfToken());
+
+    fetch('process.php', { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok) window.location.reload();
+            else alert('Lỗi: ' + data.message);
+        });
+}
+
+function closeInboundDetailModal() {
+    document.getElementById('detailModal').style.display = 'none';
+}
+
+function viewInboundDetail(id) {
+    fetch(`process.php?action=get_detail&id=${encodeURIComponent(id)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) { alert('Không tìm thấy phiếu'); return; }
+            let itemsHtml = '';
+            (data.items || []).forEach((it, idx) => {
+                itemsHtml += `
+                    <tr>
+                        <td class="text-center">${idx + 1}</td>
+                        <td><strong>${escapeHtml(it.product_name)}</strong></td>
+                        <td><code>${escapeHtml(it.batch_no || '—')}</code></td>
+                        <td>${it.exp_date || '—'}</td>
+                        <td class="text-right">${formatNumberInput(it.quantity)}</td>
+                        <td class="text-right">${formatNumberInput(it.unit_price)} ₫</td>
+                        <td class="text-right font-price">${formatNumberInput(it.total)} ₫</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('detailContent').innerHTML = `
+                <div class="info-details-box" style="margin-bottom:16px;">
+                    <div class="info-detail-row"><span class="row-label">Mã phiếu:</span><span class="row-value">${escapeHtml(data.ref_no)}</span></div>
+                    <div class="info-detail-row"><span class="row-label">Nhà cung cấp:</span><span class="row-value">${escapeHtml(data.supplier_name || '—')}</span></div>
+                    <div class="info-detail-row"><span class="row-label">Người tạo:</span><span class="row-value">${escapeHtml(data.user_name || '—')}</span></div>
+                    <div class="info-detail-row"><span class="row-label">Ngày tạo:</span><span class="row-value">${data.created}</span></div>
+                    <div class="info-detail-row" style="grid-column:span 2;"><span class="row-label">Ghi chú:</span><span class="row-value">${escapeHtml(data.note || '—')}</span></div>
+                </div>
+                <div style="border:1px solid var(--tb-border); border-radius:10px; overflow:hidden;">
+                    <table class="task-data-table">
+                        <thead><tr><th width="40" class="text-center">#</th><th>Sản phẩm</th><th>Lô</th><th>HSD</th><th class="text-right">SL</th><th class="text-right">Đơn giá</th><th class="text-right">Thành tiền</th></tr></thead>
+                        <tbody>${itemsHtml}</tbody>
+                    </table>
+                </div>
+                <div style="display:flex; justify-content:flex-end; font-size:16px; font-weight:700; margin-top:14px;">
+                    Tổng tiền: <span style="color:#2563eb; margin-left:8px;">${formatNumberInput(data.total_amount)} ₫</span>
+                </div>
+            `;
+            document.getElementById('detailModal').style.display = 'flex';
+        });
+}
+
+// ── DOM INITIALIZATION ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    // 1. Toggle Sidebar Filter
+    const toggleBtn     = document.getElementById('btnToggleSidebar');
+    const filterSidebar = document.getElementById('taskFilterSidebar');
+    const toggleTxt     = document.getElementById('txtToggleSidebar');
+
+    const isFilterHidden = localStorage.getItem('inbound_filter_hidden') === 'true';
+    if (toggleTxt) toggleTxt.textContent = isFilterHidden ? 'Show Filters' : 'Hide Filters';
+    if (isFilterHidden && filterSidebar) filterSidebar.classList.add('hidden');
+
+    if (toggleBtn && filterSidebar) {
+        toggleBtn.addEventListener('click', function () {
+            const willHide = !filterSidebar.classList.contains('hidden');
+            if (willHide) {
+                filterSidebar.classList.add('hidden');
+                document.documentElement.classList.add('inbound-filter-hidden');
+                if (toggleTxt) toggleTxt.textContent = 'Show Filters';
+            } else {
+                filterSidebar.classList.remove('hidden');
+                document.documentElement.classList.remove('inbound-filter-hidden');
+                if (toggleTxt) toggleTxt.textContent = 'Hide Filters';
+            }
+            localStorage.setItem('inbound_filter_hidden', willHide);
+        });
+    }
+
+    // 2. Tự khởi tạo dòng đầu tiên ở trang tạo
+    const tbody = document.getElementById('itemsBody');
+    if (tbody && tbody.children.length === 0) {
+        addInboundRow();
+    }
+
+    // 3. Đóng modal khi click ra ngoài
+    window.addEventListener('click', function (e) {
+        if (e.target === document.getElementById('detailModal')) closeInboundDetailModal();
+        if (e.target === document.getElementById('editInboundModal')) closeEditInboundModal();
+        if (e.target === document.getElementById('productModal')) closeProductModal();
+    });
+});
+
+window.addInboundRow                      = addInboundRow;
+window.removeInboundRow                   = removeInboundRow;
+window.validateInboundFormBeforeSubmit    = validateInboundFormBeforeSubmit;
+window.viewInboundDetail                  = viewInboundDetail;
+window.closeInboundDetailModal            = closeInboundDetailModal;
+window.editInbound                        = editInbound;
+window.closeEditInboundModal              = closeEditInboundModal;
+window.addEditInboundRow                  = addEditInboundRow;
+window.removeEditInboundRow               = removeEditInboundRow;
+window.validateEditInboundFormBeforeSubmit= validateEditInboundFormBeforeSubmit;
+window.confirmDeleteInbound               = confirmDeleteInbound;
+window.searchInboundTable                 = searchInboundTable;
 window.addInboundRow                    = addInboundRow;
 window.addInboundRowWithData            = addInboundRowWithData;
 window.removeInboundRow                 = removeInboundRow;

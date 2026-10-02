@@ -5,7 +5,7 @@ $host     = getenv('DB_HOST')     ?: 'postgres';
 $port     = getenv('DB_PORT')     ?: '5432';
 $dbname   = getenv('DB_NAME')     ?: 'smartware';
 $username = getenv('DB_USER')     ?: 'postgres';
-$password = getenv('DB_PASSWORD') ?: '';
+$password = getenv('DB_PASSWORD') ?: 'smartware'; // <-- Đổi '' thành 'smartware'
 
 try {
     $pdo = new PDO(

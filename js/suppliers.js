@@ -1,9 +1,13 @@
-//  suppliers.js
-
+// js/suppliers.js
 'use strict';
 
 function _getCsrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+}
+
+function _setVal(id, val, prop = 'value') {
+    const el = document.getElementById(id);
+    if (el) el[prop] = val;
 }
 
 let addressData = null;
@@ -25,7 +29,7 @@ function loadAddressData() {
 function populateProvinces() {
     const sel = document.getElementById('province');
     if (!sel || !addressData) return;
-    sel.innerHTML = '<option value="">Chọn tỉnh/thành</option>';
+    sel.innerHTML = '<option value="">Chọn tỉnh / thành</option>';
     addressData.forEach(p => {
         const opt       = document.createElement('option');
         opt.value       = p.Code;
@@ -37,7 +41,7 @@ function populateProvinces() {
 function populateWards(provinceCode) {
     const sel = document.getElementById('ward');
     if (!sel) return;
-    sel.innerHTML = '<option value="">Chọn phường/xã</option>';
+    sel.innerHTML = '<option value="">Chọn phường / xã</option>';
     if (!provinceCode) { sel.disabled = true; return; }
     const province = addressData?.find(p => p.Code == provinceCode);
     if (province?.Wards?.length) {
@@ -53,7 +57,6 @@ function populateWards(provinceCode) {
     }
 }
 
-// ── Chuyển đổi giữa địa chỉ VN / nước ngoài ──────────────────────────────────
 function toggleAddressScope(scope) {
     const vnBlock      = document.getElementById('addressVNBlock');
     const foreignBlock = document.getElementById('addressForeignBlock');
@@ -63,10 +66,10 @@ function toggleAddressScope(scope) {
         vnBlock.style.display      = 'block';
         foreignBlock.style.display = 'none';
 
-        document.getElementById('foreignCountry').value = '';
-        document.getElementById('foreignState').value   = '';
-        document.getElementById('foreignCity').value    = '';
-        document.getElementById('foreignPostal').value  = '';
+        _setVal('foreignCountry', '');
+        _setVal('foreignState', '');
+        _setVal('foreignCity', '');
+        _setVal('foreignPostal', '');
     } else {
         vnBlock.style.display      = 'none';
         foreignBlock.style.display = 'block';
@@ -74,7 +77,7 @@ function toggleAddressScope(scope) {
         const provSel = document.getElementById('province');
         const wardSel = document.getElementById('ward');
         if (provSel) provSel.value = '';
-        if (wardSel) { wardSel.innerHTML = '<option value="">Chọn phường/xã</option>'; wardSel.disabled = true; }
+        if (wardSel) { wardSel.innerHTML = '<option value="">Chọn phường / xã</option>'; wardSel.disabled = true; }
     }
     updateFullAddress();
 }
@@ -82,13 +85,6 @@ function toggleAddressScope(scope) {
 function updateFullAddress() {
     const scope       = document.querySelector('input[name="address_scope"]:checked')?.value || 'VN';
     const addrDisplay = document.getElementById('address_display');
-
-    const provinceHidden = document.getElementById('provinceCode');
-    const wardHidden      = document.getElementById('wardCode');
-    const countryHidden   = document.getElementById('countryCode');
-    const cityHidden       = document.getElementById('cityField');
-    const stateHidden      = document.getElementById('stateField');
-    const postalHidden     = document.getElementById('postalField');
 
     if (scope === 'VN') {
         const provSel = document.getElementById('province');
@@ -104,14 +100,14 @@ function updateFullAddress() {
         if (wardName)     fullAddress += wardName;
         if (provinceName) fullAddress += (fullAddress ? ', ' : '') + provinceName;
 
-        if (addrDisplay) addrDisplay.innerText = fullAddress || 'Chưa có địa chỉ';
+        if (addrDisplay) addrDisplay.innerText = fullAddress || '';
 
-        if (provinceHidden) provinceHidden.value = provinceCode;
-        if (wardHidden)     wardHidden.value      = wardCode;
-        if (countryHidden)  countryHidden.value   = 'VN';
-        if (cityHidden)     cityHidden.value      = '';
-        if (stateHidden)    stateHidden.value     = '';
-        if (postalHidden)   postalHidden.value    = '';
+        _setVal('provinceCode', provinceCode);
+        _setVal('wardCode', wardCode);
+        _setVal('countryCode', 'VN');
+        _setVal('cityField', '');
+        _setVal('stateField', '');
+        _setVal('postalField', '');
     } else {
         const country = document.getElementById('foreignCountry')?.value.trim() || '';
         const state   = document.getElementById('foreignState')?.value.trim()   || '';
@@ -119,21 +115,21 @@ function updateFullAddress() {
         const postal  = document.getElementById('foreignPostal')?.value.trim()  || '';
 
         const fullAddress = [city, state, country].filter(Boolean).join(', ');
-        if (addrDisplay) addrDisplay.innerText = fullAddress || 'Chưa có địa chỉ';
+        if (addrDisplay) addrDisplay.innerText = fullAddress || '';
 
-        if (provinceHidden) provinceHidden.value = '';
-        if (wardHidden)     wardHidden.value      = '';
-        if (countryHidden)  countryHidden.value   = country || 'OTHER';
-        if (cityHidden)     cityHidden.value      = city;
-        if (stateHidden)    stateHidden.value     = state;
-        if (postalHidden)   postalHidden.value    = postal;
+        _setVal('provinceCode', '');
+        _setVal('wardCode', '');
+        _setVal('countryCode', country || 'OTHER');
+        _setVal('cityField', city);
+        _setVal('stateField', state);
+        _setVal('postalField', postal);
     }
 }
 
 function populateFilterProvinces() {
     const sel = document.getElementById('filter_province');
     if (!sel || !addressData) return;
-    sel.innerHTML = '<option value="">Tỉnh/thành</option>';
+    sel.innerHTML = '<option value="">Tỉnh / Thành</option>';
     addressData.forEach(p => {
         const opt       = document.createElement('option');
         opt.value       = p.Code;
@@ -143,18 +139,17 @@ function populateFilterProvinces() {
     const selected = new URLSearchParams(window.location.search).get('province');
     if (selected) {
         sel.value = selected;
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        populateFilterWards(selected);
     }
 }
 
 function populateFilterWards(provinceCode) {
     const sel = document.getElementById('filter_ward');
     if (!sel) return;
-    sel.innerHTML = '<option value="">Tất cả</option>';
-    if (!provinceCode) { sel.disabled = true; return; }
+    sel.innerHTML = '<option value="">Phường / Xã</option>';
+    if (!provinceCode) return;
     const province = addressData?.find(p => p.Code == provinceCode);
     if (province?.Wards?.length) {
-        sel.disabled = false;
         province.Wards.forEach(w => {
             const opt       = document.createElement('option');
             opt.value       = w.Code;
@@ -163,27 +158,29 @@ function populateFilterWards(provinceCode) {
         });
         const selected = new URLSearchParams(window.location.search).get('ward');
         if (selected) sel.value = selected;
-    } else {
-        sel.disabled = true;
     }
 }
 
+// ── MODAL THÊM / SỬA ĐỐI TÁC ────────────────────────────────────────────────
 function openSupplierModal(action, data = null) {
     const modal = document.getElementById('supplierModal');
     if (!modal) return;
-    const formAction = document.getElementById('formAction');
-    const modalTitle = document.getElementById('modalTitle');
+    const toggleStatus = document.getElementById('supStatusToggle');
+
+    document.querySelectorAll('.error-message').forEach(el => el.innerText = '');
 
     if (action === 'add') {
-        if (formAction) formAction.value = 'add';
-        if (modalTitle) modalTitle.innerText = 'Thêm đối tác';
-        document.getElementById('supplierId').value     = 0;
-        document.getElementById('supName').value        = '';
-        document.getElementById('supPhone').value       = '';
-        document.getElementById('supEmail').value       = '';
-        document.getElementById('supTaxCode').value     = '';
-        document.getElementById('supStatus').value      = 'active';
-        document.getElementById('supEntityOrigin').value = 'domestic';
+        _setVal('formAction', 'add');
+        _setVal('modalTitle', 'Thêm đối tác mới', 'innerText');
+        _setVal('supplierId', 0);
+        _setVal('supName', '');
+        _setVal('supPhone', '');
+        _setVal('supEmail', '');
+        _setVal('supTaxCode', '');
+        _setVal('supStatus', 'active');
+        _setVal('supEntityOrigin', 'domestic');
+        _setVal('supAddress', '');
+        if (toggleStatus) toggleStatus.checked = true;
 
         document.getElementById('scopeVN').checked = true;
         toggleAddressScope('VN');
@@ -191,29 +188,21 @@ function openSupplierModal(action, data = null) {
         const province = document.getElementById('province');
         if (province) province.value = '';
         const ward = document.getElementById('ward');
-        if (ward) { ward.innerHTML = '<option value="">Chọn phường/xã</option>'; ward.disabled = true; }
-
-        document.getElementById('foreignCountry').value = '';
-        document.getElementById('foreignState').value   = '';
-        document.getElementById('foreignCity').value    = '';
-        document.getElementById('foreignPostal').value  = '';
-
-        document.getElementById('supAddress').value = '';
-        const disp = document.getElementById('address_display');
-        if (disp) disp.innerText = '';
-        document.querySelectorAll('.error-message').forEach(el => el.innerText = '');
-
+        if (ward) { ward.innerHTML = '<option value="">Chọn phường / xã</option>'; ward.disabled = true; }
+        _setVal('address_display', '', 'innerText');
     } else if (action === 'edit' && data) {
-        if (formAction) formAction.value = 'edit';
-        if (modalTitle) modalTitle.innerText = 'Sửa đối tác';
-        document.getElementById('supplierId').value      = data.id;
-        document.getElementById('supName').value         = data.name;
-        document.getElementById('supPhone').value        = data.phone         || '';
-        document.getElementById('supEmail').value        = data.email         || '';
-        document.getElementById('supTaxCode').value      = data.tax_code      || '';
-        document.getElementById('supStatus').value       = data.status        || 'active';
-        document.getElementById('supEntityOrigin').value = data.entity_origin || 'domestic';
-        document.querySelectorAll('.error-message').forEach(el => el.innerText = '');
+        _setVal('formAction', 'edit');
+        _setVal('modalTitle', 'Chỉnh sửa đối tác', 'innerText');
+        _setVal('supplierId', data.id);
+        _setVal('supName', data.name);
+        _setVal('supPhone', data.phone || '');
+        _setVal('supEmail', data.email || '');
+        _setVal('supTaxCode', data.tax_code || '');
+        _setVal('supEntityOrigin', data.entity_origin || 'domestic');
+
+        const isAct = (data.status || 'active') === 'active';
+        _setVal('supStatus', isAct ? 'active' : 'inactive');
+        if (toggleStatus) toggleStatus.checked = isAct;
 
         const isForeign = !!data.country_code && data.country_code !== 'VN';
         document.getElementById(isForeign ? 'scopeForeign' : 'scopeVN').checked = true;
@@ -223,7 +212,7 @@ function openSupplierModal(action, data = null) {
             const province = document.getElementById('province');
             if (province) {
                 province.value = data.province_code;
-                province.dispatchEvent(new Event('change', { bubbles: true }));
+                populateWards(data.province_code);
                 setTimeout(() => {
                     const ward = document.getElementById('ward');
                     if (ward && data.ward_code) ward.value = data.ward_code;
@@ -231,18 +220,15 @@ function openSupplierModal(action, data = null) {
                 }, 100);
             }
         } else if (isForeign) {
-            document.getElementById('foreignCountry').value = data.country_code   || '';
-            document.getElementById('foreignState').value   = data.state_province || '';
-            document.getElementById('foreignCity').value    = data.city           || '';
-            document.getElementById('foreignPostal').value  = data.postal_code    || '';
-            updateFullAddress();
-        } else {
+            _setVal('foreignCountry', data.country_code   || '');
+            _setVal('foreignState', data.state_province || '');
+            _setVal('foreignCity', data.city           || '');
+            _setVal('foreignPostal', data.postal_code    || '');
             updateFullAddress();
         }
 
-        document.getElementById('supAddress').value = data.address || '';
-        const disp = document.getElementById('address_display');
-        if (disp) disp.innerText = data.address || '';
+        _setVal('supAddress', data.address || '');
+        _setVal('address_display', data.address || '', 'innerText');
     }
 
     modal.style.display = 'flex';
@@ -256,53 +242,34 @@ function closeSupplierModal() {
 function confirmDeleteSupplier(id, status) {
     const isInactive = status === 'inactive';
     const msg = isInactive
-        ? 'Đối tác này đang ngừng hợp tác.\nBấm OK để xóa vĩnh viễn (chỉ khả dụng nếu không còn dữ liệu liên quan).'
-        : 'Bạn có chắc muốn ngừng hợp tác với đối tác này?\nMọi lịch sử nhập hàng vẫn được giữ nguyên.';
+        ? 'Đối tác này đang ngừng hợp tác.\nBấm OK để xóa vĩnh viễn.'
+        : 'Bạn có chắc muốn ngừng hợp tác với đối tác này?';
 
     if (!confirm(msg)) return;
 
     fetch('process.php', {
         method:  'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRF-Token': _getCsrfToken(),
-        },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': _getCsrfToken() },
         body: 'action=delete&id=' + encodeURIComponent(id),
     })
-        .then(res => {
-            if (!res.ok) throw new Error(`Lỗi server: ${res.status}`);
-            return res.json();
-        })
-        .then(data => {
-            if (data.ok) {
-                window.location.href = 'index.php';
-            } else {
-                alert('Không thể thực hiện: ' + data.message);
-            }
-        })
-        .catch(err => alert('Có lỗi xảy ra: ' + err.message));
+    .then(res => { if (!res.ok) throw new Error(`Lỗi server: ${res.status}`); return res.json(); })
+    .then(data => {
+        if (data.ok) window.location.href = 'index.php';
+        else alert('Không thể thực hiện: ' + data.message);
+    })
+    .catch(err => alert('Có lỗi xảy ra: ' + err.message));
 }
 
+let _searchTimer = null;
 function searchSupplierTable() {
-    const input = document.getElementById('searchInput');
-    if (!input) return;
-    const filter = input.value.toLowerCase();
-    const table  = document.getElementById('supplierTable');
-    if (!table) return;
-    const rows = table.getElementsByTagName('tr');
-    for (let i = 1; i < rows.length; i++) {
-        const tdName = rows[i].getElementsByTagName('td')[1]; // tên
-        const tdTax  = rows[i].getElementsByTagName('td')[5]; // tax_code (đã dịch cột do thêm cột "Loại hình")
-        let show     = false;
-        if (tdName && tdName.textContent.toLowerCase().includes(filter)) show = true;
-        if (!show && tdTax && tdTax.textContent.toLowerCase().includes(filter)) show = true;
-        rows[i].style.display = show ? '' : 'none';
-    }
-}
-
-function exportSupplierExcel() {
-    const params = new URLSearchParams(window.location.search);
-    window.location.href = '../../pages/export/Export.php?type=suppliers&' + params.toString();
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(() => {
+        const keyword = document.getElementById('searchInput')?.value.trim() ?? '';
+        const params  = new URLSearchParams(window.location.search);
+        params.delete('page');
+        keyword !== '' ? params.set('keyword', keyword) : params.delete('keyword');
+        window.location.href = 'index.php?' + params.toString();
+    }, 350);
 }
 
 let checkTimeout;
@@ -310,16 +277,14 @@ function checkUnique(field) {
     const input = document.getElementById(`sup${field.charAt(0).toUpperCase() + field.slice(1)}`);
     if (!input) return;
     const value     = input.value.trim();
-    const id        = document.getElementById('supplierId').value;
+    const id        = document.getElementById('supplierId')?.value || 0;
     const errorSpan = document.getElementById(`${field}Error`);
     if (value === '') { if (errorSpan) errorSpan.innerText = ''; return; }
+
     clearTimeout(checkTimeout);
     checkTimeout = setTimeout(() => {
         fetch(`process.php?action=check_unique&field=${encodeURIComponent(field)}&value=${encodeURIComponent(value)}&id=${encodeURIComponent(id)}`)
-            .then(res => {
-                if (!res.ok) throw new Error('Server error');
-                return res.json();
-            })
+            .then(res => res.json())
             .then(data => {
                 if (errorSpan) {
                     const labels = { name: 'Tên', phone: 'Số điện thoại', email: 'Email', tax_code: 'Mã số thuế' };
@@ -330,232 +295,439 @@ function checkUnique(field) {
     }, 300);
 }
 
-let currentSupplierId = null;
+// ── BULK ACTION ──────────────────────────────────────────────────────────────
+window._isAllTotalSelected = false;
 
-function viewSupplierDetail(supplierId, supplierName) {
-    currentSupplierId = supplierId;
-    const titleEl = document.getElementById('detailModalTitle');
-    if (titleEl) titleEl.innerText = supplierName ? `Chi tiết: ${supplierName}` : 'Chi tiết đối tác';
-    const modal = document.getElementById('detailModal');
-    if (modal) modal.style.display = 'flex';
-    showTab('info');
-    loadSupplierInfo();
-    loadProductsBySupplier();
-    loadHistoryBySupplier('all');
-}
+function updateSelectAllTotalState() {
+    const totalRows    = window._supplierTotalRows || 0;
+    const checkboxes   = document.querySelectorAll('.row-checkbox');
+    const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+    const btnTotal     = document.getElementById('btnSelectAllTotal');
+    const bulkCount    = document.getElementById('bulkCount');
+    const bulkBar      = document.getElementById('bulkActionBar');
 
-function closeDetailModal() {
-    const modal = document.getElementById('detailModal');
-    if (modal) modal.style.display = 'none';
-    currentSupplierId = null;
-}
+    if (!bulkBar) return;
 
-function showTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
-    const tabContent = document.getElementById(`tab-${tabName}`);
-    if (tabContent) tabContent.style.display = 'block';
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    const activeBtn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
-    if (activeBtn) activeBtn.classList.add('active');
-    if (tabName === 'products') loadProductsBySupplier();
-    else if (tabName === 'history') loadHistoryBySupplier('all');
-}
-
-function formatFullAddress(data) {
-    if (data.country_code && data.country_code !== 'VN') {
-        const parts = [data.address, data.city, data.state_province, data.country_code].filter(Boolean);
-        return parts.length ? parts.join(', ') : '—';
+    if (checkedBoxes.length > 0) {
+        bulkBar.style.display = 'flex';
+        if (bulkCount) {
+            bulkCount.textContent = window._isAllTotalSelected 
+                ? `Tất cả ${totalRows} đối tác đã chọn` 
+                : `${checkedBoxes.length} đối tác đã chọn`;
+        }
+    } else {
+        bulkBar.style.display = 'none';
+        window._isAllTotalSelected = false;
+        if (btnTotal) btnTotal.style.display = 'none';
+        return;
     }
-    return data.address || '—';
+
+    if (!btnTotal) return;
+
+    if (checkboxes.length > 0 && checkedBoxes.length === checkboxes.length && totalRows > checkboxes.length) {
+        btnTotal.style.display = 'inline-block';
+        if (!window._isAllTotalSelected) {
+            btnTotal.textContent = `Chọn tất cả ${totalRows}`;
+            btnTotal.classList.remove('active');
+        }
+    } else if (!window._isAllTotalSelected) {
+        btnTotal.style.display = 'none';
+    }
 }
 
-function loadSupplierInfo() {
-    if (!currentSupplierId) return;
-    const container = document.getElementById('supplierInfo');
-    if (container) container.innerHTML = 'Đang tải...';
+function toggleSelectAllTotal() {
+    const totalRows    = window._supplierTotalRows || 0;
+    const btnTotal     = document.getElementById('btnSelectAllTotal');
+    const bulkCount    = document.getElementById('bulkCount');
+    const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
 
-    fetch(`process.php?action=get_supplier_info&id=${encodeURIComponent(currentSupplierId)}`)
-        .then(res => {
-            if (!res.ok) throw new Error(`Lỗi server: ${res.status}`);
-            return res.json();
-        })
-        .then(data => {
-            if (!container) return;
-            if (data.error) { container.innerHTML = `<div class="alert-error">${escapeHtml(data.error)}</div>`; return; }
-            const titleEl = document.getElementById('detailModalTitle');
-            if (titleEl && data.name) titleEl.innerText = `Chi tiết: ${data.name}`;
+    window._isAllTotalSelected = !window._isAllTotalSelected;
 
-            const entityLabel = data.entity_origin === 'fdi' ? 'FDI (vốn nước ngoài)' : 'Trong nước';
-
-            container.innerHTML = `
-                <div class="info-card">
-                    <div class="info-row"><strong>Tên:</strong> ${escapeHtml(data.name)}</div>
-                    <div class="info-row"><strong>Loại hình:</strong> ${escapeHtml(entityLabel)}</div>
-                    <div class="info-row"><strong>Điện thoại:</strong> ${escapeHtml(data.phone || '—')}</div>
-                    <div class="info-row"><strong>Email:</strong> ${escapeHtml(data.email || '—')}</div>
-                    <div class="info-row"><strong>Mã số thuế:</strong> ${escapeHtml(data.tax_code || '—')}</div>
-                    <div class="info-row"><strong>Địa chỉ:</strong> ${escapeHtml(formatFullAddress(data))}</div>
-                    <div class="info-row"><strong>Trạng thái:</strong>
-                        <span class="status-badge ${data.status === 'active' ? 'status-active' : 'status-inactive'}">
-                            ${data.status === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động'}
-                        </span>
-                    </div>
-                    <div class="info-row"><strong>Ngày tạo:</strong> ${escapeHtml(data.created ? formatDate(data.created) : '—')}</div>
-                    <div class="info-row"><strong>Tổng nhập hàng:</strong> ${formatNumberInput(data.total_import ?? 0)} ₫</div>
-                </div>`;
-        })
-        .catch(err => {
-            if (container) container.innerHTML = '<div class="alert-error">Lỗi tải thông tin</div>';
-            console.error(err);
-        });
-}
-
-function loadProductsBySupplier() {
-    if (!currentSupplierId) return;
-    const container = document.getElementById('productsList');
-    if (container) container.innerHTML = 'Đang tải...';
-
-    fetch(`process.php?action=get_products&supplier_id=${encodeURIComponent(currentSupplierId)}`)
-        .then(res => {
-            if (!res.ok) throw new Error(`Lỗi server: ${res.status}`);
-            return res.json();
-        })
-        .then(data => {
-            if (!container) return;
-            if (data.error)   { container.innerHTML = `<div class="alert-error">${escapeHtml(data.error)}</div>`; return; }
-            if (!data.length) { container.innerHTML = '<div class="text-center">Chưa có sản phẩm nào.</div>'; return; }
-
-            let html = `<table class="data-table">
-                <thead><tr>
-                    <th>Tên sản phẩm</th>
-                    <th>SKU</th>
-                    <th>Đơn vị</th>
-                    <th>Giá vốn</th>
-                    <th>Tồn kho</th>
-                    <th>Trạng thái</th>
-                </tr></thead><tbody>`;
-
-            data.forEach(p => {
-                const statusText  = p.status === 'active' ? 'Đang bán' : 'Ngừng bán';
-                const statusClass = p.status === 'active' ? 'status-active' : 'status-inactive';
-                html += `<tr>
-                    <td>${escapeHtml(p.name)}</td>
-                    <td>${escapeHtml(p.sku || '')}</td>
-                    <td>${escapeHtml(p.unit || '')}</td>
-                    <td>${formatNumberInput(p.cost_price ?? 0)} ₫</td>
-                    <td>${formatNumberInput(p.total_stock ?? 0)}</td>
-                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                </tr>`;
-            });
-
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        })
-        .catch(err => {
-            if (container) container.innerHTML = '<div class="alert-error">Lỗi tải dữ liệu</div>';
-            console.error(err);
-        });
-}
-
-function loadHistoryBySupplier(range) {
-    if (!currentSupplierId) return;
-    const container = document.getElementById('historyList');
-    if (container) container.innerHTML = 'Đang tải...';
-
-    const validRanges = ['7d', '30d', '90d', '1y'];
-    const safeRange   = validRanges.includes(range) ? range : 'all';
-
-    fetch(`process.php?action=get_inbound_history&supplier_id=${encodeURIComponent(currentSupplierId)}&range=${safeRange}`)
-        .then(res => {
-            if (!res.ok) throw new Error(`Lỗi server: ${res.status}`);
-            return res.json();
-        })
-        .then(data => {
-            if (!container) return;
-            if (data.error)   { container.innerHTML = `<div class="alert-error">${escapeHtml(data.error)}</div>`; return; }
-            if (!data.length) { container.innerHTML = '<div class="text-center">Không có giao dịch nào.</div>'; return; }
-
-            let html = `<table class="data-table">
-                <thead><tr>
-                    <th>Mã phiếu</th>
-                    <th>Ngày nhập</th>
-                    <th>Tổng tiền (VNĐ)</th>
-                    <th>Trạng thái</th>
-                </tr></thead><tbody>`;
-
-            data.forEach(h => {
-                html += `<tr>
-                    <td>${escapeHtml(h.ref_no)}</td>
-                    <td>${escapeHtml(formatDate(h.created))}</td>
-                    <td class="price-col">${formatNumberInput(h.total_amount ?? 0)} ₫</td>
-                    <td>${escapeHtml(h.status || '')}</td>
-                </tr>`;
-            });
-
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        })
-        .catch(err => {
-            if (container) container.innerHTML = '<div class="alert-error">Lỗi tải lịch sử</div>';
-            console.error(err);
-        });
-}
-
-function updateBulkBar() {
-    const checked = document.querySelectorAll('.row-checkbox:checked');
-    const bar     = document.getElementById('bulkActionBar');
-    const count   = document.getElementById('bulkCount');
-    if (!bar) return;
-    bar.style.display = checked.length > 0 ? 'flex' : 'none';
-    if (count) count.textContent = `${checked.length} đối tác đã chọn`;
+    if (window._isAllTotalSelected) {
+        if (btnTotal) { btnTotal.classList.add('active'); btnTotal.textContent = 'Bỏ chọn toàn bộ'; }
+        if (bulkCount) bulkCount.textContent = `Tất cả ${totalRows} đối tác đã chọn`;
+    } else {
+        if (btnTotal) { btnTotal.classList.remove('active'); btnTotal.textContent = `Chọn tất cả ${totalRows}`; }
+        if (bulkCount) bulkCount.textContent = `${checkedCount} đối tác đã chọn`;
+    }
 }
 
 function clearSelection() {
+    window._isAllTotalSelected = false;
     document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
-    const selectAll = document.getElementById('selectAll');
-    if (selectAll) { selectAll.checked = false; selectAll.indeterminate = false; }
-    updateBulkBar();
+    const sa = document.getElementById('selectAll');
+    if (sa) { sa.checked = false; sa.indeterminate = false; }
+    updateSelectAllTotalState();
 }
 
 function exportSelectedExcel() {
-    const ids = [...document.querySelectorAll('.row-checkbox:checked')]
-        .map(cb => cb.dataset.id)
-        .filter(Boolean);
-    if (ids.length === 0) { alert('Chưa chọn đối tác nào.'); return; }
     const params = new URLSearchParams(window.location.search);
-    ids.forEach(id => params.append('selected_ids[]', id));
+    if (window._isAllTotalSelected) {
+        params.set('all', '1');
+    } else {
+        const ids = [...document.querySelectorAll('.row-checkbox:checked')].map(cb => cb.dataset.id).filter(Boolean);
+        if (!ids.length) { alert('Chưa chọn đối tác nào.'); return; }
+        params.set('ids', ids.join(','));
+    }
     window.location.href = '../../pages/export/Export.php?type=suppliers&' + params.toString();
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    if (!document.getElementById('supplierTable')) return;
+// =======================================================
+// BỘ CHỌN NGÀY PRESET + CALENDAR RANGE (DAYS, MONTHS, YEARS)
+// =======================================================
+let _calViewMode = 'days'; 
+let _calViewDate = new Date();
+let _rangeStart = null;
+let _rangeEnd = null;
 
+const _shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function _formatDateYMD(d) {
+    if (!d) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+function _formatShortVN(d) {
+    if (!d) return '';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+}
+
+function toggleDatePickerPopover(e) {
+    if (e) e.stopPropagation();
+    const container = document.getElementById('neoDatePicker');
+    if (!container) return;
+    const isOpen = container.classList.toggle('is-open');
+    if (isOpen) {
+        if (_rangeStart && _rangeEnd) {
+            openCalendarPicker();
+        } else {
+            document.getElementById('datepickerPresetList').style.display = 'flex';
+            document.getElementById('datepickerCalendarPanel').style.display = 'none';
+        }
+    }
+}
+
+function openCalendarPicker() {
+    document.getElementById('datepickerPresetList').style.display = 'none';
+    document.getElementById('datepickerCalendarPanel').style.display = 'block';
+    _calViewMode = 'days';
+    renderCalendar();
+}
+
+function backToPresets() {
+    document.getElementById('datepickerPresetList').style.display = 'flex';
+    document.getElementById('datepickerCalendarPanel').style.display = 'none';
+}
+
+function selectQuickDate(preset) {
+    const today = new Date();
+    let fromD = new Date(today);
+    let toD = new Date(today);
+    let label = 'Hôm nay';
+
+    if (preset === 'today') {
+        label = 'Hôm nay';
+    } else if (preset === 'yesterday') {
+        fromD.setDate(today.getDate() - 1);
+        toD.setDate(today.getDate() - 1);
+        label = 'Hôm qua';
+    } else if (preset === 'last7') {
+        fromD.setDate(today.getDate() - 6);
+        label = '7 ngày trước';
+    } else if (preset === 'last14') {
+        fromD.setDate(today.getDate() - 13);
+        label = '14 ngày trước';
+    } else if (preset === 'last30') {
+        fromD.setDate(today.getDate() - 29);
+        label = '30 ngày trước';
+    }
+
+    _setVal('neoDateFrom', _formatDateYMD(fromD));
+    _setVal('neoDateTo', _formatDateYMD(toD));
+    _setVal('neoDatePickerText', label, 'innerText');
+    document.getElementById('filterForm')?.submit();
+}
+
+function onCalTitleClick() {
+    if (_calViewMode === 'days') {
+        _calViewMode = 'months';
+    } else if (_calViewMode === 'months') {
+        _calViewMode = 'years';
+    }
+    renderCalendar();
+}
+
+function changeCalStep(step) {
+    if (_calViewMode === 'days') {
+        _calViewDate.setMonth(_calViewDate.getMonth() + step);
+    } else if (_calViewMode === 'months') {
+        _calViewDate.setFullYear(_calViewDate.getFullYear() + step);
+    } else if (_calViewMode === 'years') {
+        _calViewDate.setFullYear(_calViewDate.getFullYear() + (step * 12));
+    }
+    renderCalendar();
+}
+
+function renderCalendar() {
+    const daysView = document.getElementById('calDaysView');
+    const monthsView = document.getElementById('calMonthsView');
+    const yearsView = document.getElementById('calYearsView');
+    const titleBtn = document.getElementById('calMainTitleBtn');
+
+    if (!daysView || !monthsView || !yearsView || !titleBtn) return;
+
+    daysView.style.display = _calViewMode === 'days' ? 'block' : 'none';
+    monthsView.style.display = _calViewMode === 'months' ? 'block' : 'none';
+    yearsView.style.display = _calViewMode === 'years' ? 'block' : 'none';
+
+    const year = _calViewDate.getFullYear();
+    const month = _calViewDate.getMonth();
+
+    if (_calViewMode === 'days') {
+        titleBtn.innerText = `Tháng ${month + 1} ${year}`;
+        renderDaysGrid();
+    } else if (_calViewMode === 'months') {
+        titleBtn.innerText = `${year}`;
+        renderMonthsGrid();
+    } else if (_calViewMode === 'years') {
+        const startYear = year - (year % 12);
+        const endYear = startYear + 11;
+        titleBtn.innerText = `${startYear}-${endYear}`;
+        renderYearsGrid(startYear);
+    }
+}
+
+function renderDaysGrid() {
+    const year = _calViewDate.getFullYear();
+    const month = _calViewDate.getMonth();
+    const grid = document.getElementById('calDaysGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+
+    for (let x = 0; x < firstDayIndex; x++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'cal-day-num empty';
+        grid.appendChild(emptyCell);
+    }
+
+    for (let day = 1; day <= totalDays; day++) {
+        const cell = document.createElement('div');
+        cell.className = 'cal-day-num';
+        cell.innerText = day;
+        const cellDate = new Date(year, month, day);
+
+        const ymd = _formatDateYMD(cellDate);
+        const startYMD = _formatDateYMD(_rangeStart);
+        const endYMD = _formatDateYMD(_rangeEnd);
+
+        if (startYMD && ymd === startYMD) {
+            cell.classList.add('selected-start');
+        } else if (endYMD && ymd === endYMD) {
+            cell.classList.add('selected-end');
+        } else if (_rangeStart && _rangeEnd && cellDate > _rangeStart && cellDate < _rangeEnd) {
+            cell.classList.add('in-range');
+        }
+
+        cell.onclick = (e) => {
+            e.stopPropagation();
+            onSelectRangeDay(cellDate);
+        };
+        grid.appendChild(cell);
+    }
+
+    const hint = document.getElementById('calRangeHint');
+    if (hint) {
+        if (_rangeStart && _rangeEnd) {
+            hint.innerText = `${_formatShortVN(_rangeStart)} → ${_formatShortVN(_rangeEnd)}`;
+        } else if (_rangeStart) {
+            hint.innerText = `Từ: ${_formatShortVN(_rangeStart)} (Chọn ngày kết thúc)`;
+        } else {
+            hint.innerText = 'Chọn ngày bắt đầu';
+        }
+    }
+}
+
+function renderMonthsGrid() {
+    const grid = document.getElementById('calMonthsGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const curMonth = _calViewDate.getMonth();
+
+    _shortMonths.forEach((mName, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cal-grid-item';
+        btn.innerText = mName;
+
+        if (idx === curMonth) {
+            btn.classList.add('selected');
+        }
+
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            _calViewDate.setMonth(idx);
+            _calViewMode = 'days';
+            renderCalendar();
+        };
+
+        grid.appendChild(btn);
+    });
+}
+
+function renderYearsGrid(startYear) {
+    const grid = document.getElementById('calYearsGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const curYear = _calViewDate.getFullYear();
+
+    for (let y = startYear; y < startYear + 12; y++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cal-grid-item';
+        btn.innerText = y;
+
+        if (y === curYear) {
+            btn.classList.add('selected');
+        }
+
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            _calViewDate.setFullYear(y);
+            _calViewMode = 'months';
+            renderCalendar();
+        };
+
+        grid.appendChild(btn);
+    }
+}
+
+function onSelectRangeDay(d) {
+    if (!_rangeStart || (_rangeStart && _rangeEnd)) {
+        _rangeStart = d;
+        _rangeEnd = null;
+    } else if (_rangeStart && !_rangeEnd) {
+        if (d < _rangeStart) {
+            _rangeEnd = _rangeStart;
+            _rangeStart = d;
+        } else {
+            _rangeEnd = d;
+        }
+    }
+    renderDaysGrid();
+}
+
+function applyCustomRange() {
+    if (!_rangeStart) return;
+    const end = _rangeEnd || _rangeStart;
+    _setVal('neoDateFrom', _formatDateYMD(_rangeStart));
+    _setVal('neoDateTo', _formatDateYMD(end));
+    
+    const startStr = _formatShortVN(_rangeStart);
+    const endStr = _formatShortVN(end);
+    
+    if (_formatDateYMD(_rangeStart) === _formatDateYMD(end)) {
+        _setVal('neoDatePickerText', startStr, 'innerText');
+    } else {
+        _setVal('neoDatePickerText', `${startStr} - ${endStr}`, 'innerText');
+    }
+    
+    document.getElementById('neoDatePicker')?.classList.remove('is-open');
+    document.getElementById('filterForm')?.submit();
+}
+
+// ── DOM INITIALIZATION ───────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
     loadAddressData();
 
-    const selectAllCb = document.getElementById('selectAll');
-    if (selectAllCb) {
-        selectAllCb.addEventListener('change', function () {
-            document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = this.checked);
-            updateBulkBar();
+    // 1. Toggle Sidebar Filter
+    const toggleBtn     = document.getElementById('btnToggleSidebar');
+    const filterSidebar = document.getElementById('taskFilterSidebar');
+    const toggleTxt     = document.getElementById('txtToggleSidebar');
+
+    const isFilterHidden = localStorage.getItem('supplier_filter_hidden') === 'true';
+    if (toggleTxt) toggleTxt.textContent = isFilterHidden ? 'Show Filters' : 'Hide Filters';
+    if (isFilterHidden && filterSidebar) filterSidebar.classList.add('hidden');
+
+    if (toggleBtn && filterSidebar) {
+        toggleBtn.addEventListener('click', function () {
+            const willHide = !filterSidebar.classList.contains('hidden');
+            if (willHide) {
+                filterSidebar.classList.add('hidden');
+                document.documentElement.classList.add('supplier-filter-hidden');
+                if (toggleTxt) toggleTxt.textContent = 'Show Filters';
+            } else {
+                filterSidebar.classList.remove('hidden');
+                document.documentElement.classList.remove('supplier-filter-hidden');
+                if (toggleTxt) toggleTxt.textContent = 'Hide Filters';
+            }
+            localStorage.setItem('supplier_filter_hidden', willHide);
         });
     }
-    document.querySelectorAll('.row-checkbox').forEach(cb => {
-        cb.addEventListener('change', function () {
-            const all     = document.querySelectorAll('.row-checkbox');
-            const checked = document.querySelectorAll('.row-checkbox:checked');
-            if (selectAllCb) {
-                selectAllCb.checked       = checked.length === all.length;
-                selectAllCb.indeterminate = checked.length > 0 && checked.length < all.length;
+
+    // 2. Accordion Nhóm lọc
+    let collapsedSections = [];
+    try {
+        collapsedSections = JSON.parse(localStorage.getItem('collapsed_supplier_filters') || '[]');
+    } catch (e) {}
+
+    document.querySelectorAll('.filter-section[data-filter-key]').forEach(section => {
+        const key = section.getAttribute('data-filter-key');
+        if (collapsedSections.includes(key)) section.classList.add('is-collapsed');
+    });
+
+    document.querySelectorAll('.filter-sec-title').forEach(title => {
+        title.addEventListener('click', function () {
+            const section = this.closest('.filter-section');
+            if (!section) return;
+            const isCollapsed = section.classList.toggle('is-collapsed');
+            const key = section.getAttribute('data-filter-key');
+            if (key) {
+                if (isCollapsed) { if (!collapsedSections.includes(key)) collapsedSections.push(key); }
+                else { collapsedSections = collapsedSections.filter(k => k !== key); }
+                localStorage.setItem('collapsed_supplier_filters', JSON.stringify(collapsedSections));
             }
-            updateBulkBar();
         });
     });
 
+    // 3. Checkboxes & Select all
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function () {
+            const isChecked = this.checked;
+            document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = isChecked);
+            updateSelectAllTotalState();
+        });
+    }
+
+    document.addEventListener('change', function (e) {
+        if (e.target.classList.contains('row-checkbox')) {
+            const allBoxes     = document.querySelectorAll('.row-checkbox');
+            const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = (allBoxes.length > 0 && allBoxes.length === checkedBoxes.length);
+                selectAllCheckbox.indeterminate = (checkedBoxes.length > 0 && checkedBoxes.length < allBoxes.length);
+            }
+            updateSelectAllTotalState();
+        }
+    });
+
+    // 4. Form Submit
     const supplierForm = document.getElementById('supplierForm');
     if (supplierForm) {
         supplierForm.addEventListener('submit', function (e) {
             let hasError = false;
-            const name    = document.getElementById('supName')?.value.trim() ?? '';
+            const name = document.getElementById('supName')?.value.trim() ?? '';
             const nameErr = document.getElementById('nameError');
             if (!name) { if (nameErr) nameErr.innerText = 'Tên không được để trống'; hasError = true; }
             ['nameError', 'phoneError', 'emailError', 'taxCodeError'].forEach(id => {
@@ -566,54 +738,74 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    const provinceEl = document.getElementById('province');
-    if (provinceEl) provinceEl.addEventListener('change', function () {
-        populateWards(this.value);
-        updateFullAddress();
-    });
-    const wardEl = document.getElementById('ward');
-    if (wardEl) wardEl.addEventListener('change', updateFullAddress);
-
-    ['foreignCountry', 'foreignState', 'foreignCity', 'foreignPostal'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('input', updateFullAddress);
-    });
-
+    // 5. Sự kiện lọc khu vực
     const filterProvince = document.getElementById('filter_province');
-    if (filterProvince) filterProvince.addEventListener('change', function () {
-        populateFilterWards(this.value);
-    });
-
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', function () { showTab(this.getAttribute('data-tab')); });
-    });
-
-    document.querySelectorAll('.btn-time').forEach(btn => {
-        btn.addEventListener('click', function () {
-            loadHistoryBySupplier(this.getAttribute('data-range'));
+    if (filterProvince) {
+        filterProvince.addEventListener('change', function () {
+            populateFilterWards(this.value);
         });
+    }
+
+    // 6. Khôi phục nhãn ngày & đóng popover
+    const fromVal = document.getElementById('neoDateFrom')?.value;
+    const toVal   = document.getElementById('neoDateTo')?.value;
+    const textEl  = document.getElementById('neoDatePickerText');
+
+    if (fromVal && toVal) {
+        _rangeStart = new Date(fromVal);
+        _rangeEnd   = new Date(toVal);
+        _calViewDate = new Date(_rangeStart);
+        if (fromVal === toVal) {
+            const todayStr = _formatDateYMD(new Date());
+            if (fromVal === todayStr && textEl) textEl.innerText = 'Hôm nay';
+            else if (textEl) textEl.innerText = _formatShortVN(_rangeStart);
+        } else if (textEl) {
+            textEl.innerText = `${_formatShortVN(_rangeStart)} - ${_formatShortVN(_rangeEnd)}`;
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#neoDatePicker')) {
+            document.getElementById('neoDatePicker')?.classList.remove('is-open');
+        }
     });
+
+    // 7. Đồng bộ chiều cao Sidebar = Khung bảng
+    function syncSidebarHeight() {
+        const tableCard = document.querySelector('.task-table-card');
+        const toolbar   = document.querySelector('.task-top-toolbar');
+        const sidebar   = document.getElementById('taskFilterSidebar');
+        if (tableCard && toolbar && sidebar) {
+            const targetHeight = toolbar.offsetHeight + 16 + tableCard.offsetHeight;
+            sidebar.style.height = `${targetHeight}px`;
+        }
+    }
+    syncSidebarHeight();
+    window.addEventListener('resize', syncSidebarHeight);
 
     window.addEventListener('click', function (e) {
         if (e.target === document.getElementById('supplierModal')) closeSupplierModal();
-        if (e.target === document.getElementById('detailModal'))   closeDetailModal();
     });
 });
 
-window.openSupplierModal     = openSupplierModal;
-window.closeSupplierModal    = closeSupplierModal;
-window.confirmDeleteSupplier = confirmDeleteSupplier;
-window.searchSupplierTable   = searchSupplierTable;
-window.exportSupplierExcel   = exportSupplierExcel;
-window.checkUnique           = checkUnique;
-window.viewSupplierDetail    = viewSupplierDetail;
-window.closeDetailModal      = closeDetailModal;
-window.showTab               = showTab;
-window.loadAddressData       = loadAddressData;
-window.populateWards         = populateWards;
-window.populateFilterWards   = populateFilterWards;
-window.updateFullAddress     = updateFullAddress;
-window.toggleAddressScope    = toggleAddressScope;
-window.updateBulkBar         = updateBulkBar;
-window.clearSelection        = clearSelection;
-window.exportSelectedExcel   = exportSelectedExcel;
+// ── EXPORT GLOBAL FUNCTIONS ──────────────────────────────────────────────────
+window.openSupplierModal        = openSupplierModal;
+window.closeSupplierModal       = closeSupplierModal;
+window.confirmDeleteSupplier    = confirmDeleteSupplier;
+window.searchSupplierTable      = searchSupplierTable;
+window.checkUnique              = checkUnique;
+window.loadAddressData          = loadAddressData;
+window.populateWards            = populateWards;
+window.populateFilterWards      = populateFilterWards;
+window.updateFullAddress        = updateFullAddress;
+window.toggleAddressScope       = toggleAddressScope;
+window.toggleSelectAllTotal     = toggleSelectAllTotal;
+window.clearSelection           = clearSelection;
+window.exportSelectedExcel      = exportSelectedExcel;
+window.toggleDatePickerPopover  = toggleDatePickerPopover;
+window.selectQuickDate          = selectQuickDate;
+window.openCalendarPicker       = openCalendarPicker;
+window.backToPresets            = backToPresets;
+window.onCalTitleClick         = onCalTitleClick;
+window.changeCalStep           = changeCalStep;
+window.applyCustomRange         = applyCustomRange;

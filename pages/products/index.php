@@ -41,7 +41,7 @@ $filters = [
     'supplier_ids' => $supplierIds,
 ];
 
-// ── Lấy dữ liệu qua Service — không có SQL nào bên dưới đây ──────────────────
+// ── Lấy dữ liệu qua Service ──────────────────────────────────────────────────
 $result   = $service->list($filters);
 $stats    = $service->stats();
 $formData = $service->getFormData();
@@ -52,394 +52,467 @@ $totalPages  = $result['total_pages'];
 $page        = $result['page'];
 $limit       = $result['limit'];
 
-// Unpack formData cho template
 $suppliers  = $formData['suppliers'];
-$categories = $formData['categories']; // danh sách phẳng (không phân cấp)
+$categories = $formData['categories'];
 
 $filterCount = count($categoryIds) + count($statuses) + count($supplierIds)
              + ($stockMin !== '' || $stockMax !== '' ? 1 : 0)
              + ($keyword !== '' ? 1 : 0);
 
-// CSRF token cho form POST và AJAX
 $csrfToken = $csrf->getToken();
 
 include __DIR__ . '/../../layout/header.php';
 ?>
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/products.css">
 
-<div class="products-container">
+<!-- Script chống giật khi tải trang (không dùng !important) -->
+<script>
+    (function () {
+        if (localStorage.getItem('product_filter_hidden') === 'true') {
+            document.documentElement.classList.add('product-filter-hidden');
+        }
+    })();
+</script>
 
-    <!-- Stats cards -->
-    <div class="stats-cards-grid">
-        <div class="stat-card">
-            <div class="stat-icon icon-neutral"><i class="ri-archive-line"></i></div>
-            <div class="stat-body">
-                <div class="stat-title">Tổng sản phẩm</div>
-                <div class="stat-value"><?= number_format($stats['total']) ?></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon icon-success"><i class="ri-checkbox-circle-line"></i></div>
-            <div class="stat-body">
-                <div class="stat-title">Đang hoạt động</div>
-                <div class="stat-value"><?= number_format($stats['active']) ?></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon icon-danger"><i class="ri-forbid-line"></i></div>
-            <div class="stat-body">
-                <div class="stat-title">Ngừng kinh doanh</div>
-                <div class="stat-value"><?= number_format($stats['inactive']) ?></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="toolbar-modern">
-        <div class="toolbar-left">
-            <button class="btn-tool" onclick="toggleFilterBar()">
-                <i class="ri-filter-3-line"></i> Bộ lọc
+<div class="task-app-wrapper">
+    <!-- CỘT BỘ LỌC TRÁI (FILTER SIDEBAR) -->
+    <aside class="task-filter-sidebar" id="taskFilterSidebar">
+        <form method="GET" action="" id="filterForm">
+            <div class="sidebar-filter-header">
+                <h3>Bộ lọc</h3>
                 <?php if ($filterCount > 0): ?>
-                    <span class="filter-badge"><?= $filterCount ?></span>
+                    <a href="index.php" class="clear-all-link">Xóa tất cả (<?= $filterCount ?>)</a>
                 <?php endif; ?>
-            </button>
-            <div class="search-box-modern">
-                <i class="ri-search-line"></i>
-                <input type="text" id="searchInput" placeholder="Tìm kiếm nhanh..."
-                       value="<?= htmlspecialchars($keyword) ?>"
-                       onkeyup="searchProductTable()">
             </div>
-        </div>
-        <div class="toolbar-right">
-            <button class="btn-tool" onclick="openCategoryModal()">
-                <i class="ri-add-line"></i> Thêm danh mục
-            </button>
-            <button class="btn-dark" onclick="openProductModal('add')">
-                <i class="ri-add-line"></i> Thêm sản phẩm
-            </button>
-        </div>
-    </div>
 
-    <!-- Bộ lọc -->
-    <div class="filter-bar-horizontal" id="filterBar"
-         style="display: <?= $filterCount > 0 ? 'flex' : 'none' ?>;">
-        <form method="GET" action="" id="filterForm" class="filter-form-inline">
+            <!-- 1. TRẠNG THÁI HÀNG HÓA -->
+            <div class="filter-section" data-filter-key="status">
+                <div class="filter-sec-title">
+                    <span><i class="ri-checkbox-circle-line"></i> Trạng thái kho</span>
+                    <i class="ri-arrow-down-s-line"></i>
+                </div>
+                <div class="filter-checkbox-list">
+                    <label class="filter-check-item">
+                        <input type="checkbox" name="status[]" value="active" <?= in_array('active', $statuses, true) ? 'checked' : '' ?> onchange="this.form.submit()">
+                        <span class="dot-indicator dot-success"></span>
+                        <span class="label-text">Đang hoạt động</span>
+                    </label>
+                    <label class="filter-check-item">
+                        <input type="checkbox" name="status[]" value="inactive" <?= in_array('inactive', $statuses, true) ? 'checked' : '' ?> onchange="this.form.submit()">
+                        <span class="dot-indicator dot-danger"></span>
+                        <span class="label-text">Ngừng kinh doanh</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 2. DANH MỤC SẢN PHẨM -->
+            <div class="filter-section" data-filter-key="category">
+                <div class="filter-sec-title">
+                    <span><i class="ri-folder-3-line"></i> Danh mục</span>
+                    <i class="ri-arrow-down-s-line"></i>
+                </div>
+                <div class="filter-checkbox-list filter-scrollable">
+                    <?php foreach ($categories as $cat): ?>
+                    <label class="filter-check-item">
+                        <input type="checkbox" name="category_id[]" value="<?= $cat['id'] ?>" <?= in_array($cat['id'], $categoryIds, true) ? 'checked' : '' ?> onchange="this.form.submit()">
+                        <span class="label-text"><?= htmlspecialchars($cat['name']) ?></span>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <!-- 3. SỐ LƯỢNG TỒN -->
+            <div class="filter-section" data-filter-key="stock">
+                <div class="filter-sec-title">
+                    <span><i class="ri-archive-line"></i> Số lượng tồn</span>
+                    <i class="ri-arrow-down-s-line"></i>
+                </div>
+                <div class="filter-range-inputs">
+                    <input type="number" name="stock_min" value="<?= htmlspecialchars($stockMin) ?>" placeholder="Tối thiểu" class="range-field">
+                    <span>-</span>
+                    <input type="number" name="stock_max" value="<?= htmlspecialchars($stockMax) ?>" placeholder="Tối đa" class="range-field">
+                </div>
+                <button type="submit" class="btn-apply-stock">Lọc tồn</button>
+            </div>
+
+            <!-- 4. NHÀ CUNG CẤP -->
+            <div class="filter-section" data-filter-key="supplier">
+                <div class="filter-sec-title">
+                    <span><i class="ri-store-2-line"></i> Nhà cung cấp</span>
+                    <i class="ri-arrow-down-s-line"></i>
+                </div>
+                <div class="filter-checkbox-list filter-scrollable">
+                    <?php foreach ($suppliers as $sup): ?>
+                    <label class="filter-check-item">
+                        <input type="checkbox" name="supplier_id[]" value="<?= $sup['id'] ?>" <?= in_array($sup['id'], $supplierIds, true) ? 'checked' : '' ?> onchange="this.form.submit()">
+                        <span class="label-text"><?= htmlspecialchars($sup['name']) ?></span>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
             <input type="hidden" name="keyword" value="<?= htmlspecialchars($keyword) ?>">
+        </form>
+    </aside>
 
-            <!-- Danh mục -->
-            <div class="custom-dropdown">
-                <button type="button" class="filter-input custom-dropdown-btn"
-                        onclick="toggleDropdown('categoryDropdownPanel')">
-                    Danh mục <?= !empty($categoryIds) ? '(' . count($categoryIds) . ')' : '' ?>
-                    <i class="ri-arrow-down-s-line"></i>
+    <!-- KHU VỰC BẢNG DỮ LIỆU CHÍNH -->
+    <main class="task-table-main">
+        <!-- TOP TOOLBAR -->
+        <div class="task-top-toolbar">
+            <div class="tb-left">
+                <button type="button" class="btn-tb-filter" id="btnToggleSidebar">
+                    <i class="ri-equalizer-line"></i>
+                    <span id="txtToggleSidebar">Hide Filters</span>
                 </button>
-                <div class="dropdown-panel" id="categoryDropdownPanel">
-                    <div class="dropdown-panel-inner">
-                        <div class="fsb-group">
-                            <?php foreach ($categories as $cat): ?>
-                            <div class="fsb-row">
-                                <label class="fsb-label">
-                                    <input type="checkbox" name="category_id[]"
-                                           value="<?= $cat['id'] ?>"
-                                           <?= in_array($cat['id'], $categoryIds, true) ? 'checked' : '' ?>>
-                                    <span class="fsb-name"><?= htmlspecialchars($cat['name']) ?></span>
-                                </label>
+                <div class="tb-dropdown-badge">
+                    <span>Tất cả sản phẩm (<?= number_format($totalRows) ?>)</span>
+                    <i class="ri-arrow-down-s-line"></i>
+                </div>
+            </div>
+
+            <div class="tb-right">
+                <div class="tb-search-box">
+                    <i class="ri-search-line"></i>
+                    <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm..." value="<?= htmlspecialchars($keyword) ?>" onkeyup="searchProductTable()">
+                </div>
+
+                <button type="button" class="btn-tb-secondary" onclick="openCategoryModal()">
+                    <i class="ri-folder-add-line"></i> Danh mục
+                </button>
+
+                <button type="button" class="btn-tb-primary" onclick="openProductModal('add')">
+                    <i class="ri-add-line"></i> Thêm sản phẩm
+                </button>
+            </div>
+        </div>
+
+        <!-- BẢNG DỮ LIỆU -->
+        <div class="task-table-card">
+            <table class="task-data-table" id="productTable">
+                <thead>
+                    <tr>
+                        <th width="42"><input type="checkbox" id="selectAll"></th>
+                        <th width="320">Tên sản phẩm</th>
+                        <th width="150">Giá bán</th>
+                        <th width="140">Trạng thái</th>
+                        <th width="180">Danh mục</th>
+                        <th width="130">Tồn kho</th>
+                        <th width="100" class="text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($products)): ?>
+                        <tr>
+                            <td colspan="7" class="table-empty-cell">
+                                <i class="ri-inbox-line"></i>
+                                <p>Không tìm thấy sản phẩm nào</p>
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($products as $p):
+                            $stock = (int) $p['total_stock'];
+                            if ($p['status'] === 'inactive') {
+                                $statusClass = 'st-overdue';
+                                $statusText  = 'Ngừng KD';
+                            } elseif ($stock <= (int) $p['min_stock']) {
+                                $statusClass = 'st-pending';
+                                $statusText  = 'Cần nhập';
+                            } else {
+                                $statusClass = 'st-completed';
+                                $statusText  = 'Còn hàng';
+                            }
+                        ?>
+                        <tr>
+                            <td><input type="checkbox" class="row-checkbox" data-id="<?= $p['id'] ?>"></td>
+                            <td>
+                                <div class="task-title-cell">
+                                    <div class="task-text-info">
+                                        <div class="item-name"><?= htmlspecialchars($p['name']) ?></div>
+                                        <span class="item-sku"><?= htmlspecialchars($p['sku'] ?? 'N/A') ?></span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="font-price"><?= number_format((float) $p['price']) ?>₫</td>
+                            <td>
+                                <span class="clean-badge <?= $statusClass ?>">
+                                    <?= $statusText ?>
+                                </span>
+                            </td>
+                            <td>
+                                <div class="related-cell">
+                                    <i class="ri-folder-line"></i>
+                                    <span><?= htmlspecialchars($p['category_name'] ?? 'Chưa phân loại') ?></span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="stock-pill"><?= number_format($stock) ?> <?= htmlspecialchars($p['unit'] ?? 'cái') ?></span>
+                            </td>
+                            <td class="text-right actions-cell">
+                                <button type="button" class="btn-action-icon" onclick="openProductModal('edit', <?= htmlspecialchars(json_encode($p), ENT_QUOTES) ?>)" title="Sửa">
+                                    <i class="ri-pencil-line"></i>
+                                </button>
+                                <button type="button" class="btn-action-icon btn-action-delete" onclick="confirmDeleteProduct(<?= $p['id'] ?>, '<?= $p['status'] ?>')" title="Xóa">
+                                    <i class="ri-delete-bin-line"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- BULK ACTION BAR -->
+        <div id="bulkActionBar" class="bulk-action-bar">
+            <span id="bulkCount" class="bulk-count">0 sản phẩm đã chọn</span>
+            <button type="button" id="btnSelectAllTotal" class="btn-select-all-total" style="display: none;" onclick="toggleSelectAllTotal()">
+                Chọn tất cả <?= (int) $totalRows ?>
+            </button>
+            <div class="divider"></div>
+            <button onclick="exportSelectedExcel()" class="btn-export">
+                <i class="ri-download-cloud-2-line"></i> Xuất Excel
+            </button>
+            <button onclick="clearSelection()" class="btn-clear">
+                Bỏ chọn
+            </button>
+        </div>
+
+        <!-- PHÂN TRANG -->
+        <?php if ($totalPages > 1):
+            $baseParams = $_GET;
+            unset($baseParams['page']); ?>
+        <div class="pagination-footer">
+            <div class="pagination-page-list">
+                <?php if ($page > 1): ?>
+                    <a href="?<?= http_build_query(array_merge($baseParams, ['page' => $page - 1])) ?>" class="btn-page-nav">
+                        <i class="ri-arrow-left-s-line"></i>
+                    </a>
+                <?php else: ?>
+                    <span class="btn-page-nav disabled"><i class="ri-arrow-left-s-line"></i></span>
+                <?php endif; ?>
+
+                <?php $range = 1; $showDots = false;
+                for ($i = 1; $i <= $totalPages; $i++):
+                    if ($i === 1 || $i === $totalPages || ($i >= $page - $range && $i <= $page + $range)):
+                        if ($showDots) { echo '<span class="dots">...</span>'; $showDots = false; } ?>
+                        <a href="?<?= http_build_query(array_merge($baseParams, ['page' => $i])) ?>" class="btn-page-num <?= $i === $page ? 'active' : '' ?>"><?= $i ?></a>
+                    <?php else: $showDots = true;
+                    endif;
+                endfor; ?>
+
+                <?php if ($page < $totalPages): ?>
+                    <a href="?<?= http_build_query(array_merge($baseParams, ['page' => $page + 1])) ?>" class="btn-page-nav">
+                        <i class="ri-arrow-right-s-line"></i>
+                    </a>
+                <?php else: ?>
+                    <span class="btn-page-nav disabled"><i class="ri-arrow-right-s-line"></i></span>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+    </main>
+</div>
+
+<!-- ── MODAL THÊM / SỬA SẢN PHẨM ────────────────────────────────── -->
+<div id="productModal" class="modal-modern" style="display:none;">
+    <div class="modal-modern-dialog">
+        <div class="modal-modern-header">
+            <div>
+                <h3 id="modalTitle">Thêm sản phẩm mới</h3>
+                <p class="modal-subtitle">Điền thông tin chi tiết cho sản phẩm bên dưới.</p>
+            </div>
+            <button type="button" class="btn-close-modern" onclick="closeProductModal()">&times;</button>
+        </div>
+
+        <form id="productForm" method="POST" action="process.php">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+            <input type="hidden" name="action" id="formAction" value="add">
+            <input type="hidden" name="id" id="productId" value="0">
+            <input type="hidden" name="status" id="prodStatus" value="active">
+
+            <!-- Tab Navigation -->
+            <div class="modal-tabs-nav">
+                <button type="button" class="tab-pill-btn active" data-tab="tab-basic">Thông tin cơ bản</button>
+                <button type="button" class="tab-pill-btn" data-tab="tab-pricing">Giá cả & Tồn kho</button>
+            </div>
+
+            <div class="modal-tabs-body">
+                <!-- TAB 1: THÔNG TIN CƠ BẢN -->
+                <div class="tab-pane active" id="tab-basic">
+                    <div class="form-row-modern">
+                        <label class="form-label-modern">Tên sản phẩm <span class="text-danger">*</span></label>
+                        <input type="text" name="name" id="prodName" required placeholder="Nhập tên sản phẩm..." class="form-input-modern">
+                    </div>
+
+                    <!-- GRID 2: MÃ SKU & ĐƠN VỊ TÍNH -->
+                    <div class="form-grid-2">
+                        <div class="form-row-modern">
+                            <label class="form-label-modern">Mã SKU</label>
+                            <input type="text" name="sku" id="prodSku" placeholder="VD: SP-100-SF..." onblur="checkSku()" class="form-input-modern">
+                            <span id="skuError" class="error-message"></span>
+                        </div>
+                        <div class="form-row-modern">
+                            <label class="form-label-modern">Đơn vị tính</label>
+                            <input type="text" name="unit" id="prodUnit" placeholder="Cái, hộp, thùng..." class="form-input-modern">
+                        </div>
+                    </div>
+
+                    <!-- GRID 2: DANH MỤC & NHÀ CUNG CẤP -->
+                    <div class="form-grid-2">
+                        <!-- 1. DROPDOWN CHỌN DANH MỤC -->
+                        <div class="form-row-modern">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <label class="form-label-modern" style="margin-bottom: 0;">Danh mục</label>
+                                <button type="button" 
+                                        onclick="openCategoryModalFromProduct()" 
+                                        class="btn-link-add-cat"
+                                        title="Thêm danh mục mới">
+                                    <i class="ri-add-line"></i> Thêm mới
+                                </button>
                             </div>
-                            <?php endforeach; ?>
+
+                            <div class="custom-select-dropdown" id="catCustomDropdown">
+                                <button type="button" class="select-trigger-btn" onclick="toggleCustomDropdown('catCustomDropdown')">
+                                    <span class="selected-text" id="catSelectedText">-- Không phân loại --</span>
+                                    <i class="ri-arrow-down-s-line trigger-arrow"></i>
+                                </button>
+
+                                <div class="select-dropdown-menu" id="categoryRadioContainer">
+                                    <label class="radio-circle-item">
+                                        <input type="radio" name="category_id" value="" checked onchange="onRadioSelectChange('cat', '-- Không phân loại --')">
+                                        <span class="custom-radio-circle"></span>
+                                        <span class="radio-text-label">-- Không phân loại --</span>
+                                    </label>
+                                    <?php foreach ($categories as $cat): ?>
+                                        <label class="radio-circle-item" id="cat-radio-label-<?= $cat['id'] ?>">
+                                            <input type="radio" name="category_id" value="<?= $cat['id'] ?>" onchange="onRadioSelectChange('cat', '<?= htmlspecialchars(addslashes($cat['name'])) ?>')">
+                                            <span class="custom-radio-circle"></span>
+                                            <span class="radio-text-label"><?= htmlspecialchars($cat['name']) ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. DROPDOWN CHỌN NHÀ CUNG CẤP -->
+                        <div class="form-row-modern">
+                            <label class="form-label-modern" style="margin-bottom: 6px;">Nhà cung cấp</label>
+                            
+                            <div class="custom-select-dropdown" id="supCustomDropdown">
+                                <button type="button" class="select-trigger-btn" onclick="toggleCustomDropdown('supCustomDropdown')">
+                                    <span class="selected-text" id="supSelectedText">-- Không chọn --</span>
+                                    <i class="ri-arrow-down-s-line trigger-arrow"></i>
+                                </button>
+
+                                <div class="select-dropdown-menu" id="supplierRadioContainer">
+                                    <label class="radio-circle-item">
+                                        <input type="radio" name="supplier_id" value="" checked onchange="onRadioSelectChange('sup', '-- Không chọn --')">
+                                        <span class="custom-radio-circle"></span>
+                                        <span class="radio-text-label">-- Không chọn --</span>
+                                    </label>
+                                    <?php foreach ($suppliers as $sup): ?>
+                                        <label class="radio-circle-item">
+                                            <input type="radio" name="supplier_id" value="<?= $sup['id'] ?>" onchange="onRadioSelectChange('sup', '<?= htmlspecialchars(addslashes($sup['name'])) ?>')">
+                                            <span class="custom-radio-circle"></span>
+                                            <span class="radio-text-label"><?= htmlspecialchars($sup['name']) ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MÔ TẢ SẢN PHẨM: FULL-WIDTH RỘNG RÃI -->
+                    <div class="form-row-modern">
+                        <label class="form-label-modern">Mô tả sản phẩm</label>
+                        <textarea name="description" id="prodDesc" rows="3" placeholder="Nhập ghi chú hoặc mô tả về sản phẩm..." class="form-input-modern"></textarea>
+                    </div>
+                </div>
+
+                <!-- TAB 2: GIÁ CẢ & TỒN KHO -->
+                <div class="tab-pane" id="tab-pricing">
+                    <div class="form-grid-2">
+                        <div class="form-row-modern">
+                            <label class="form-label-modern">Giá vốn (VNĐ)</label>
+                            <input type="number" name="cost_price" id="prodCostPrice" step="1000" min="0" placeholder="0" onblur="validateCostPrice()" class="form-input-modern">
+                            <span id="costPriceError" class="error-message"></span>
+                        </div>
+                        <div class="form-row-modern">
+                            <label class="form-label-modern">Giá bán (VNĐ)</label>
+                            <input type="number" name="price" id="prodPrice" step="1000" min="0" placeholder="0" onblur="validatePrice()" class="form-input-modern">
+                            <span id="priceError" class="error-message"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2" style="margin-top: 14px;">
+                        <div class="form-row-modern">
+                            <label class="form-label-modern">Tồn kho tối thiểu</label>
+                            <input type="number" name="min_stock" id="prodMinStock" min="0" placeholder="0" class="form-input-modern">
+                        </div>
+                        <div class="form-row-modern">
+                            <label class="form-label-modern">Tồn kho tối đa</label>
+                            <input type="number" name="max_stock" id="prodMaxStock" min="0" placeholder="0" class="form-input-modern">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Trạng thái -->
-            <div class="custom-dropdown">
-                <button type="button" class="filter-input custom-dropdown-btn"
-                        onclick="toggleDropdown('statusDropdownPanel')">
-                    Trạng thái <?= !empty($statuses) ? '(' . count($statuses) . ')' : '' ?>
-                    <i class="ri-arrow-down-s-line"></i>
-                </button>
-                <div class="dropdown-panel" id="statusDropdownPanel">
-                    <div class="dropdown-panel-inner">
-                        <div class="fsb-group">
-                            <div class="fsb-row">
-                                <label class="fsb-label">
-                                    <input type="checkbox" name="status[]" value="active"
-                                           <?= in_array('active', $statuses) ? 'checked' : '' ?>>
-                                    <span class="fsb-name">Đang hoạt động</span>
-                                </label>
-                            </div>
-                            <div class="fsb-row">
-                                <label class="fsb-label">
-                                    <input type="checkbox" name="status[]" value="inactive"
-                                           <?= in_array('inactive', $statuses) ? 'checked' : '' ?>>
-                                    <span class="fsb-name">Ngừng hoạt động</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Footer: Toggle Switch & Buttons -->
+            <div class="modal-modern-footer">
+                <label class="toggle-status-wrapper">
+                    <input type="checkbox" id="prodStatusToggle" checked onchange="document.getElementById('prodStatus').value = this.checked ? 'active' : 'inactive'">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label-text">Sản phẩm đang hoạt động và hiển thị</span>
+                </label>
+
+                <div class="footer-btns-group">
+                    <button type="button" class="btn-modern-outline" onclick="closeProductModal()">Hủy</button>
+                    <button type="submit" class="btn-modern-dark">Lưu sản phẩm</button>
                 </div>
             </div>
-
-            <!-- Nhà cung cấp -->
-            <div class="custom-dropdown">
-                <button type="button" class="filter-input custom-dropdown-btn"
-                        onclick="toggleDropdown('supplierDropdownPanel')">
-                    Nhà cung cấp <?= !empty($supplierIds) ? '(' . count($supplierIds) . ')' : '' ?>
-                    <i class="ri-arrow-down-s-line"></i>
-                </button>
-                <div class="dropdown-panel" id="supplierDropdownPanel">
-                    <div class="dropdown-panel-inner">
-                        <div class="fsb-group">
-                            <?php foreach ($suppliers as $sup): ?>
-                            <div class="fsb-row">
-                                <label class="fsb-label">
-                                    <input type="checkbox" name="supplier_id[]"
-                                           value="<?= $sup['id'] ?>"
-                                           <?= in_array($sup['id'], $supplierIds) ? 'checked' : '' ?>>
-                                    <span class="fsb-name"><?= htmlspecialchars($sup['name']) ?></span>
-                                </label>
-                            </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tồn kho -->
-            <input type="number" name="stock_min"
-                   value="<?= htmlspecialchars($stockMin) ?>"
-                   placeholder="Tồn từ..." class="filter-input">
-            <input type="number" name="stock_max"
-                   value="<?= htmlspecialchars($stockMax) ?>"
-                   placeholder="Đến..." class="filter-input">
-
-            <button type="submit" class="btn-dark btn-sm">Áp dụng</button>
-            <a href="index.php" class="btn-tool btn-sm">Xóa lọc</a>
         </form>
     </div>
+</div>
 
-    <!-- Bảng sản phẩm -->
-    <div class="table-card">
-        <table class="table-modern" id="productTable">
-            <thead>
-                <tr>
-                    <th width="40"><input type="checkbox" id="selectAll"></th>
-                    <th width="240">Sản phẩm</th>
-                    <th width="240">Danh mục</th>
-                    <th width="240">Giá</th>
-                    <th width="240">Tồn kho</th>
-                    <th width="300">Trạng thái</th>
-                    <th class="text-right">Thao tác</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (empty($products)): ?>
-                    <tr>
-                        <td colspan="8" class="text-center" style="padding:40px">
-                            Không tìm thấy sản phẩm nào
-                        </td>
-                    </tr>
-                <?php else: ?>
-                    <?php foreach ($products as $p):
-                        $stock = (int) $p['total_stock'];
-                        if ($p['status'] === 'inactive')              { $badge = 'badge-danger';  $badgeText = 'Ngừng KD'; }
-                        elseif ($stock <= (int) $p['min_stock'])       { $badge = 'badge-warning'; $badgeText = 'Cần nhập'; }
-                        else                                           { $badge = 'badge-success'; $badgeText = 'Còn hàng'; }
-                    ?>
-                    <tr>
-                        <td><input type="checkbox" class="row-checkbox" data-id="<?= $p['id'] ?>"></td>
-                        <td>
-                            <div class="product-cell">
-                                <div class="prod-name"><?= htmlspecialchars($p['name']) ?></div>
-                                <div class="prod-sku"><?= htmlspecialchars($p['sku'] ?? 'N/A') ?></div>
-                            </div>
-                        </td>
-                        <td class="text-muted"><?= htmlspecialchars($p['category_name'] ?? '—') ?></td>
-                        <td class="font-medium"><?= number_format((float) $p['price']) ?>₫</td>
-                        <td><?= number_format($stock) ?></td>
-                        <td><span class="badge-modern <?= $badge ?>"><?= $badgeText ?></span></td>
-                        <td class="text-right actions-cell">
-                            <button class="btn-icon-subtle"
-                                    onclick="openProductModal('edit', <?= htmlspecialchars(json_encode($p), ENT_QUOTES) ?>)">
-                                <i class="ri-edit-line"></i>
-                            </button>
-                            <button class="btn-icon-subtle text-danger"
-                                    onclick="confirmDeleteProduct(<?= $p['id'] ?>, '<?= $p['status'] ?>')">
-                                <i class="ri-delete-bin-line"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Bulk action bar -->
-    <div id="bulkActionBar" class="bulk-action-bar">
-        <span id="bulkCount" class="bulk-count">0 sản phẩm đã chọn</span>
-        <div class="divider"></div>
-        <button onclick="exportSelectedExcel()" class="btn-export">
-            <i class="ri-download-cloud-2-line"></i> Xuất Excel
-        </button>
-        <button onclick="clearSelection()" class="btn-clear">
-            Bỏ chọn
-        </button>
-    </div>
-
-    <!-- Phân trang -->
-    <?php if ($totalPages > 1):
-        $baseParams = $_GET;
-        unset($baseParams['page']); ?>
-    <div class="pagination-modern">
-        <div class="page-numbers">
-            <?php if ($page > 1): ?>
-                <a href="?<?= http_build_query(array_merge($baseParams, ['page' => $page - 1])) ?>">
-                    <i class="ri-arrow-left-s-line"></i>
-                </a>
-            <?php else: ?>
-                <span class="disabled"><i class="ri-arrow-left-s-line"></i></span>
-            <?php endif; ?>
-
-            <?php $range = 1; $showDots = false;
-            for ($i = 1; $i <= $totalPages; $i++):
-                if ($i === 1 || $i === $totalPages || ($i >= $page - $range && $i <= $page + $range)):
-                    if ($showDots) { echo '<span class="dots">...</span>'; $showDots = false; } ?>
-                    <a href="?<?= http_build_query(array_merge($baseParams, ['page' => $i])) ?>"
-                       class="<?= $i === $page ? 'active' : '' ?>"><?= $i ?></a>
-                <?php else: $showDots = true;
-                endif;
-            endfor; ?>
-
-            <?php if ($page < $totalPages): ?>
-                <a href="?<?= http_build_query(array_merge($baseParams, ['page' => $page + 1])) ?>">
-                    <i class="ri-arrow-right-s-line"></i>
-                </a>
-            <?php else: ?>
-                <span class="disabled"><i class="ri-arrow-right-s-line"></i></span>
-            <?php endif; ?>
-        </div>
-    </div>
-    <?php endif; ?>
-
-   <div id="productModal" class="modal" style="display:none;">
-        <div class="modal-content modal-lg" style="max-width: 800px;"> <div class="modal-header">
-                <h3 id="modalTitle">Thêm sản phẩm</h3>
-                <span class="close" onclick="closeProductModal()">&times;</span>
+<!-- ── MODAL THÊM DANH MỤC ──────────────────────────────────────── -->
+<div id="categoryModal" class="modal-modern" style="display:none;">
+    <div class="modal-modern-dialog" style="max-width: 520px;">
+        <div class="modal-modern-header">
+            <div>
+                <h3>Thêm danh mục mới</h3>
+                <p class="modal-subtitle">Tạo phân loại sản phẩm để dễ dàng quản lý hàng tồn.</p>
             </div>
-            <form id="productForm" method="POST" action="process.php">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                <input type="hidden" name="action" id="formAction" value="add">
-                <input type="hidden" name="id" id="productId" value="0">
-                
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Tên sản phẩm <span class="required">*</span></label>
-                        <input type="text" name="name" id="prodName" required placeholder="Nhập tên sản phẩm">
-                    </div>
-                    <div class="form-group">
-                        <label>SKU</label>
-                        <input type="text" name="sku" id="prodSku" placeholder="Mã SKU (tùy chọn)" onblur="checkSku()">
-                        <span id="skuError" class="error-message"></span>
-                    </div>
-                    <div class="form-group">
-                        <label>Danh mục</label>
-                        <select name="category_id" id="prodCategory">
-                            <option value="">-- Chọn danh mục --</option>
-                            <?php foreach ($categories as $cat): ?>
-                                <option value="<?= $cat['id'] ?>">
-                                    <?= htmlspecialchars($cat['name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Nhà cung cấp</label>
-                        <select name="supplier_id" id="prodSupplier">
-                            <option value="">-- Chọn nhà cung cấp --</option>
-                            <?php foreach ($suppliers as $sup): ?>
-                                <option value="<?= $sup['id'] ?>">
-                                    <?= htmlspecialchars($sup['name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Giá vốn (VNĐ)</label>
-                        <input type="number" name="cost_price" id="prodCostPrice" step="1000" min="0" placeholder="0" onblur="validateCostPrice()">
-                        <span id="costPriceError" class="error-message"></span>
-                    </div>
-                    <div class="form-group">
-                        <label>Giá bán (VNĐ)</label>
-                        <input type="number" name="price" id="prodPrice" step="1000" min="0" placeholder="0" onblur="validatePrice()">
-                        <span id="priceError" class="error-message"></span>
-                    </div>
-                    <div class="form-group">
-                        <label>Đơn vị tính</label>
-                        <input type="text" name="unit" id="prodUnit" placeholder="Ví dụ: Cái, hộp, thùng">
-                    </div>
-                    <div class="form-group">
-                        <label>Tồn kho tối thiểu</label>
-                        <input type="number" name="min_stock" id="prodMinStock" min="0" placeholder="0">
-                    </div>
-                    <div class="form-group">
-                        <label>Tồn kho tối đa</label>
-                        <input type="number" name="max_stock" id="prodMaxStock" min="0" placeholder="0">
-                    </div>
-                    <div class="form-group">
-                        <label>Trạng thái</label>
-                        <select name="status" id="prodStatus">
-                            <option value="active">Đang hoạt động</option>
-                            <option value="inactive">Ngừng hoạt động</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group full-width">
-                        <label>Mô tả</label>
-                        <textarea name="description" id="prodDesc" rows="3" placeholder="Mô tả sản phẩm (nếu có)"></textarea>
-                    </div>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Lưu sản phẩm</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeProductModal()">Hủy</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- ── Modal danh mục nhanh ─────────────────────────────────────────────── -->
-    <div id="categoryModal" class="modal">
-    <div class="modal-content" style="max-width:550px">
-        <div class="modal-header">
-            <h3>Thêm danh mục mới</h3>
-            <span class="close" onclick="closeCategoryModal()">&times;</span>
+            <button type="button" class="btn-close-modern" onclick="closeCategoryModal()">&times;</button>
         </div>
         <form id="categoryForm" onsubmit="submitCategory(event)">
             <input type="hidden" id="csrfTokenMeta" value="<?= htmlspecialchars($csrfToken) ?>">
-            <div style="overflow-y: auto; flex: 1; padding-bottom: 16px;">
-            <div class="form-group">
-                <label>Tên danh mục <span class="required">*</span></label>
-                <input type="text" name="name" id="catName" required>
+            
+            <div class="modal-tabs-body" style="padding-top: 14px;">
+                <div class="form-row-modern">
+                    <label class="form-label-modern">Tên danh mục <span class="text-danger">*</span></label>
+                    <input type="text" name="name" id="catName" required placeholder="Nhập tên phân loại..." class="form-input-modern">
+                </div>
+
+                <div class="form-row-modern" style="margin-top: 14px;">
+                    <label class="form-label-modern">Mô tả / Ghi chú</label>
+                    <textarea name="description" id="catDesc" rows="3" placeholder="Mô tả chi tiết danh mục..." class="form-input-modern"></textarea>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Mô tả / Ghi chú</label>
-                <textarea name="description" id="catDesc" rows="3"></textarea>
-            </div>
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Lưu</button>
-                <button type="button" class="btn btn-secondary" onclick="closeCategoryModal()">Hủy</button>
+            <div class="modal-modern-footer" style="justify-content: flex-end;">
+                <div class="footer-btns-group">
+                    <button type="button" class="btn-modern-outline" onclick="closeCategoryModal()">Hủy</button>
+                    <button type="submit" class="btn-modern-dark">Lưu danh mục</button>
+                </div>
             </div>
         </form>
     </div>
 </div>
 
-</div>
-
-<script src="<?= BASE_URL ?>/js/utils.js"></script>
-<script src="<?= BASE_URL ?>/js/products.js"></script>
 <script>
     window._productTotalRows = <?= (int) $totalRows ?>;
 </script>
+<script src="<?= BASE_URL ?>/js/utils.js"></script>
+<script src="<?= BASE_URL ?>/js/products.js"></script>
+
 <?php include __DIR__ . '/../../layout/footer.php'; ?>
