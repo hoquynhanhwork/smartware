@@ -1,0 +1,9 @@
+{
+    "name": "smartware/smartware",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    }
+}

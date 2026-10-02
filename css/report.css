@@ -1,0 +1,342 @@
+
+
+
+/* ===== REPORTS ===== */
+@media (max-width: 768px) {
+
+    .report-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .report-header h1 {
+        font-size: 28px;
+        text-shadow: 3px 0px 0 rgb(255, 212, 94);
+    }
+
+    .report-actions {
+        width: 100%;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .search-box-reports {
+        width: 100%;
+        font-size: 14px;
+    }
+
+    .search-box-reports input {
+        font-size: 14px;
+    }
+
+    .btn-export {
+        width: 100%;
+        justify-content: center;
+        font-size: 16px;
+        padding: 10px;
+    }
+
+    .report-body {
+        flex-direction: column;
+    }
+
+    .report-filter {
+        width: 100%;
+        padding: 12px;
+    }
+
+    .report-filter h3 {
+        font-size: 16px;
+    }
+
+    .report-filter input,
+    .report-filter select {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .dropdown-menu {
+        width: 100%;
+        left: 0;
+    }
+
+    .report-table {
+        padding: 8px;
+    }
+
+    table {
+        min-width: 700px; 
+    }
+
+    th, td {
+        padding: 8px;
+        font-size: 13px;
+    }
+}
+
+.report-container {
+    padding: 20px 30px;
+}
+
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.report-header h1 {
+    font-size: 50px;
+    font-weight: bolder;
+    font-style: italic;
+    color: #000;
+    text-shadow: 5px 0px 0 rgb(255, 212, 94);
+}
+
+.report-actions {
+    display: flex;
+    align-items: center; 
+    gap: 80px;
+}
+
+.search-box-reports {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 6px 12px;
+    width: 450px;
+    gap: 10px;
+}
+
+.search-box-reports input {
+    border: none;
+    outline: none;
+    background: transparent;
+    width: 100%;
+    font-size: 20px;
+    flex: 1;
+}
+
+.search-box-reports input:focus {
+    outline: none;
+}
+
+.search-box-reports:focus-within {
+    box-shadow: 0 0 0 3px rgba(255, 200, 0, 0.25);
+    border-radius: 25px;
+}
+
+.filter-icon, .search-icon {
+    cursor: pointer;
+    font-size: 18px;
+    color: #d29e00;
+    transition: 0.2s;
+}
+
+.filter-icon:hover, .search-icon:hover {
+    transform: scale(1.1);
+}
+
+.btn-export {
+    background: #f6f1e7;
+    padding: 10px 22px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 25px;
+    cursor: pointer;
+    font-weight: bolder;    
+    border: 2px solid transparent;
+    background-image: 
+        linear-gradient(#f6f1e7, #f6f1e7), 
+        linear-gradient(90deg, #000, #C89116);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+}
+
+.btn-export i{
+    color: #d29e00;
+}
+
+.btn-export:hover {
+    background: #fffae8; 
+    color: #000;
+    background-image: 
+        linear-gradient(#ffecec, #fffae8),
+        linear-gradient(90deg, #000, #C89116);
+    transform: translateY(-2px);
+}
+
+.report-body {
+    display: flex;
+    gap: 20px;
+}
+
+.report-filter {
+    width: 230px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 15px;
+    border: 1px solid transparent;
+    background-image: 
+        linear-gradient(#ffffff, #ffffff), 
+        linear-gradient(90deg, #000, #C89116);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+}
+
+.report-filter h3 {
+    margin-top: 10px;
+    font-size: 20px;
+    font-weight: bolder;
+}
+
+.report-filter input,
+.report-filter select {
+    width: 100%;
+    margin: 5px 0 10px;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background-image: 
+        linear-gradient(#fff, #fff), 
+        linear-gradient(90deg, #000, #C89116);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    outline: none;
+}
+
+.report-filter input[type="date"] {
+    width: 100%;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background-image: 
+        linear-gradient(#ffffff, #ffffff), 
+        linear-gradient(90deg, #000, #C89116);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    cursor: pointer;
+}
+
+.date-range {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.date-range input {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.dropdown { 
+    position: relative; 
+}
+
+.dropdown-selected {
+    padding: 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    background-image: 
+        linear-gradient(#fff, #fff), 
+        linear-gradient(90deg, #000, #C89116);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 45px;
+    left: 0;
+    width: 240px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    padding: 12px; 
+}
+
+.group-title {
+    font-weight: bold;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.group-title:hover {
+    background: #f5f5f5;
+}
+
+.group-items {
+    display: none;
+    margin-left: 10px;
+}
+
+.group-items div {
+    padding: 6px 8px;
+    cursor: pointer; 
+    border-radius: 6px;
+}
+
+.report-table {
+    flex: 1;
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid transparent;
+    background-image: 
+        linear-gradient(#ffffff, #ffffff), 
+        linear-gradient(90deg, #000, #C89116);
+
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%; 
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid #ccc;
+    text-align: left;
+    vertical-align: middle;
+}
+
+td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.empty{
+    text-align: center;
+}
+
+.report-table thead {
+    background: #fffae8;
+}
+
+td:nth-child(3) {
+    white-space: normal;
+}
+
+.report-table th {
+    font-size: 20px;
+    font-weight: 700;
+}

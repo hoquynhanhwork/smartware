@@ -1,0 +1,39 @@
+# Web framework
+fastapi
+uvicorn[standard]
+
+# Database
+sqlalchemy
+psycopg2-binary
+
+# OpenAI
+openai
+
+# Config & env
+python-dotenv
+pydantic-settings
+
+# Security
+python-jose[cryptography]
+passlib[bcrypt]
+
+# HTTP client
+httpx
+
+# Validation
+email-validator
+
+# Data processing
+pandas
+numpy
+
+# Prophet — dùng cmdstanpy (Python 3.11 compatible)
+prophet
+cmdstanpy
+
+# ── Giai đoạn 4: OCR + RAG ──────────────────────────────────────
+Pillow
+python-multipart
+pgvector
+sentence-transformers
+pdf2image

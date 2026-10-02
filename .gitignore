@@ -1,0 +1,37 @@
+# Secrets — KHÔNG commit
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+env/
+ai-service/venv/
+ai-service/.venv/
+# Output chạy thử / backtest — dữ liệu nội bộ, không nên public
+output/
+*.xlsx
+*.csv
+
+# Model cache (Prophet / sentence-transformers hay tải về)
+*.pkl
+.cache/
+
+vendor/
+*.sql
+*.dump
+pgvector-master/
+
+AI_INVENTORY_ANALYSIS.md
+assessment_results_all.json
+
+data/
+db_export/
+
+.vscode/
+composer.phar
+
+ai-service/policies/

@@ -1,0 +1,192 @@
+:root {
+    --primary:       #ffc800;
+    --primary-hover: #e0a800;
+    --sidebar-bg:    #000000;
+    --card-radius:   16px;
+}
+
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc88 60%, #e0e7ff88 100%),
+                url("../img/bgr-kho-bai.png") center/cover no-repeat;
+    background-blend-mode: multiply;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.signin-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 860px;
+    min-height: 520px;
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+
+.brand-panel {
+    background: linear-gradient(135deg, #000000 0%, #c89114 100%);
+    padding: 48px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #fff;
+}
+.brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -.3px;
+}
+.brand-logo .icon-box {
+    width: 40px; height: 40px;
+    background: var(--primary);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    color: #1e293b;
+}
+.brand-tagline {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+.brand-tagline span { color: var(--primary); }
+.brand-desc {
+    font-size: 13.5px;
+    color: rgba(255,255,255,.7);
+    line-height: 1.65;
+}
+.feature-list {
+    list-style: none;
+    padding: 0; margin: 20px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.feature-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(255,255,255,.85);
+}
+.feature-list li i {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,.1);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+.brand-footer {
+    font-size: 11.5px;
+    color: rgba(255,255,255,.4);
+}
+
+.form-panel {
+    background: #fff;
+    padding: 48px 44px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.form-title {
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(90deg, #000000 0%, #c89114 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    margin-bottom: 4px;
+    text-align: center;
+}
+.form-subtitle {
+    font-size: 13.5px;
+    color: #64748b;
+    margin-bottom: 28px;
+    text-align: center;
+
+}
+
+.form-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+    margin-bottom: 6px;
+}
+.input-group-text {
+    background: #f8fafc;
+    border-right: none;
+    color: #64748b;
+    border-color: #cbd5e1;
+}
+.form-control {
+    border-left: none;
+    font-size: 14px;
+    padding: 10px 14px;
+    border-color: #cbd5e1;
+}
+.form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(255,200,0,.2);
+}
+.input-group:focus-within .input-group-text {
+    border-color: var(--primary);
+}
+
+.btn-signin {
+    background: var(--primary);
+    border: none;
+    padding: 11px;
+    font-size: 14.5px;
+    font-weight: 600;
+    border-radius: 40px;
+    letter-spacing: .2px;
+    transition: background .2s, transform .1s;
+    color: #1e293b;
+}
+.btn-signin:hover  { background: var(--primary-hover); }
+.btn-signin:active { transform: scale(.98); }
+
+.toggle-password {
+    cursor: pointer;
+    background: #f8fafc;
+    border-left: none;
+    color: #64748b;
+    border-color: #cbd5e1;
+}
+.toggle-password:hover { color: var(--primary); }
+
+.alert-error {
+    background: #fff5f5;
+    border: 1px solid #ffc9c9;
+    color: #c92a2a;
+    border-radius: 40px;
+    padding: 10px 14px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-caps-lock-indicator,
+input[type="password"]::-webkit-strong-password-auto-fill-button {
+    display: none !important;
+}
+@media (max-width: 700px) {
+    .signin-wrapper { grid-template-columns: 1fr; width: 94vw; }
+    .brand-panel { display: none; }
+    .form-panel { padding: 36px 28px; }
+}

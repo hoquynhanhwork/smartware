@@ -1,0 +1,60 @@
+services:
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartware_fastapi
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:smartware@postgres:5432/smartware
+    volumes:
+      - ./app:/app/app
+      - ./scripts:/app/scripts
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - smartware_net
+
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile.php
+    container_name: smartware_php
+    ports:
+      - "80:80"
+    volumes:
+      - C:/xampp/htdocs:/var/www/html
+    environment:
+      AI_SERVICE_URL: http://smartware_fastapi:8000/api/v1
+    depends_on:
+      - postgres
+      - fastapi
+    networks:
+      - smartware_net
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: smartware_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: smartware
+      POSTGRES_DB: smartware
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_data.sql:/docker-entrypoint-initdb.d/init_data.sql
+    networks:
+      - smartware_net
+
+networks:
+  smartware_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  n8n_data:
