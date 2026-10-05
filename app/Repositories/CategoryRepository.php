@@ -10,14 +10,14 @@ class CategoryRepository extends BaseRepository implements CategoryRepositoryInt
     public function listWithCount(): array
     {
         return $this->fetchAll("
-            SELECT c.id, c.name, c.description,
+            SELECT c.id, c.name, c.description, c.need_expiry_tracking,
                    COALESCE(COUNT(p.id), 0) AS product_count
             FROM   categories c
             LEFT JOIN products p
                 ON  p.category_id = c.id
                 AND p.deleted_at  IS NULL
             WHERE  c.deleted_at IS NULL
-            GROUP BY c.id, c.name, c.description
+            GROUP BY c.id, c.name, c.description, c.need_expiry_tracking
             ORDER BY c.name ASC
         ");
     }
@@ -43,13 +43,15 @@ class CategoryRepository extends BaseRepository implements CategoryRepositoryInt
     {
         return $this->insertReturningId("
             INSERT INTO categories
-                (name, description, created, updated)
+                (name, description, need_expiry_tracking, created, updated)
             VALUES
-                (:name, :description, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                (:name, :description, :need_expiry, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             RETURNING id
         ", [
             ':name'        => $data['name'],
             ':description' => $data['description'] ?? '',
+            // Mặc định có theo dõi hạn dùng để không bỏ sót hàng có hạn.
+            ':need_expiry' => ($data['need_expiry_tracking'] ?? true) ? 'true' : 'false',
         ]);
     }
 
@@ -59,12 +61,17 @@ class CategoryRepository extends BaseRepository implements CategoryRepositoryInt
             UPDATE categories
             SET    name        = :name,
                    description = :description,
+                   need_expiry_tracking = COALESCE(CAST(:need_expiry AS boolean), need_expiry_tracking),
                    updated     = CURRENT_TIMESTAMP
             WHERE  id         = :id
               AND  deleted_at IS NULL
         ", [
             ':name'        => $data['name'],
             ':description' => $data['description'] ?? '',
+            // Không truyền cờ thì giữ nguyên giá trị cũ.
+            ':need_expiry' => array_key_exists('need_expiry_tracking', $data)
+                                ? ($data['need_expiry_tracking'] ? 'true' : 'false')
+                                : null,
             ':id'          => $id,
         ]);
 

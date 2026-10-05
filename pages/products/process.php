@@ -62,6 +62,7 @@ if ($action === 'add_category') {
     $result = $productService->addCategory(
         name:        trim($_POST['name']        ?? ''),
         description: trim($_POST['description'] ?? ''),
+        needExpiry:  !empty($_POST['need_expiry_tracking']),
     );
     echo json_encode($result);
     exit;

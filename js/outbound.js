@@ -6,9 +6,18 @@ function getCsrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.content || '';
 }
 
+// NCC đang chọn: trang tạo phiếu dùng #outboundSupplier, modal sửa dùng #editOutboundSupplierId.
+function getOutboundSupplierId() {
+    const v = document.getElementById('outboundSupplier')?.value
+           || document.getElementById('editOutboundSupplierId')?.value
+           || '';
+    return parseInt(v, 10) || 0;
+}
+
 function getOutboundAutocompleteOptions() {
     return {
-        searchUrl: 'process.php?action=search_products',
+        // Phiếu xuất thuộc đúng 1 NCC → chỉ gợi ý sản phẩm của NCC đó.
+        searchUrl: `process.php?action=search_products&supplier_id=${getOutboundSupplierId()}`,
         onSelect: (product, row) => {
             loadBatchesForOutboundRow(row, product.id);
             if (typeof saveOutboundDraft === 'function') saveOutboundDraft();
@@ -16,6 +25,33 @@ function getOutboundAutocompleteOptions() {
         position: 'above',
         minChars: 2
     };
+}
+
+// Chưa chọn NCC thì khóa ô tìm sản phẩm để không chọn nhầm hàng của NCC khác.
+function applyOutboundSupplierLock(row) {
+    const input = row?.querySelector('.product-autocomplete-outbound');
+    const select = document.getElementById('outboundSupplier');
+    if (!input || !select) return;
+    const hasSupplier = !!select.value;
+    input.readOnly    = !hasSupplier;
+    input.placeholder = hasSupplier ? 'Nhập tên hoặc SKU' : 'Chọn nhà cung cấp trước';
+}
+
+function onOutboundSupplierChange(select) {
+    const prev = select.dataset.prev || '';
+    const hasProducts = [...document.querySelectorAll('#outboundItemsBody .product-id')].some(el => el.value);
+    if (hasProducts && prev && prev !== select.value) {
+        if (!confirm('Đổi nhà cung cấp sẽ xóa các dòng sản phẩm đã chọn (mỗi phiếu chỉ dành cho một nhà cung cấp). Tiếp tục?')) {
+            select.value = prev;
+            return;
+        }
+    }
+    select.dataset.prev = select.value;
+    const tbody = document.getElementById('outboundItemsBody');
+    if (tbody) {
+        tbody.innerHTML = '';
+        addOutboundRow();
+    }
 }
 
 function loadBatchesForOutboundRow(row, productId) {
@@ -32,8 +68,8 @@ function loadBatchesForOutboundRow(row, productId) {
             if (data.success && data.batches.length) {
                 let opts = '<option value="">-- Chọn lô --</option>';
                 data.batches.forEach(b => {
-                    opts += `<option value="${escapeHtml(b.batch_no)}" data-stock="${b.quantity}" data-exp="${b.exp_date}">
-                        ${escapeHtml(b.batch_no)} (HSD: ${b.exp_date}, còn: ${b.quantity})
+                    opts += `<option value="${escapeHtml(b.batch_no)}" data-stock="${b.quantity}" data-exp="${b.exp_date || ''}">
+                        ${escapeHtml(b.batch_no)} (${b.exp_date ? 'HSD: ' + b.exp_date + ', ' : ''}còn: ${b.quantity})
                     </option>`;
                 });
                 if (batchSelect) batchSelect.innerHTML = opts;
@@ -52,6 +88,7 @@ function getEmptyOutboundRow() {
     const newRow = template.content.cloneNode(true).querySelector('tr');
     newRow.querySelectorAll('input, select').forEach(el => { el.value = ''; });
     newRow.querySelector('.qty-outbound').value = '1';
+    applyOutboundSupplierLock(newRow);
     return newRow;
 }
 
@@ -143,6 +180,7 @@ function updateOutboundStt() {
 
 function saveOutboundDraft() {
     const draft = {
+        supplier_id: document.getElementById('outboundSupplier')?.value || '',
         ref_no: document.querySelector('#outboundForm input[name="ref_no"]')?.value || '',
         note:   document.querySelector('#outboundForm textarea[name="note"]')?.value || '',
         items:  []
@@ -160,6 +198,12 @@ function saveOutboundDraft() {
 }
 
 function validateOutboundFormBeforeSubmit() {
+    const supplierEl = document.getElementById('outboundSupplier');
+    if (supplierEl && !supplierEl.value) {
+        alert('Vui lòng chọn nhà cung cấp cho phiếu xuất.');
+        supplierEl.focus();
+        return false;
+    }
     let hasValidRow = false;
     document.querySelectorAll('#outboundItemsBody .item-row').forEach(row => {
         const pid     = row.querySelector('.product-id').value;
@@ -200,6 +244,7 @@ function renderOutboundDetailModal(data) {
     let html = `
         <div style="margin-bottom:20px">
             <p><strong>Mã phiếu:</strong> ${escapeHtml(data.ref_no)}</p>
+            <p><strong>Nhà cung cấp:</strong> ${escapeHtml(data.supplier_name || '—')}</p>
             <p><strong>Người xuất:</strong> ${escapeHtml(data.user_name || '')}</p>
             <p><strong>Ghi chú:</strong> ${escapeHtml(data.note || '')}</p>
             <p><strong>Ngày tạo:</strong> ${createdDisplay}</p>
@@ -335,6 +380,11 @@ function renderEditOutboundModal(data) {
                     <label>Số tham chiếu</label>
                     <input type="text" name="ref_no" class="inv-field-input" value="${escapeHtml(data.ref_no || '')}">
                 </div>
+                <div class="form-group" style="margin-top:12px">
+                    <label>Nhà cung cấp</label>
+                    <div class="inv-field-input" style="background:#f4f4f5">${escapeHtml(data.supplier_name || 'Chưa xác định (suy ra từ sản phẩm khi lưu)')}</div>
+                    <input type="hidden" id="editOutboundSupplierId" value="${escapeHtml(String(data.supplier_id || ''))}">
+                </div>
             </div>
             <div class="inv-col">
                 <div class="form-group">
@@ -441,6 +491,17 @@ function addEditOutboundRow(item = null) {
     `;
     tbody.appendChild(tr);
     attachEditOutboundRowEvents(tr);
+
+    // Thêm dòng mới trong modal sửa: chỉ gợi ý sản phẩm của NCC phiếu, rồi tải lô của sản phẩm đó.
+    const acInput = tr.querySelector('.product-autocomplete-outbound');
+    if (acInput) {
+        initAutocomplete(acInput, {
+            searchUrl: `process.php?action=search_products&supplier_id=${getOutboundSupplierId()}`,
+            onSelect: (product, row) => _loadEditOutboundBatches(row, product.id, ''),
+            position: 'above',
+            minChars: 2
+        });
+    }
 
     if (item?.product_id) _loadEditOutboundBatches(tr, item.product_id, item.batch_no);
 }
@@ -685,6 +746,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const outboundBody = document.getElementById('outboundItemsBody');
     if (outboundBody) {
+        const supplierSelect = document.getElementById('outboundSupplier');
+        if (supplierSelect) {
+            supplierSelect.dataset.prev = supplierSelect.value;
+            supplierSelect.addEventListener('change', () => onOutboundSupplierChange(supplierSelect));
+        }
+
         if (outboundBody.children.length === 0) addOutboundRow();
 
         const outboundForm = document.getElementById('outboundForm');
@@ -702,6 +769,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 try {
                     const data = JSON.parse(draft);
                     if (data.items?.length) {
+                        // Khôi phục NCC trước khi dựng lại các dòng (ô tìm sản phẩm phụ thuộc NCC).
+                        if (supplierSelect && data.supplier_id &&
+                            [...supplierSelect.options].some(o => o.value === String(data.supplier_id))) {
+                            supplierSelect.value = String(data.supplier_id);
+                            supplierSelect.dataset.prev = supplierSelect.value;
+                        }
                         outboundBody.innerHTML = '';
                         data.items.forEach(item => {
                             addOutboundRow();

@@ -33,7 +33,12 @@ interface OutboundRepositoryInterface
     public function getBatchesForProduct(int $product_id): array;
 
     // ── Autocomplete sản phẩm ─────────────────────────────────────────────────
-    public function searchProducts(string $term): array;
+    public function searchProducts(string $term, int $supplier_id = 0): array;
+
+    // ── Phiếu xuất thuộc đúng 1 NCC ───────────────────────────────────────────
+    public function supplierExists(int $supplier_id): bool;
+    /** @return array<int,array{supplier_id:int|null,name:string}> */
+    public function getProductSuppliers(array $product_ids): array;
 
     // ── Inventory: trừ / hoàn tồn kho ────────────────────────────────────────
     public function reduceInventoryBatch(

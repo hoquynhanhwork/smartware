@@ -121,6 +121,7 @@ function submitCategory(e) {
     fd.append('csrf_token', _getCsrfToken());
     fd.append('name', document.getElementById('catName')?.value ?? '');
     fd.append('description', document.getElementById('catDesc')?.value ?? '');
+    fd.append('need_expiry_tracking', document.getElementById('catNeedExpiry')?.checked ? '1' : '0');
 
     fetch('process.php', { method: 'POST', body: fd })
         .then(r => r.json())

@@ -14,9 +14,10 @@ class OutboundRepository extends BaseRepository implements OutboundRepositoryInt
         [$where, $params] = $this->buildWhere($filters);
 
         $stmt = $this->pdo->prepare("
-            SELECT so.*, u.full_name AS user_name
+            SELECT so.*, u.full_name AS user_name, s.name AS supplier_name
             FROM stock_outbounds so
-            LEFT JOIN users u ON u.id = so.user_id
+            LEFT JOIN users u     ON u.id = so.user_id
+            LEFT JOIN suppliers s ON s.id = so.supplier_id
             WHERE $where
             ORDER BY so.created DESC
             LIMIT :limit OFFSET :offset
@@ -42,9 +43,10 @@ class OutboundRepository extends BaseRepository implements OutboundRepositoryInt
     public function findById(int $id): array|false
     {
         return $this->fetchOne("
-            SELECT so.*, u.full_name AS user_name
+            SELECT so.*, u.full_name AS user_name, s.name AS supplier_name
             FROM stock_outbounds so
-            LEFT JOIN users u ON u.id = so.user_id
+            LEFT JOIN users u     ON u.id = so.user_id
+            LEFT JOIN suppliers s ON s.id = so.supplier_id
             WHERE so.id = :id AND so.deleted_at IS NULL
         ", [':id' => $id]);
     }
@@ -66,11 +68,12 @@ class OutboundRepository extends BaseRepository implements OutboundRepositoryInt
     {
         $stmt = $this->execute("
             INSERT INTO stock_outbounds
-                (user_id, ref_no, note, status)
+                (supplier_id, user_id, ref_no, note, status)
             VALUES
-                (:user_id, :ref_no, :note, :status)
+                (:supplier_id, :user_id, :ref_no, :note, :status)
             RETURNING id
         ", [
+            ':supplier_id' => $data['supplier_id'],
             ':user_id' => $data['user_id'],
             ':ref_no'  => $data['ref_no'],
             ':note'    => $data['note'] ?? '',
@@ -99,10 +102,11 @@ class OutboundRepository extends BaseRepository implements OutboundRepositoryInt
     {
         $stmt = $this->execute("
             UPDATE stock_outbounds
-            SET ref_no = :ref_no, note = :note, status = :status,
+            SET supplier_id = :supplier_id, ref_no = :ref_no, note = :note, status = :status,
                 updated = CURRENT_TIMESTAMP
             WHERE id = :id AND deleted_at IS NULL
         ", [
+            ':supplier_id' => $data['supplier_id'],
             ':ref_no' => $data['ref_no'],
             ':note'   => $data['note'] ?? '',
             ':status' => $data['status'],
@@ -159,8 +163,15 @@ class OutboundRepository extends BaseRepository implements OutboundRepositoryInt
     }
 
     // ── Tìm sản phẩm autocomplete ──────────────────────────────────────────
-    public function searchProducts(string $term): array
+    // Phiếu xuất thuộc đúng 1 NCC nên chỉ gợi ý sản phẩm của NCC đó.
+    public function searchProducts(string $term, int $supplier_id = 0): array
     {
+        $params = [':term' => '%' . $term . '%'];
+        $supplierCond = '';
+        if ($supplier_id > 0) {
+            $supplierCond = 'AND p.supplier_id = :sid';
+            $params[':sid'] = $supplier_id;
+        }
         return $this->fetchAll("
             SELECT p.id, p.name, p.sku, p.unit, p.price,
                    COALESCE(SUM(ib.quantity), 0) AS current_stock
@@ -168,9 +179,48 @@ class OutboundRepository extends BaseRepository implements OutboundRepositoryInt
             LEFT JOIN inventory_batches ib ON ib.product_id = p.id
             WHERE p.deleted_at IS NULL AND p.status = 'active'
               AND (p.name ILIKE :term OR p.sku ILIKE :term)
+              $supplierCond
             GROUP BY p.id, p.name, p.sku, p.unit, p.price
             LIMIT 10
-        ", [':term' => '%' . $term . '%']);
+        ", $params);
+    }
+
+    public function supplierExists(int $supplier_id): bool
+    {
+        return (bool) $this->fetchOne(
+            "SELECT id FROM suppliers WHERE id = :id AND deleted_at IS NULL",
+            [':id' => $supplier_id]
+        );
+    }
+
+    /**
+     * NCC của từng sản phẩm: [product_id => supplier_id|null].
+     * Sản phẩm không tồn tại thì không có key.
+     *
+     * @param int[] $product_ids
+     * @return array<int,int|null>
+     */
+    public function getProductSuppliers(array $product_ids): array
+    {
+        $product_ids = array_values(array_unique(array_filter(array_map('intval', $product_ids))));
+        if (!$product_ids) return [];
+
+        $ph = []; $params = [];
+        foreach ($product_ids as $i => $id) {
+            $ph[] = ":p$i"; $params[":p$i"] = $id;
+        }
+        $rows = $this->fetchAll("
+            SELECT id, name, supplier_id FROM products WHERE id IN (" . implode(',', $ph) . ")
+        ", $params);
+
+        $map = [];
+        foreach ($rows as $r) {
+            $map[(int) $r['id']] = [
+                'supplier_id' => $r['supplier_id'] !== null ? (int) $r['supplier_id'] : null,
+                'name'        => $r['name'],
+            ];
+        }
+        return $map;
     }
 
     // ── Kiểm tra tồn kho đủ trước khi xuất ───────────────────────────────

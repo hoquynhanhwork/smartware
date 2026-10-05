@@ -11,6 +11,41 @@ function appendCsrf(formData) {
     return formData;
 }
 
+// Hạn dùng chỉ bắt buộc khi danh mục của sản phẩm có need_expiry_tracking = true.
+// Không dùng `disabled` vì input bị disable sẽ không được gửi, làm lệch chỉ số exp_date[] so với product_id[].
+function applyExpiryRequirement(row, needExpiry) {
+    const exp = row && row.querySelector('[name="exp_date[]"]');
+    if (!exp) return;
+
+    const need = !(needExpiry === false || needExpiry === 0 || needExpiry === '0' ||
+                   needExpiry === 'f' || needExpiry === 'false');
+    row.dataset.needExpiry = need ? '1' : '0';
+
+    const cell = exp.parentNode;
+    cell.querySelector('.exp-na-note')?.remove();
+
+    if (need) {
+        exp.readOnly = false;
+        exp.required = true;
+        exp.tabIndex = 0;
+        exp.classList.remove('exp-not-tracked');
+        exp.removeAttribute('title');
+    } else {
+        exp.value    = '';
+        exp.required = false;
+        exp.readOnly = true;
+        exp.tabIndex = -1;
+        exp.style.border = '';
+        exp.classList.add('exp-not-tracked');
+        exp.title = 'Danh mục này không theo dõi hạn dùng';
+        cell.querySelector('.expiry-warning')?.remove();
+        const note = document.createElement('div');
+        note.className   = 'exp-na-note';
+        note.textContent = 'Không theo dõi hạn dùng';
+        cell.appendChild(note);
+    }
+}
+
 function getInboundAutocompleteOptions() {
     return {
         searchUrl: 'process.php?action=search_products',
@@ -19,6 +54,7 @@ function getInboundAutocompleteOptions() {
             if (priceEl && !unformatNumber(priceEl.value)) {
                 priceEl.value = formatNumberInput(product.price.toString());
             }
+            applyExpiryRequirement(row, product.need_expiry);
             calculateInboundRow(row);
             if (typeof saveInboundDraft === 'function') saveInboundDraft();
         },
@@ -96,6 +132,7 @@ function addInboundRowWithData(item) {
     newRow.querySelector('input[name="batch_no[]"]').value = item.batch_no || '';
     newRow.querySelector('input[name="mfg_date[]"]').value = item.mfg_date || '';
     newRow.querySelector('input[name="exp_date[]"]').value = item.exp_date || '';
+    applyExpiryRequirement(newRow, item.need_expiry);
     newRow.querySelector('.qty').value                     = formatNumberInput(item.quantity.toString());
     newRow.querySelector('.price').value                   = formatNumberInput(item.unit_price.toString());
     tbody.appendChild(newRow);
@@ -244,6 +281,7 @@ function submitNewProduct(event) {
                     batch_no:     '',
                     mfg_date:     '',
                     exp_date:     '',
+                    need_expiry:  data.need_expiry,
                     quantity:     1
                 });
                 if (typeof closeProductModal === 'function') closeProductModal();
@@ -348,7 +386,7 @@ function renderInboundDetailModal(data) {
             <td>${escapeHtml(item.product_name)}</td>
             <td>${escapeHtml(item.category_name || '')}</td>
             <td class="text-right">${escapeHtml(item.batch_no)}</td>
-            <td class="text-right">${item.exp_date}</td>
+            <td class="text-right">${item.exp_date || '—'}</td>
             <td class="text-right">${formatNumberInput(item.quantity)}</td>
             <td class="text-right">${formatNumberInput(item.unit_price)} ₫</td>
             <td class="text-right">${formatNumberInput(item.total)} ₫</td>
@@ -378,7 +416,7 @@ function printInboundDetail() {
             <td>${escapeHtml(item.product_name)}</td>
             <td>${escapeHtml(item.category_name || '')}</td>
             <td style="text-align:right">${escapeHtml(item.batch_no)}</td>
-            <td style="text-align:right">${item.exp_date}</td>
+            <td style="text-align:right">${item.exp_date || '—'}</td>
             <td style="text-align:right">${formatNumberInput(item.quantity)}</td>
             <td style="text-align:right">${formatNumberInput(item.unit_price)} ₫</td>
             <td style="text-align:right">${formatNumberInput(item.total)} ₫</td>
@@ -527,6 +565,7 @@ function addEditInboundRowWithData(item) {
     newRow.querySelector('input[name="batch_no[]"]').value = item.batch_no || '';
     newRow.querySelector('input[name="mfg_date[]"]').value = item.mfg_date || '';
     newRow.querySelector('input[name="exp_date[]"]').value = item.exp_date || '';
+    applyExpiryRequirement(newRow, item.need_expiry);
     newRow.querySelector('.qty').value                     = formatNumberInput(item.quantity.toString());
     newRow.querySelector('.price').value                   = formatNumberInput(item.unit_price.toString());
     tbody.appendChild(newRow);
@@ -825,6 +864,7 @@ function getInboundAutocompleteOptions() {
             if (priceEl && !unformatNumber(priceEl.value)) {
                 priceEl.value = formatNumberInput(product.price.toString());
             }
+            applyExpiryRequirement(row, product.need_expiry);
             calculateInboundRow(row);
         },
         position: 'above',
@@ -971,6 +1011,7 @@ function addEditInboundRowWithData(item) {
     newRow.querySelector('input[name="batch_no[]"]').value = item.batch_no || '';
     newRow.querySelector('input[name="mfg_date[]"]').value = item.mfg_date || '';
     newRow.querySelector('input[name="exp_date[]"]').value = item.exp_date || '';
+    applyExpiryRequirement(newRow, item.need_expiry);
     newRow.querySelector('.qty').value                     = item.quantity;
     newRow.querySelector('.price').value                   = formatNumberInput(item.unit_price.toString());
     tbody.appendChild(newRow);

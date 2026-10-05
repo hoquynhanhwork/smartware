@@ -157,7 +157,7 @@ class ProductService
     }
 
     // ── Thêm danh mục nhanh (từ context sản phẩm) ────────────────────────────
-    public function addCategory(string $name, string $description = ''): array
+    public function addCategory(string $name, string $description = '', bool $needExpiry = true): array
     {
         $name = trim($name);
         if ($name === '') {
@@ -165,8 +165,9 @@ class ProductService
         }
 
         $newId = $this->categoryRepo->create([
-            'name'        => $name,
-            'description' => trim($description),
+            'name'                 => $name,
+            'description'          => trim($description),
+            'need_expiry_tracking' => $needExpiry,
         ]);
 
         return [

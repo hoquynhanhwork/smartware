@@ -60,4 +60,3 @@ networks:
 
 volumes:
   postgres_data:
-  n8n_data:

@@ -67,4 +67,9 @@ interface InboundRepositoryInterface
 
     // ── Autocomplete sản phẩm ─────────────────────────────────────────────────
     public function searchProducts(string $term): array;
+
+    // ── Hạn dùng theo danh mục ────────────────────────────────────────────────
+    /** @return array<int,bool> product_id => có bắt buộc nhập hạn dùng không */
+    public function getExpiryRequirements(array $product_ids): array;
+    public function categoryNeedsExpiry(?int $category_id): bool;
 }

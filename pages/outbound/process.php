@@ -10,60 +10,6 @@ use App\Repositories\OutboundRepository;
 use App\Repositories\ProductRepository;
 use App\Repositories\CategoryRepository;
 
-function triggerInventoryAlert(PDO $pdo, array $post): void {
-    // Lấy danh sách sản phẩm vừa xuất
-    $items = $post['items'] ?? [];
-    if (empty($items)) return;
-
-    foreach ($items as $item) {
-        $product_id = (int) ($item['product_id'] ?? 0);
-        if (!$product_id) continue;
-
-        // Lấy tồn kho hiện tại + min_stock + thông tin NCC
-        $stmt = $pdo->prepare("
-            SELECT 
-                p.name          as product_name,
-                p.min_stock,
-                COALESCE(SUM(b.quantity), 0) as current_stock,
-                s.name          as supplier_name,
-                s.email         as supplier_email
-            FROM products p
-            LEFT JOIN inventory_batches b ON b.product_id = p.id
-            LEFT JOIN suppliers s ON s.id = p.supplier_id
-            WHERE p.id = :product_id
-            GROUP BY p.id, p.name, p.min_stock, s.name, s.email
-        ");
-        $stmt->execute([
-            ':product_id' => $product_id,
-        ]);
-        $row = $stmt->fetch();
-
-        if (!$row) continue;
-
-        // Chỉ trigger nếu tồn kho dưới ngưỡng
-        if ($row['current_stock'] >= $row['min_stock']) continue;
-
-        // Gọi webhook n8n
-        $payload = json_encode([
-            'product_id'     => $product_id,
-            'product_name'   => $row['product_name'],
-            'quantity'       => (int) $row['current_stock'],
-            'min_stock'      => (int) $row['min_stock'],
-            'supplier_name'  => $row['supplier_name'] ?? 'Chưa có NCC',
-            'supplier_email' => $row['supplier_email'] ?? '',
-            'triggered_at'   => date('Y-m-d H:i:s'),
-        ], JSON_UNESCAPED_UNICODE);
-
-        $ch = curl_init('http://n8n:5678/webhook/inventory-alert');
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        curl_exec($ch);
-        curl_close($ch);
-    }
-}
 requireLogin();
 
 $user_id = (int) $_SESSION['user_id'];
@@ -83,7 +29,7 @@ $service = new OutboundService(
 
 if ($action === 'search_products' && isset($_GET['term'])) {
     header('Content-Type: application/json');
-    echo json_encode($service->searchProducts(trim($_GET['term'])));
+    echo json_encode($service->searchProducts(trim($_GET['term']), (int) ($_GET['supplier_id'] ?? 0)));
     exit;
 }
 
@@ -145,7 +91,8 @@ if ($action === 'add_category') {
     header('Content-Type: application/json');
     echo json_encode($service->addCategory(
         $_POST['name']        ?? '',
-        $_POST['description'] ?? ''
+        $_POST['description'] ?? '',
+        !isset($_POST['need_expiry_tracking']) || !empty($_POST['need_expiry_tracking'])
     ));
     // Không rotate
     exit;
@@ -159,7 +106,6 @@ if ($action === 'add_outbound' || $action === 'add') {
     $result = $service->add($user_id, $_POST);
     $csrf->rotate();
     if ($result['ok']) {
-        triggerInventoryAlert($pdo, $_POST);
         setFlash('success', $result['message']);
     } else {
         setFlash('error', $result['message']);

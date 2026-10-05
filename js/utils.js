@@ -211,7 +211,7 @@ function validateItemRow(row, config = {}) {
     const errors = [];
     if (!pidEl?.value || pidEl.value === '0') errors.push('chưa chọn sản phẩm');
     if (requireBatch && !batchEl?.value?.trim()) errors.push('thiếu số lô');
-    if (requireExp   && !expEl?.value)           errors.push('thiếu hạn dùng');
+    if (requireExp   && row.dataset.needExpiry !== '0' && !expEl?.value) errors.push('thiếu hạn dùng');
     if (unformatNumber(qtyEl?.value) <= 0)       errors.push('số lượng không hợp lệ');
     if (requirePrice && unformatNumber(priceEl?.value) <= 0) errors.push('đơn giá phải lớn hơn 0');
 

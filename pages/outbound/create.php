@@ -84,6 +84,16 @@ include __DIR__ . '/../../layout/header.php';
                             <input type="text" name="ref_no" class="inv-field-input" placeholder="Tự động sinh mã...">
                         </div>
                     </div>
+                    <div class="form-group" style="margin-top:12px;">
+                        <label for="outboundSupplier">Nhà cung cấp <span style="color:#ef4444;">*</span></label>
+                        <select name="supplier_id" id="outboundSupplier" required class="inv-field-input">
+                            <option value="">-- Chọn nhà cung cấp --</option>
+                            <?php foreach ($suppliers as $sup): ?>
+                                <option value="<?= (int) $sup['id'] ?>"><?= htmlspecialchars($sup['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small style="color:#71717a;display:block;margin-top:4px;">Mỗi phiếu xuất chỉ dành cho một nhà cung cấp; chỉ tìm được sản phẩm của nhà cung cấp này.</small>
+                    </div>
                 </div>
             </div>
 

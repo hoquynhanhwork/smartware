@@ -53,9 +53,9 @@ class OutboundService
     }
 
     // ── Tìm sản phẩm autocomplete ────────────────────────────────────────
-    public function searchProducts(string $term): array
+    public function searchProducts(string $term, int $supplier_id = 0): array
     {
-        return $this->repo->searchProducts(trim($term));
+        return $this->repo->searchProducts(trim($term), $supplier_id);
     }
 
     // ── Lấy lô hàng theo sản phẩm (FEFO) ─────────────────────────────────
@@ -72,12 +72,22 @@ class OutboundService
     // ── Thêm phiếu xuất ──────────────────────────────────────────────────
     public function add(int $user_id, array $input): array
     {
+        $supplier_id = (int) ($input['supplier_id'] ?? 0);
         $ref_no = trim($input['ref_no'] ?? '');
         $note   = trim($input['note']   ?? '');
         $status = $this->sanitizeStatus($input['status'] ?? 'completed');
 
+        if ($supplier_id <= 0 || !$this->repo->supplierExists($supplier_id)) {
+            return ['ok' => false, 'message' => 'Vui lòng chọn nhà cung cấp cho phiếu xuất.', 'redirect' => 'create.php'];
+        }
+
         [$rows, $err] = $this->parseItems($input);
         if ($err) {
+            return ['ok' => false, 'message' => $err, 'redirect' => 'create.php'];
+        }
+
+        // Một phiếu xuất chỉ thuộc đúng 1 NCC: mọi sản phẩm phải là hàng của NCC đó.
+        if ($err = $this->checkRowsBelongToSupplier($rows, $supplier_id)) {
             return ['ok' => false, 'message' => $err, 'redirect' => 'create.php'];
         }
 
@@ -89,6 +99,7 @@ class OutboundService
             $this->pdo->beginTransaction();
 
             $outbound_id = $this->repo->create([
+                'supplier_id' => $supplier_id,
                 'user_id' => $user_id,
                 'ref_no'  => $ref_no,
                 'note'    => $note,
@@ -153,11 +164,24 @@ class OutboundService
             return ['ok' => false, 'message' => 'Phiếu phải có ít nhất một dòng sản phẩm hợp lệ.', 'redirect' => 'index.php'];
         }
 
+        // NCC của phiếu không đổi khi sửa. Phiếu cũ chưa có NCC thì suy ra từ sản phẩm (phải cùng 1 NCC).
+        $supplier_id = (int) ($existing['supplier_id'] ?? 0);
+        if ($supplier_id <= 0) {
+            $supplier_id = $this->inferSingleSupplier($rows);
+            if ($supplier_id <= 0) {
+                return ['ok' => false, 'message' => 'Không xác định được nhà cung cấp của phiếu: các sản phẩm phải thuộc cùng một NCC.', 'redirect' => 'index.php'];
+            }
+        }
+        if ($err = $this->checkRowsBelongToSupplier($rows, $supplier_id)) {
+            return ['ok' => false, 'message' => $err, 'redirect' => 'index.php'];
+        }
+
         try {
             $this->pdo->beginTransaction();
 
             $this->repo->deleteItems($outbound_id);
             $this->repo->update($outbound_id, [
+                'supplier_id' => $supplier_id,
                 'ref_no' => $ref_no,
                 'note'   => $note,
                 'status' => $new_status,
@@ -274,7 +298,7 @@ class OutboundService
     }
 
     // ── Thêm danh mục nhanh ───────────────────────────────────────────────
-    public function addCategory(string $name, string $description = ''): array
+    public function addCategory(string $name, string $description = '', bool $needExpiry = true): array
     {
         $name = trim($name);
         if ($name === '') {
@@ -284,8 +308,43 @@ class OutboundService
             'name'        => $name,
             'description' => trim($description),
             'parent_id'   => null,
+            'need_expiry_tracking' => $needExpiry,
         ]);
         return ['success' => true, 'id' => $newId, 'name' => $name];
+    }
+
+    // ── Phiếu xuất thuộc đúng 1 NCC ───────────────────────────────────────
+
+    /** Trả về thông báo lỗi nếu có dòng không thuộc NCC của phiếu, null nếu hợp lệ. */
+    private function checkRowsBelongToSupplier(array $rows, int $supplier_id): ?string
+    {
+        $info = $this->repo->getProductSuppliers(array_column($rows, 'product_id'));
+        foreach ($rows as $i => $row) {
+            $p = $info[$row['product_id']] ?? null;
+            $line = $i + 1;
+            if ($p === null) {
+                return "Dòng $line: Sản phẩm không tồn tại.";
+            }
+            if ($p['supplier_id'] !== $supplier_id) {
+                return $p['supplier_id'] === null
+                    ? "Dòng $line: Sản phẩm \"{$p['name']}\" chưa gán nhà cung cấp nên không thể xuất theo phiếu NCC."
+                    : "Dòng $line: Sản phẩm \"{$p['name']}\" không thuộc nhà cung cấp của phiếu. Mỗi phiếu xuất chỉ dành cho một NCC.";
+            }
+        }
+        return null;
+    }
+
+    /** NCC chung của các dòng; 0 nếu có nhiều NCC hoặc có sản phẩm chưa gán NCC. */
+    private function inferSingleSupplier(array $rows): int
+    {
+        $info = $this->repo->getProductSuppliers(array_column($rows, 'product_id'));
+        $ids  = [];
+        foreach ($rows as $row) {
+            $sid = $info[$row['product_id']]['supplier_id'] ?? null;
+            if ($sid === null) return 0;
+            $ids[$sid] = true;
+        }
+        return count($ids) === 1 ? (int) array_key_first($ids) : 0;
     }
 
     // ── Helpers nội bộ ────────────────────────────────────────────────────

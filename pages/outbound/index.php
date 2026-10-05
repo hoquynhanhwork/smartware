@@ -139,8 +139,9 @@ include __DIR__ . '/../../layout/header.php';
             <thead>
                 <tr>
                     <th width="40"><input type="checkbox" id="selectAll"></th>
-                    <th width="300">Mã PX</th>
-                    <th width="300">Người tạo</th>
+                    <th width="220">Mã PX</th>
+                    <th width="260">Nhà cung cấp</th>
+                    <th width="240">Người tạo</th>
                     <th>Ngày tạo</th>
                     <th width="300">Trạng thái</th>
                     <th width="200" class="text-right">Thao tác</th>
@@ -148,7 +149,7 @@ include __DIR__ . '/../../layout/header.php';
             </thead>
             <tbody>
                 <?php if (empty($outbounds)): ?>
-                    <tr><td colspan="6" class="text-center" style="padding:40px">Chưa có phiếu xuất nào</td></tr>
+                    <tr><td colspan="7" class="text-center" style="padding:40px">Chưa có phiếu xuất nào</td></tr>
                 <?php else: ?>
                     <?php foreach ($outbounds as $ob):
                         $statusMap = [
@@ -162,6 +163,7 @@ include __DIR__ . '/../../layout/header.php';
                     <tr>
                         <td><input type="checkbox" class="row-checkbox" data-id="<?= (int)$ob['id'] ?>"></td>
                         <td class="font-medium"><?= htmlspecialchars($ob['ref_no'] ?? '') ?></td>
+                        <td><?= htmlspecialchars($ob['supplier_name'] ?? '—') ?></td>
                         <td><?= htmlspecialchars($ob['user_name'] ?? '') ?></td>
                         <td class="text-muted"><?= htmlspecialchars(date('d/m/Y H:i', strtotime($ob['created']))) ?></td>
                         <td><span class="badge-modern <?= $statusClass ?>"><?= $statusText ?></span></td>

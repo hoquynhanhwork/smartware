@@ -700,3 +700,17 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Hạn dùng: danh mục không theo dõi hạn thì ô bị làm mờ, không nhập được */
+input.exp-not-tracked {
+    background: #f4f4f5 !important;
+    color: transparent !important;
+    border-style: dashed !important;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+.exp-na-note {
+    font-size: 11px;
+    color: #71717a;
+    margin-top: 2px;
+}

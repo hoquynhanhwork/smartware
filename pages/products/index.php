@@ -497,6 +497,16 @@ include __DIR__ . '/../../layout/header.php';
                     <label class="form-label-modern">Mô tả / Ghi chú</label>
                     <textarea name="description" id="catDesc" rows="3" placeholder="Mô tả chi tiết danh mục..." class="form-input-modern"></textarea>
                 </div>
+
+                <div class="form-row-modern" style="margin-top: 14px;">
+                    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+                        <input type="checkbox" name="need_expiry_tracking" id="catNeedExpiry" value="1" checked style="margin-top:3px;">
+                        <span>
+                            <span class="form-label-modern" style="display:block;margin:0;">Theo dõi hạn sử dụng</span>
+                            <span class="modal-subtitle">Bật cho hàng có hạn (thực phẩm, thuốc, mỹ phẩm...). Tắt cho hàng không có hạn như điện tử, đồ chơi, thời trang: khi nhập kho sẽ không bắt buộc nhập hạn dùng.</span>
+                        </span>
+                    </label>
+                </div>
             </div>
 
             <div class="modal-modern-footer" style="justify-content: flex-end;">

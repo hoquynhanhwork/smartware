@@ -262,7 +262,10 @@ class InboundService
             ];
 
             $newId = $this->productRepo->create($data);
-            return ['success' => true, 'id' => $newId, 'name' => $name, 'unit' => $unit, 'price' => $price];
+            return [
+                'success'     => true, 'id' => $newId, 'name' => $name, 'unit' => $unit, 'price' => $price,
+                'need_expiry' => $this->repo->categoryNeedsExpiry($category_id),
+            ];
         }
 
         if ($sku === '') {
@@ -288,7 +291,10 @@ class InboundService
             ]);
             $newId = $stmt->fetchColumn();
             if ($newId) {
-                return ['success' => true, 'id' => (int) $newId, 'name' => $name, 'unit' => $unit, 'price' => $price];
+                return [
+                    'success'     => true, 'id' => (int) $newId, 'name' => $name, 'unit' => $unit, 'price' => $price,
+                    'need_expiry' => $this->repo->categoryNeedsExpiry($category_id),
+                ];
             }
             return ['success' => false, 'message' => 'Lỗi hệ thống'];
         } catch (\Exception $e) {
@@ -297,15 +303,16 @@ class InboundService
         }
     }
 
-    public function addCategory(string $name, string $description = ''): array
+    public function addCategory(string $name, string $description = '', bool $needExpiry = true): array
     {
         $name = trim($name);
         if ($name === '') {
             return ['success' => false, 'message' => 'Tên danh mục không được để trống'];
         }
         $newId = $this->categoryRepo->create([
-            'name'        => $name,
-            'description' => trim($description),
+            'name'                 => $name,
+            'description'          => trim($description),
+            'need_expiry_tracking' => $needExpiry,
         ]);
         return ['success' => true, 'id' => $newId, 'name' => $name];
     }
@@ -363,30 +370,49 @@ class InboundService
             return [[], 'Chưa có sản phẩm nào được thêm vào phiếu.'];
         }
 
+        // Hạn dùng chỉ bắt buộc với sản phẩm thuộc danh mục có need_expiry_tracking = true.
+        $needExpiry = $this->repo->getExpiryRequirements(array_map('intval', $product_ids));
+
         $rows = [];
         foreach ($product_ids as $i => $pid) {
             $product_id = (int) $pid;
             $batch_no   = trim($batch_nos[$i]  ?? '');
-            $exp_date   = trim($exp_dates[$i]  ?? '');
+            $exp_raw    = trim($exp_dates[$i]  ?? '');
             $quantity   = (int) ($quantities[$i] ?? 0);
             $unit_price = $this->parseNumber($unit_prices[$i] ?? 0);
             $mfg_date   = !empty($mfg_dates[$i]) ? $mfg_dates[$i] : null;
 
-            if ($product_id <= 0 || $batch_no === '' || $exp_date === '' || $quantity <= 0 || $unit_price <= 0) {
+            // Mặc định coi là cần theo dõi hạn nếu không tra được (sản phẩm không tồn tại sẽ bị chặn ngay dưới).
+            $requiresExp = $needExpiry[$product_id] ?? true;
+            // Danh mục không theo dõi hạn: bỏ qua mọi giá trị hạn dùng client gửi lên.
+            $exp_date    = $requiresExp ? $exp_raw : '';
+
+            $row    = $i + 1;
+            $errMsg = null;
+            if ($product_id <= 0 || !isset($needExpiry[$product_id])) {
+                $errMsg = "Dòng $row: Sản phẩm không hợp lệ.";
+            } elseif ($batch_no === '') {
+                $errMsg = "Dòng $row: Số lô không được để trống.";
+            } elseif ($requiresExp && $exp_date === '') {
+                $errMsg = "Dòng $row: Hạn sử dụng không được để trống (danh mục này có theo dõi hạn dùng).";
+            } elseif ($requiresExp && !$this->isValidDate($exp_date)) {
+                $errMsg = "Dòng $row: Hạn sử dụng không đúng định dạng ngày.";
+            } elseif ($quantity <= 0) {
+                $errMsg = "Dòng $row: Số lượng phải lớn hơn 0.";
+            } elseif ($unit_price <= 0) {
+                $errMsg = "Dòng $row: Đơn giá phải lớn hơn 0.";
+            }
+
+            if ($errMsg !== null) {
                 if ($skipInvalid) continue;
-                $row = $i + 1;
-                if ($product_id <= 0)   return [[], "Dòng $row: Sản phẩm không hợp lệ."];
-                if ($batch_no   === '') return [[], "Dòng $row: Số lô không được để trống."];
-                if ($exp_date   === '') return [[], "Dòng $row: Hạn sử dụng không được để trống."];
-                if ($quantity   <= 0)  return [[], "Dòng $row: Số lượng phải lớn hơn 0."];
-                if ($unit_price <= 0)  return [[], "Dòng $row: Đơn giá phải lớn hơn 0."];
+                return [[], $errMsg];
             }
 
             $rows[] = [
                 'product_id' => $product_id,
                 'batch_no'   => $batch_no,
                 'mfg_date'   => $mfg_date,
-                'exp_date'   => $exp_date,
+                'exp_date'   => $exp_date !== '' ? $exp_date : null,
                 'quantity'   => $quantity,
                 'unit_price' => $unit_price,
                 'total'      => $quantity * $unit_price,
@@ -394,5 +420,11 @@ class InboundService
         }
 
         return [$rows, null];
+    }
+
+    private function isValidDate(string $value): bool
+    {
+        $d = \DateTime::createFromFormat('Y-m-d', $value);
+        return $d !== false && $d->format('Y-m-d') === $value;
     }
 }

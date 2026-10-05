@@ -75,7 +75,7 @@ switch ($action) {
         $pid = (int)($body['product_id'] ?? 0);
         if (!$pid) { echo json_encode(['error' => 'Thiếu product_id']); exit; }
 
-        $pdo  = getPDO();
+        // dùng $pdo từ config/db.php
         $stmt = $pdo->prepare("
             SELECT product_name, current_stock, min_stock, max_stock,
                    avg_daily_out, estimated_days_left, days_to_nearest_exp,
@@ -119,7 +119,7 @@ switch ($action) {
         $pid = (int)($body['product_id'] ?? 0);
         if (!$pid) { echo json_encode(['error' => 'Thiếu product_id']); exit; }
 
-        $pdo  = getPDO();
+        // dùng $pdo từ config/db.php
         $stmt = $pdo->prepare("
             SELECT product_name, current_stock, min_stock, max_stock,
                    avg_daily_out, estimated_days_left, nearest_exp_date, cost_price
@@ -149,7 +149,7 @@ switch ($action) {
         $pid = (int)($body['product_id'] ?? 0);
         if (!$pid) { echo json_encode(['error' => 'Thiếu product_id']); exit; }
 
-        $pdo  = getPDO();
+        // dùng $pdo từ config/db.php
         $stmt = $pdo->prepare("
             SELECT product_name, current_stock, min_stock, max_stock
             FROM vw_stock_summary_for_ai

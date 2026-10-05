@@ -88,7 +88,8 @@ if ($action === 'add_category') {
     header('Content-Type: application/json');
     echo json_encode($service->addCategory(
         $_POST['name']        ?? '',
-        $_POST['description'] ?? ''
+        $_POST['description'] ?? '',
+        !isset($_POST['need_expiry_tracking']) || !empty($_POST['need_expiry_tracking'])
     ));
     exit;
 }

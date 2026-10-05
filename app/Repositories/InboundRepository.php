@@ -8,7 +8,7 @@ use PDO;
 
 class InboundRepository extends BaseRepository implements InboundRepositoryInterface
 {
-    public const HISTORY_TYPE = 'purchase_in';
+    public const HISTORY_TYPE = 'in';
 
     // Khóa cố định dùng cho pg_advisory_lock khi sinh ref_no (hệ thống single-tenant,
     // không có company_id để phân biệt khóa theo từng công ty).
@@ -60,7 +60,8 @@ class InboundRepository extends BaseRepository implements InboundRepositoryInter
         return $this->fetchAll("
             SELECT ii.product_id, ii.batch_no, ii.mfg_date, ii.exp_date,
                    ii.quantity, ii.unit_price, ii.total,
-                   p.name AS product_name, p.unit, c.name AS category_name
+                   p.name AS product_name, p.unit, c.name AS category_name,
+                   COALESCE(c.need_expiry_tracking, TRUE) AS need_expiry
             FROM stock_inbound_items ii
             JOIN products p        ON p.id = ii.product_id
             LEFT JOIN categories c ON c.id = p.category_id
@@ -303,15 +304,61 @@ class InboundRepository extends BaseRepository implements InboundRepositoryInter
         return $this->fetchAll("
             SELECT p.id, p.name, p.unit, p.price, p.cost_price,
                    COALESCE(SUM(ib.quantity), 0) AS current_stock,
-                   p.min_stock, p.max_stock
+                   p.min_stock, p.max_stock,
+                   COALESCE(c.need_expiry_tracking, TRUE) AS need_expiry
             FROM products p
+            LEFT JOIN categories c
+                ON c.id = p.category_id
             LEFT JOIN inventory_batches ib
                 ON ib.product_id = p.id
             WHERE p.deleted_at IS NULL AND p.status = 'active'
               AND (p.name ILIKE :term OR p.sku ILIKE :term)
-            GROUP BY p.id, p.name, p.unit, p.price, p.cost_price, p.min_stock, p.max_stock
+            GROUP BY p.id, p.name, p.unit, p.price, p.cost_price, p.min_stock, p.max_stock,
+                     c.need_expiry_tracking
             LIMIT 10
         ", [':term' => '%' . $term . '%']);
+    }
+
+    /**
+     * Sản phẩm nào bắt buộc nhập hạn dùng (theo danh mục của nó).
+     * Trả về [product_id => bool]. Sản phẩm chưa có danh mục được coi là cần theo dõi hạn
+     * (mặc định an toàn: không để lọt lô thiếu hạn dùng).
+     *
+     * @param int[] $product_ids
+     * @return array<int,bool>
+     */
+    public function getExpiryRequirements(array $product_ids): array
+    {
+        $product_ids = array_values(array_unique(array_filter(array_map('intval', $product_ids))));
+        if (!$product_ids) return [];
+
+        $ph = []; $params = [];
+        foreach ($product_ids as $i => $id) {
+            $ph[] = ":p$i"; $params[":p$i"] = $id;
+        }
+        $rows = $this->fetchAll("
+            SELECT p.id, COALESCE(c.need_expiry_tracking, TRUE) AS need_expiry
+            FROM products p
+            LEFT JOIN categories c ON c.id = p.category_id
+            WHERE p.id IN (" . implode(',', $ph) . ")
+        ", $params);
+
+        $map = [];
+        foreach ($rows as $r) {
+            $v = $r['need_expiry'];
+            $map[(int) $r['id']] = ($v === true || $v === 't' || $v === 1 || $v === '1');
+        }
+        return $map;
+    }
+
+    public function categoryNeedsExpiry(?int $category_id): bool
+    {
+        if (!$category_id) return true;
+        $v = $this->fetchColumn(
+            "SELECT need_expiry_tracking FROM categories WHERE id = :id",
+            [':id' => $category_id]
+        );
+        return $v === false || $v === null || $v === true || $v === 't' || $v === 1 || $v === '1';
     }
 
     private function buildWhere(array $filters): array
