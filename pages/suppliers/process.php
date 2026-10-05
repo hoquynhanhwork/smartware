@@ -240,6 +240,7 @@ if ($action === 'add') {
 
 // ── CẬP NHẬT ĐỐI TÁC
 if ($action === 'edit') {
+    denyUnlessRole('admin', 'manager'); // staff chỉ được tạo mới, không sửa/xóa
     $supplierId = (int) ($_POST['id'] ?? 0);
     $result     = $service->edit($supplierId, $_POST);
 
@@ -260,6 +261,7 @@ if ($action === 'edit') {
 
 // ── XÓA / NGỪNG HỢP TÁC
 if ($action === 'delete') {
+    denyUnlessRole('admin', 'manager'); // staff chỉ được tạo mới, không sửa/xóa
     $result = $service->delete((int) ($_POST['id'] ?? 0));
 
     if (isAjax()) {

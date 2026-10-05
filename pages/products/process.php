@@ -81,6 +81,7 @@ if ($action === 'add') {
 
 // ── CẬP NHẬT SẢN PHẨM ────────────────────────────────────────────────────
 if ($action === 'edit') {
+    denyUnlessRole('admin', 'manager'); // staff chỉ được tạo mới, không sửa/xóa
     $result = $productService->edit((int) ($_POST['id'] ?? 0), $_POST);
     if ($result['ok']) {
         setFlash('success', $result['message']);
@@ -93,6 +94,7 @@ if ($action === 'edit') {
 
 // ── XÓA / NGỪNG KINH DOANH ───────────────────────────────────────────────
 if ($action === 'delete') {
+    denyUnlessRole('admin', 'manager'); // staff chỉ được tạo mới, không sửa/xóa
     $result = $productService->delete((int) ($_POST['id'] ?? 0));
     $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
            || str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');

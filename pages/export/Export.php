@@ -50,12 +50,19 @@ function exportXls(string $title, array $headers, array $rows, string $filename)
 
 function fmtMoney(mixed $v): string { return number_format((float)$v, 0, ',', '.') . ' ₫'; }
 function fmtNum(mixed $v): string   { return number_format((float)$v, 0, ',', '.'); }
-function fmtDate(string $v): string { return $v ? date('d/m/Y', strtotime($v)) : ''; }
-function fmtDateTime(string $v): string { return $v ? date('d/m/Y H:i', strtotime($v)) : ''; }
+function fmtDate(?string $v): string { return $v ? date('d/m/Y', strtotime($v)) : ''; }
+function fmtDateTime(?string $v): string { return $v ? date('d/m/Y H:i', strtotime($v)) : ''; }
 
 function money(mixed $v): array { return ['value' => fmtMoney($v), 'align' => 'right']; }
 function num(mixed $v): array   { return ['value' => fmtNum($v),   'align' => 'right']; }
 function ctr(mixed $v): array   { return ['value' => (string)$v,   'align' => 'center']; }
+
+/** Chỉ giữ ký tự an toàn để đưa vào tên file (chặn xuống dòng/dấu nháy trong header). */
+function safeFilePart(string $s): string
+{
+    $s = preg_replace('/[^A-Za-z0-9_\-]/', '_', $s) ?? '';
+    return $s !== '' ? $s : 'phieu';
+}
 
 function buildIn(array $vals, string $prefix, array &$params): string
 {
@@ -68,6 +75,9 @@ function buildIn(array $vals, string $prefix, array &$params): string
     return '(' . implode(',', $ph) . ')';
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Danh sách sản phẩm
+// ═══════════════════════════════════════════════════════════════════════════
 if ($type === 'products') {
     $keyword      = trim($_GET['keyword'] ?? '');
     $categoryIds  = array_filter(array_map('intval', (array)($_GET['category_id']  ?? [])));
@@ -130,6 +140,9 @@ if ($type === 'products') {
     exportXls('DANH SÁCH SẢN PHẨM', $headers, $rows, 'san_pham');
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Danh sách nhà cung cấp
+// ═══════════════════════════════════════════════════════════════════════════
 if ($type === 'suppliers') {
     $statuses        = array_filter((array)($_GET['status']          ?? []));
     $hasTransactions = array_filter((array)($_GET['has_transaction'] ?? []));
@@ -183,6 +196,9 @@ if ($type === 'suppliers') {
     exportXls('DANH SÁCH NHÀ CUNG CẤP', $headers, $rows, 'nha_cung_cap');
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Danh sách phiếu nhập
+// ═══════════════════════════════════════════════════════════════════════════
 if ($type === 'inbound_list') {
     $supplier_ids = array_filter(array_map('intval', (array)($_GET['supplier_id'] ?? [])));
     $statuses     = array_filter((array)($_GET['status'] ?? []));
@@ -230,6 +246,9 @@ if ($type === 'inbound_list') {
     exportXls('DANH SÁCH PHIẾU NHẬP KHO', $headers, $rows, 'phieu_nhap');
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Chi tiết một phiếu nhập (dữ liệu do trình duyệt gửi lên)
+// ═══════════════════════════════════════════════════════════════════════════
 if ($type === 'inbound_detail' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
     if (!$data || !isset($data['items'])) {
@@ -237,6 +256,7 @@ if ($type === 'inbound_detail' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         die(json_encode(['error' => 'Dữ liệu không hợp lệ']));
     }
 
+    $file_ref      = safeFilePart((string) ($data['ref_no'] ?? ''));
     $ref_no        = htmlspecialchars($data['ref_no']        ?? '');
     $supplier_name = htmlspecialchars($data['supplier_name'] ?? '');
     $user_name     = htmlspecialchars($data['user_name']     ?? '');
@@ -247,7 +267,7 @@ if ($type === 'inbound_detail' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $total_qty     = array_sum(array_column($items, 'quantity'));
 
     header('Content-Type: application/vnd.ms-excel');
-    header('Content-Disposition: attachment; filename="phieu_nhap_' . $ref_no . '_' . date('Ymd_His') . '.xls"');
+    header('Content-Disposition: attachment; filename="phieu_nhap_' . $file_ref . '_' . date('Ymd_His') . '.xls"');
     header('Cache-Control: no-store');
 
     echo '<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -302,6 +322,11 @@ if ($type === 'inbound_detail' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Danh sách phiếu xuất
+// stock_outbounds / stock_outbound_items không có cột tiền, nên "giá trị xuất"
+// được tính theo giá vốn của lô: SUM(quantity * inventory_batches.cost_price).
+// ═══════════════════════════════════════════════════════════════════════════
 if ($type === 'outbound_list') {
     $statuses     = array_filter((array)($_GET['status'] ?? []));
     $from         = $_GET['from']    ?? '';
@@ -320,9 +345,18 @@ if ($type === 'outbound_list') {
 
     $stmt = $pdo->prepare("
         SELECT so.ref_no, u.full_name AS user_name,
-               so.total_amount, so.created, so.status, so.note
+               COALESCE(t.total_amount, 0) AS total_amount,
+               so.created, so.status, so.note
         FROM stock_outbounds so
         LEFT JOIN users u ON u.id = so.user_id
+        LEFT JOIN (
+            SELECT soi.outbound_id,
+                   SUM(soi.quantity * ib.cost_price) AS total_amount
+            FROM stock_outbound_items soi
+            LEFT JOIN inventory_batches ib
+                   ON ib.product_id = soi.product_id AND ib.batch_no = soi.batch_no
+            GROUP BY soi.outbound_id
+        ) t ON t.outbound_id = so.id
         WHERE $where
         ORDER BY so.created DESC
     ");
@@ -331,7 +365,7 @@ if ($type === 'outbound_list') {
     $data = $stmt->fetchAll();
 
     $statusMap = ['completed' => 'Hoàn thành', 'pending' => 'Tạm thời', 'cancelled' => 'Đã hủy'];
-    $headers   = ['STT', 'Mã phiếu', 'Người tạo', 'Tổng tiền (₫)', 'Ngày tạo', 'Trạng thái', 'Ghi chú'];
+    $headers   = ['STT', 'Mã phiếu', 'Người tạo', 'Giá trị xuất (giá vốn) (₫)', 'Ngày tạo', 'Trạng thái', 'Ghi chú'];
     $rows = [];
     foreach ($data as $i => $r) {
         $rows[] = [
@@ -347,32 +381,66 @@ if ($type === 'outbound_list') {
     exportXls('DANH SÁCH PHIẾU XUẤT KHO', $headers, $rows, 'phieu_xuat');
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Chi tiết một phiếu xuất
+// Trình duyệt chỉ cần gửi ref_no; dòng hàng, người lập, ngày tạo, giá vốn
+// và tổng tiền đều lấy từ DB (không tin số liệu tiền từ client).
+// ═══════════════════════════════════════════════════════════════════════════
 if ($type === 'outbound_detail' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $raw = file_get_contents('php://input');
 
-    $csrf = new \App\Services\CsrfService();
+    $csrf  = new \App\Services\CsrfService();
     $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
     if (!$csrf->validate($token)) {
         http_response_code(403);
         die(json_encode(['error' => 'Phiên làm việc hết hạn.']));
     }
 
-    $data = json_decode($raw, true);
-    if (!$data || !isset($data['items'])) {
+    $data   = json_decode($raw, true);
+    $ref_in = trim((string) ($data['ref_no'] ?? ''));
+    if (!is_array($data) || $ref_in === '') {
         http_response_code(400);
         die(json_encode(['error' => 'Dữ liệu không hợp lệ']));
     }
 
-    $ref_no       = htmlspecialchars($data['ref_no']      ?? '');
-    $user_name    = htmlspecialchars($data['user_name']   ?? '');
-    $note         = htmlspecialchars($data['note']        ?? '');
-    $created      = htmlspecialchars($data['created']     ?? '');
-    $total_amount = (float)($data['total_amount']         ?? 0);
-    $items        = $data['items'];
+    $stmt = $pdo->prepare("
+        SELECT so.id, so.ref_no, so.note, so.created, u.full_name AS user_name
+        FROM stock_outbounds so
+        LEFT JOIN users u ON u.id = so.user_id
+        WHERE so.ref_no = :ref AND so.deleted_at IS NULL
+        LIMIT 1
+    ");
+    $stmt->execute([':ref' => $ref_in]);
+    $head = $stmt->fetch();
+    if (!$head) {
+        http_response_code(404);
+        die(json_encode(['error' => 'Không tìm thấy phiếu xuất']));
+    }
+
+    $stmt = $pdo->prepare("
+        SELECT p.name AS product_name, soi.batch_no, soi.quantity,
+               COALESCE(ib.cost_price, 0)                      AS unit_cost,
+               soi.quantity * COALESCE(ib.cost_price, 0)       AS line_total
+        FROM stock_outbound_items soi
+        JOIN products p ON p.id = soi.product_id
+        LEFT JOIN inventory_batches ib
+               ON ib.product_id = soi.product_id AND ib.batch_no = soi.batch_no
+        WHERE soi.outbound_id = :id
+        ORDER BY soi.id ASC
+    ");
+    $stmt->execute([':id' => (int) $head['id']]);
+    $items = $stmt->fetchAll();
+
+    $file_ref     = safeFilePart((string) $head['ref_no']);
+    $ref_no       = htmlspecialchars((string) $head['ref_no']);
+    $user_name    = htmlspecialchars((string) ($head['user_name'] ?? ''));
+    $note         = htmlspecialchars((string) ($head['note'] ?? ''));
+    $created      = htmlspecialchars(fmtDateTime($head['created']));
     $total_qty    = array_sum(array_column($items, 'quantity'));
+    $total_amount = array_sum(array_column($items, 'line_total'));
 
     header('Content-Type: application/vnd.ms-excel');
-    header('Content-Disposition: attachment; filename="phieu_xuat_' . $ref_no . '_' . date('Ymd_His') . '.xls"');
+    header('Content-Disposition: attachment; filename="phieu_xuat_' . $file_ref . '_' . date('Ymd_His') . '.xls"');
     header('Cache-Control: no-store');
 
     echo '<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -394,24 +462,24 @@ if ($type === 'outbound_detail' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     echo '</table>';
 
     echo '<table><thead><tr>';
-    foreach (['STT','Sản phẩm','Số lô','Số lượng','Đơn giá (₫)','Thành tiền (₫)'] as $h)
+    foreach (['STT','Sản phẩm','Số lô','Số lượng','Giá vốn (₫)','Giá trị (giá vốn) (₫)'] as $h)
         echo '<th>' . $h . '</th>';
     echo '</tr></thead><tbody>';
     foreach ($items as $i => $item) {
         echo '<tr>';
         echo '<td style="text-align:center">' . ($i + 1) . '</td>';
-        echo '<td>' . htmlspecialchars($item['product_name'] ?? '') . '</td>';
-        echo '<td>' . htmlspecialchars($item['batch_no'] ?? '') . '</td>';
+        echo '<td>' . htmlspecialchars((string) ($item['product_name'] ?? '')) . '</td>';
+        echo '<td>' . htmlspecialchars((string) ($item['batch_no'] ?? '')) . '</td>';
         echo '<td style="text-align:right">' . fmtNum($item['quantity'] ?? 0) . '</td>';
-        echo '<td style="text-align:right">' . fmtMoney($item['unit_price'] ?? 0) . '</td>';
-        echo '<td style="text-align:right">' . fmtMoney($item['total'] ?? 0) . '</td>';
+        echo '<td style="text-align:right">' . fmtMoney($item['unit_cost'] ?? 0) . '</td>';
+        echo '<td style="text-align:right">' . fmtMoney($item['line_total'] ?? 0) . '</td>';
         echo '</tr>';
     }
     echo '</tbody></table>';
 
     echo '<table style="margin-top:10px;border:none"><tr>';
     echo '<td style="border:none"><strong>Tổng số lượng:</strong> ' . fmtNum($total_qty) . '</td>';
-    echo '<td style="border:none;text-align:right"><strong>Tổng tiền: ' . fmtMoney($total_amount) . '</strong></td>';
+    echo '<td style="border:none;text-align:right"><strong>Tổng giá trị (giá vốn): ' . fmtMoney($total_amount) . '</strong></td>';
     echo '</tr></table>';
 
     echo '<table class="sign"><tr>';
@@ -423,23 +491,30 @@ if ($type === 'outbound_detail' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Tổng quan tồn kho
+// vw_stock_summary_for_ai không có category_id / category_name / unit,
+// nên JOIN thêm products và categories.
+// ═══════════════════════════════════════════════════════════════════════════
 if ($type === 'stock_summary') {
     $keyword      = trim($_GET['keyword']      ?? '');
     $category_id  = (int)($_GET['category_id'] ?? 0);
     $status_f     = trim($_GET['stock_status'] ?? '');
-    $selected_ids = array_filter(array_map('intval', (array)($_GET['selected_ids'] ?? []))); // thêm dòng này
+    $selected_ids = array_filter(array_map('intval', (array)($_GET['selected_ids'] ?? [])));
 
     $where  = "1=1";
     $params = [];
     if ($keyword !== '') { $where .= " AND (v.product_name ILIKE :kw OR v.sku ILIKE :kw)"; $params[':kw'] = "%$keyword%"; }
-    if ($category_id > 0) { $where .= " AND v.category_id = :cat"; $params[':cat'] = $category_id; }
+    if ($category_id > 0) { $where .= " AND p.category_id = :cat"; $params[':cat'] = $category_id; }
     if ($status_f !== '')  { $where .= " AND v.stock_status = :st";  $params[':st']  = $status_f; }
-    if (!empty($selected_ids)) $where .= " AND v.product_id IN " . buildIn($selected_ids, 'sid', $params); // thêm
+    if (!empty($selected_ids)) $where .= " AND v.product_id IN " . buildIn($selected_ids, 'sid', $params);
 
     $stmt = $pdo->prepare("
-        SELECT v.product_name, v.sku, v.category_name, v.unit,
+        SELECT v.product_name, v.sku, c.name AS category_name, p.unit,
                v.current_stock, v.min_stock, v.max_stock, v.stock_status
         FROM vw_stock_summary_for_ai v
+        JOIN products p        ON p.id = v.product_id
+        LEFT JOIN categories c ON c.id = p.category_id
         WHERE $where
         ORDER BY v.product_name
     ");
@@ -463,6 +538,9 @@ if ($type === 'stock_summary') {
     exportXls('TỔNG QUAN TỒN KHO', $headers, $rows, 'ton_kho');
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Danh sách lô hàng
+// ═══════════════════════════════════════════════════════════════════════════
 if ($type === 'batch_summary') {
     $keyword     = trim($_GET['keyword']       ?? '');
     $category_id = (int)($_GET['category_id']  ?? 0);
@@ -511,6 +589,9 @@ if ($type === 'batch_summary') {
     exportXls('DANH SÁCH LÔ HÀNG', $headers, $rows, 'lo_hang');
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Lịch sử xuất nhập kho
+// ═══════════════════════════════════════════════════════════════════════════
 if ($type === 'inventory_history') {
     $type_f     = in_array($_GET['type_filter'] ?? '', ['in','out','adjustment']) ? $_GET['type_filter'] : '';
     $from       = $_GET['from']       ?? '';

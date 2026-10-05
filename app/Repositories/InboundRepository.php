@@ -171,12 +171,14 @@ class InboundRepository extends BaseRepository implements InboundRepositoryInter
         int    $product_id,
         int    $supplier_id,
         string $batch_no,
-        string $exp_date,
+        ?string $exp_date,
         int    $quantity,
         float  $unit_price,
         int    $inbound_item_id
     ): void {
         // Constraint thật trong schema: inventory_batches_product_id_batch_no_key UNIQUE (product_id, batch_no)
+        // Nhập thêm vào lô đã có: giữ nguyên supplier/exp_date của lô,
+        // cost_price = bình quân gia quyền (không ghi đè giá của phần tồn cũ).
         $this->execute("
             INSERT INTO inventory_batches
                 (product_id, supplier_id, batch_no, exp_date,
@@ -186,8 +188,15 @@ class InboundRepository extends BaseRepository implements InboundRepositoryInter
                  :quantity, :cost_price, :inbound_item_id)
             ON CONFLICT (product_id, batch_no)
             DO UPDATE SET
+                cost_price      = CASE
+                    WHEN inventory_batches.quantity + EXCLUDED.quantity > 0 THEN ROUND(
+                        (inventory_batches.quantity * COALESCE(inventory_batches.cost_price, 0)
+                         + EXCLUDED.quantity * EXCLUDED.cost_price)
+                        / (inventory_batches.quantity + EXCLUDED.quantity), 2)
+                    ELSE EXCLUDED.cost_price
+                END,
                 quantity        = inventory_batches.quantity + EXCLUDED.quantity,
-                cost_price      = EXCLUDED.cost_price,
+                exp_date        = COALESCE(inventory_batches.exp_date, EXCLUDED.exp_date),
                 inbound_item_id = EXCLUDED.inbound_item_id,
                 updated         = CURRENT_TIMESTAMP
         ", [
@@ -204,13 +213,16 @@ class InboundRepository extends BaseRepository implements InboundRepositoryInter
     public function reverseInventoryBatch(
         int    $product_id,
         string $batch_no,
-        string $exp_date,
+        ?string $exp_date,
         int    $quantity
     ): void {
+        // IS NOT DISTINCT FROM: lô không theo dõi hạn dùng có exp_date NULL,
+        // so sánh "=" với NULL luôn sai nên trước đây không tìm thấy lô để reverse.
         $row = $this->fetchOne("
             SELECT id, quantity FROM inventory_batches
             WHERE product_id = :pid
-              AND batch_no = :batch_no AND exp_date = :exp_date
+              AND batch_no = :batch_no
+              AND exp_date IS NOT DISTINCT FROM CAST(:exp_date AS date)
             FOR UPDATE
         ", [
             ':pid'      => $product_id,
@@ -246,21 +258,17 @@ class InboundRepository extends BaseRepository implements InboundRepositoryInter
         int    $user_id,
         string $type = self::HISTORY_TYPE
     ): void {
-        $quantity_after = (int) $this->fetchColumn("
-            SELECT COALESCE(quantity, 0) FROM inventory_batches
-            WHERE product_id = :pid AND batch_no = :batch_no
-            LIMIT 1
-        ", [':pid' => $product_id, ':batch_no' => $batch_no]);
-
+        // quantity_after do trigger trg_inventory_history_quantity_after điền
+        // (tồn của sản phẩm sau thao tác) — không tự tính ở đây nữa.
         $this->execute("
             INSERT INTO inventory_history
                 (product_id, batch_no, type, quantity,
                  reference_no, reference_id, user_id,
-                 reference_type, quantity_after)
+                 reference_type)
             VALUES
                 (:product_id, :batch_no, :type, :quantity,
                  :reference_no, :reference_id, :user_id,
-                 'inbound', :quantity_after)
+                 'inbound')
         ", [
             ':product_id'     => $product_id,
             ':batch_no'       => $batch_no,
@@ -269,7 +277,6 @@ class InboundRepository extends BaseRepository implements InboundRepositoryInter
             ':reference_no'   => $reference_no,
             ':reference_id'   => $reference_id,
             ':user_id'        => $user_id,
-            ':quantity_after' => $quantity_after,
         ]);
     }
 

@@ -233,9 +233,9 @@ class OutboundRepository extends BaseRepository implements OutboundRepositoryInt
         $this->execute("
             INSERT INTO inventory_history
                 (product_id, batch_no, type, quantity,
-                 reference_no, reference_id, user_id)
+                 reference_no, reference_id, user_id, reference_type)
             VALUES
-                (:pid, :batch_no, :type, :qty, :ref_no, :ref_id, :user_id)
+                (:pid, :batch_no, :type, :qty, :ref_no, :ref_id, :user_id, 'outbound')
         ", [
             ':pid'     => $product_id,
             ':batch_no'=> $batch_no,

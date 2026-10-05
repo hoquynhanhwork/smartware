@@ -10,7 +10,7 @@ requireLogin();
 header('Content-Type: application/json; charset=utf-8');
 
 $AI_BASE = getenv('AI_SERVICE_URL') ?: 'http://localhost:8000/api/v1';
-$AI_KEY  = getenv('AI_API_KEY')     ?: 'smartware';
+$AI_KEY  = getenv('AI_API_KEY') ?: '';
 
 $raw    = file_get_contents('php://input');
 $body   = json_decode($raw, true) ?? [];

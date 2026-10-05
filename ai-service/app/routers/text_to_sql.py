@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 from app.services.text_to_sql_service import ask_sql
 from app.security import verify_api_key
-from app.db.postgresql import get_db
 import csv
 import io
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -24,28 +25,30 @@ class QueryResponse(BaseModel):
 @router.post("/query", response_model=QueryResponse)
 async def text_to_sql_endpoint(
     req: QueryRequest,
-    db: Session = Depends(get_db),
     api_key: str = Depends(verify_api_key),
 ):
     try:
-        sql, result = await ask_sql(req.question, req.supplier_id, db)
-        return QueryResponse(question=req.question, sql=sql, result=result)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        sql, result = await ask_sql(req.question, req.supplier_id)
+    except Exception:
+        logger.exception("Text-to-SQL endpoint lỗi")
+        raise HTTPException(status_code=500, detail="Không xử lý được câu hỏi.")
+
+    if isinstance(result, dict) and "error" in result:
+        return QueryResponse(question=req.question, sql=sql, result=None, error=result["error"])
+    return QueryResponse(question=req.question, sql=sql, result=result)
 
 
 # ── /query/csv — trả về CSV cho Power BI ──────────────────────
 @router.post("/query/csv")
 async def query_csv(
     req: QueryRequest,
-    db: Session = Depends(get_db),
     api_key: str = Depends(verify_api_key),
 ):
     """
     Trả về kết quả truy vấn dưới dạng CSV.
     Phù hợp để Power BI gọi qua Web.Contents().
     """
-    sql, data = await ask_sql(req.question, req.supplier_id, db)
+    sql, data = await ask_sql(req.question, req.supplier_id)
 
     # Nếu có lỗi, trả về 400
     if isinstance(data, dict) and "error" in data:

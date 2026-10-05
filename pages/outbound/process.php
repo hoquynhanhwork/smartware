@@ -169,6 +169,7 @@ if ($action === 'add_outbound' || $action === 'add') {
 }
 
 if ($action === 'edit_outbound' || $action === 'edit') {
+    denyUnlessRole('admin', 'manager'); // staff chỉ được tạo mới, không sửa/xóa
     $id     = (int) ($_POST['outbound_id'] ?? $_POST['id'] ?? 0);
     $result = $service->edit($user_id, $id, $_POST);
     $csrf->rotate();
@@ -182,6 +183,7 @@ if ($action === 'edit_outbound' || $action === 'edit') {
 }
 
 if ($action === 'delete_outbound' || $action === 'delete') {
+    denyUnlessRole('admin', 'manager'); // staff chỉ được tạo mới, không sửa/xóa
     $id     = (int) ($_POST['id'] ?? $_POST['outbound_id'] ?? 0);
     $result = $service->delete($id);
     $csrf->rotate();

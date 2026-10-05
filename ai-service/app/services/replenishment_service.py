@@ -9,12 +9,23 @@ from app.services.prophet_service import (
 from app.config import settings
 
 def get_latest_forecast(db: Session, product_id: int, supplier_id: int) -> dict | None:
-    """Lấy forecast mới nhất từ bảng forecasts (Prophet)."""
+    """Lấy forecast mới nhất từ bảng forecasts (Prophet).
+
+    save_forecast ghi 3 dòng (1/2/3 tháng) trong cùng 1 transaction nên chúng
+    có cùng `created`. Chọn đúng lượt chạy mới nhất (created = MAX) rồi sắp
+    theo period_end để dòng 0/1/2 luôn là tháng 1/2/3 — trước đây
+    ORDER BY created DESC LIMIT 3 cho thứ tự không xác định và có thể trộn
+    dòng của các lượt chạy khác nhau.
+    """
     rows = db.execute(text("""
         SELECT predicted_quantity, period_start, confidence
         FROM public.forecasts
         WHERE product_id = :pid AND supplier_id = :sid
-        ORDER BY created DESC
+          AND created = (
+              SELECT MAX(created) FROM public.forecasts
+              WHERE product_id = :pid AND supplier_id = :sid
+          )
+        ORDER BY period_end ASC
         LIMIT 3
     """), {"pid": product_id, "sid": supplier_id}).fetchall()
 

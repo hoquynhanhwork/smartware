@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 from app.services.gpt_service import explain_and_draft_email
 from app.services.app_time import app_today
 from app.db.postgresql import get_db
+from app.security import verify_api_key
 
-router = APIRouter(prefix="/predict", tags=["explain"])
+router = APIRouter(prefix="/predict", tags=["explain"], dependencies=[Depends(verify_api_key)])
 
 class ExplainRequest(BaseModel):
     product_id:    int

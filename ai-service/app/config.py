@@ -3,6 +3,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     # Database
     database_url: str
+    # Role chỉ-đọc cho text-to-SQL (smartware_ai_ro). Để trống = tắt text-to-SQL.
+    database_url_ro: str = ""
 
     # ── LM Studio — dữ liệu nhạy cảm, offline ───────────────────
     lm_api_key:  str = "smartware"
@@ -21,6 +23,9 @@ class Settings(BaseSettings):
 
     # Security
     api_secret_key: str
+
+    # CORS: danh sách origin cho phép, cách nhau bằng dấu phẩy. Để trống = không cho trình duyệt gọi chéo origin.
+    cors_origins: str = ""
 
     # App config
     debug:      bool = False

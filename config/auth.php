@@ -73,6 +73,29 @@ function requireRole(string ...$roles): void {
     }
 }
 
+// ─── Chặn thao tác theo role (hỗ trợ cả AJAX lẫn form thường) ───────────
+// Khác requireRole(): với AJAX trả về 403 JSON thay vì chuyển hướng.
+function denyUnlessRole(string ...$roles): void {
+    requireLogin();
+    if (hasRole(...$roles)) {
+        return;
+    }
+    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+           || str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
+    if ($isAjax) {
+        http_response_code(403);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'ok' => false, 'success' => false,
+            'message' => 'Bạn không có quyền thực hiện thao tác này.',
+        ]);
+        exit;
+    }
+    setFlash('error', 'Bạn không có quyền thực hiện thao tác này.');
+    header('Location: ' . BASE_URL . '/pages/dashboard/index.php');
+    exit;
+}
+
 // ─── Flash message ────────────────────────────────────────────────────────
 function setFlash(string $type, string $message): void {
     // $type: 'success' | 'error' | 'warning' | 'info'

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import settings
 from app.db.postgresql import test_connection
 from app.routers import analyze
 from app.routers import forecast
@@ -21,12 +22,13 @@ app = FastAPI(
     version     = "2.0.0",
 )
 
-# Cho phép PHP gọi từ localhost
+# PHP gọi server-to-server nên không cần CORS. Chỉ mở cho các origin khai báo trong CORS_ORIGINS.
+_cors_origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins  = ["*"],
-    allow_methods  = ["*"],
-    allow_headers  = ["*"],
+    allow_origins  = _cors_origins,
+    allow_methods  = ["GET", "POST"],
+    allow_headers  = ["Content-Type", "X-API-Key"],
 )
 
 # ── Routers (Giai đoạn 1 — có sẵn) ───────────────────────────

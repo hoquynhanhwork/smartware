@@ -29,7 +29,7 @@ if (strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) !== 'pdf') {
 }
 
 $AI_BASE = getenv('AI_SERVICE_URL') ?: 'http://localhost:8000/api/v1';
-$AI_KEY  = getenv('AI_API_KEY')     ?: 'smartware';
+$AI_KEY  = getenv('AI_API_KEY') ?: '';
 
 $ch = curl_init("$AI_BASE/ocr/invoice");
 curl_setopt_array($ch, [

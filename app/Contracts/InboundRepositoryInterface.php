@@ -35,7 +35,7 @@ interface InboundRepositoryInterface
         int    $product_id,
         int    $supplier_id,
         string $batch_no,
-        string $exp_date,
+        ?string $exp_date,
         int    $quantity,
         float  $unit_price,
         int    $inbound_item_id
@@ -44,7 +44,7 @@ interface InboundRepositoryInterface
     public function reverseInventoryBatch(
         int    $product_id,
         string $batch_no,
-        string $exp_date,
+        ?string $exp_date,
         int    $quantity
     ): void;
 

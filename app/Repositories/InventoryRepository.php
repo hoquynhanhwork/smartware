@@ -163,9 +163,9 @@ class InventoryRepository extends BaseRepository implements InventoryRepositoryI
     ): void {
         $this->execute("
             INSERT INTO inventory_history
-                (product_id, batch_no, type, quantity, reference_no, user_id)
+                (product_id, batch_no, type, quantity, reference_no, user_id, reference_type)
             VALUES
-                (:pid, :batch_no, 'adjustment', :qty, :ref, :user_id)
+                (:pid, :batch_no, 'adjustment', :qty, :ref, :user_id, 'adjustment')
         ", [
             ':pid'      => $product_id,
             ':batch_no' => $batch_no,

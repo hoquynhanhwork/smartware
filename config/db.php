@@ -5,7 +5,12 @@ $host     = getenv('DB_HOST')     ?: 'postgres';
 $port     = getenv('DB_PORT')     ?: '5432';
 $dbname   = getenv('DB_NAME')     ?: 'smartware';
 $username = getenv('DB_USER')     ?: 'postgres';
-$password = getenv('DB_PASSWORD') ?: 'smartware'; // <-- Đổi '' thành 'smartware'
+$password = getenv('DB_PASSWORD');
+if ($password === false || $password === '') {
+    error_log('Database Error: thiếu biến môi trường DB_PASSWORD');
+    http_response_code(500);
+    die(json_encode(['error' => 'Kết nối database thất bại.']));
+}
 
 try {
     $pdo = new PDO(

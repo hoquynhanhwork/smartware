@@ -14,7 +14,7 @@ class AiService {
             getenv('AI_SERVICE_URL') ?: 'http://localhost:8000/api/v1',
             '/'
         );
-        $this->apiKey = getenv('AI_API_KEY') ?: 'smartware';
+        $this->apiKey = getenv('AI_API_KEY') ?: '';
     }
 
     /**

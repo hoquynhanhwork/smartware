@@ -9,7 +9,7 @@ requireLogin();
 $currentUser = currentUser();
 
 $AI_BASE  = getenv('AI_SERVICE_URL') ?: 'http://localhost:8000/api/v1';
-$AI_KEY   = getenv('AI_API_KEY') ?: 'smartware';
+$AI_KEY   = getenv('AI_API_KEY') ?: '';
 
 
 function callAI(string $endpoint, array $payload, string $base, string $key): array {
