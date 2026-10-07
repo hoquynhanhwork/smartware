@@ -66,6 +66,8 @@ function openProductModal(action, data = null) {
         _setVal('prodCostPrice', '');
         _setVal('prodPrice', '');
         _setVal('prodDesc', '');
+        _setVal('prodMinStock', '');
+        _setVal('prodMaxStock', '');
         _setVal('prodStatus', 'active');
         if (toggleStatus) toggleStatus.checked = true;
 
@@ -82,7 +84,9 @@ function openProductModal(action, data = null) {
         _setVal('prodCostPrice', data.cost_price ? formatNumberInput(String(data.cost_price)) : '');
         _setVal('prodPrice', data.price ? formatNumberInput(String(data.price)) : '');
         _setVal('prodDesc', data.description || '');
-        
+        _setVal('prodMinStock', data.min_stock ?? '');
+        _setVal('prodMaxStock', data.max_stock ?? '');
+
         const isAct = (data.status || 'active') === 'active';
         _setVal('prodStatus', isAct ? 'active' : 'inactive');
         if (toggleStatus) toggleStatus.checked = isAct;
@@ -132,13 +136,24 @@ function submitCategory(e) {
                     const label = document.createElement('label');
                     label.className = 'radio-circle-item';
                     label.id = `cat-radio-label-${data.id}`;
-                    label.innerHTML = `
-                        <input type="radio" name="category_id" value="${data.id}" checked onchange="onRadioSelectChange('cat', '${data.name}')">
-                        <span class="custom-radio-circle"></span>
-                        <span class="radio-text-label">${data.name}</span>
-                    `;
+
+                    const input = document.createElement('input');
+                    input.type = 'radio';
+                    input.name = 'category_id';
+                    input.value = String(data.id);
+                    input.checked = true;
+                    input.addEventListener('change', () => onRadioSelectChange('cat', data.name));
+
+                    const circle = document.createElement('span');
+                    circle.className = 'custom-radio-circle';
+
+                    const text = document.createElement('span');
+                    text.className = 'radio-text-label';
+                    text.textContent = data.name;
+
+                    label.append(input, circle, text);
                     container.appendChild(label);
-                    
+
                     const textEl = document.getElementById('catSelectedText');
                     if (textEl) textEl.textContent = data.name;
                 }
@@ -176,12 +191,16 @@ function onRadioSelectChange(type, labelText) {
 }
 
 // ── 3. XÓA & TÌM KIẾM ────────────────────────────────────────────────────────
-function confirmDeleteProduct(id, status) {
+function confirmDeleteProduct(id, status, stock = 0) {
     if (status === 'active') {
-        if (!confirm('Bạn có chắc muốn ngừng kinh doanh sản phẩm này?\nSản phẩm sẽ chuyển sang trạng thái "Ngừng kinh doanh".')) return;
+        let msg = 'Bạn có chắc muốn ngừng kinh doanh sản phẩm này?\nSản phẩm sẽ chuyển sang trạng thái "Ngừng kinh doanh".';
+        if (Number(stock) > 0) {
+            msg = `⚠️ Sản phẩm vẫn còn ${Number(stock).toLocaleString('vi-VN')} trong kho.\n\n` + msg;
+        }
+        if (!confirm(msg)) return;
     } else {
-        if (!confirm('⚠️ Sản phẩm đang NGỪNG KINH DOANH.\n\nBấm OK để XÓA VĨNH VIỄN khỏi hệ thống.\nHành động này KHÔNG THỂ hoàn tác!')) return;
-        if (!confirm('Xác nhận lần cuối: xóa vĩnh viễn sản phẩm này?')) return;
+        if (!confirm('⚠️ Sản phẩm đang NGỪNG KINH DOANH.\n\nBấm OK để XÓA sản phẩm khỏi danh sách.\nSản phẩm còn tồn kho hoặc đã có lịch sử nhập/xuất sẽ không xóa được.')) return;
+        if (!confirm('Xác nhận lần cuối: xóa sản phẩm này?')) return;
     }
 
     fetch('process.php', {

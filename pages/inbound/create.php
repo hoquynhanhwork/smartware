@@ -23,6 +23,10 @@ $categories =$categoryRepo->listActive();
 $csrfToken = $csrf->getToken();$body_page = 'inbound-create';
 include __DIR__ . '/../../layout/header.php';
 ?>
+<!-- Font Be Vietnam Pro & Style Chuẩn -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/suppliers.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/inbound.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/inbound-create.css">
@@ -30,7 +34,6 @@ include __DIR__ . '/../../layout/header.php';
 
 <script>document.body.dataset.page = '<?= htmlspecialchars($body_page) ?>';</script>
 
-<!-- Sử dụng đúng container inbound-create-wrapper có padding cách lề sidebar -->
 <div class="inbound-create-wrapper">
     <!-- TOP BAR -->
     <div class="sup-header-breadcrumb-bar">
@@ -40,10 +43,10 @@ include __DIR__ . '/../../layout/header.php';
             <span class="bc-cur">Tạo phiếu nhập mới</span>
         </div>
         <div class="header-action-group">
-            <span class="clean-badge st-completed">
+            <span class="clean-badge st-success">
                 <i class="ri-user-line"></i> <?= htmlspecialchars($_SESSION['user_name'] ?? 'Admin') ?>
             </span>
-            <span class="clean-badge" style="background:#f4f4f5; color:#52525b;">
+            <span class="clean-badge" style="background:#EDE6D2; color:var(--navy-darkest); border:1px solid var(--border-color);">
                 <i class="ri-calendar-line"></i> <?= date('d/m/Y') ?>
             </span>
         </div>
@@ -97,7 +100,7 @@ include __DIR__ . '/../../layout/header.php';
 
                     <div class="form-row-modern">
                         <label class="form-label-modern">Người lập phiếu</label>
-                        <input type="text" class="form-input-modern" value="<?= htmlspecialchars($_SESSION['user_name'] ?? 'Admin') ?>" readonly style="background:#f4f4f5; color:#71717a;">
+                        <input type="text" class="form-input-modern" value="<?= htmlspecialchars($_SESSION['user_name'] ?? 'Admin') ?>" readonly style="background:#EDE6D2; color:var(--navy-darkest);">
                     </div>
                 </div>
 
@@ -292,7 +295,7 @@ include __DIR__ . '/../../layout/header.php';
 
 <template id="rowTemplate">
     <tr class="item-row">
-        <td class="stt-cell text-center" style="color: #a1a1aa; font-weight: 500;"></td>
+        <td class="stt-cell text-center" style="color: var(--text-muted); font-weight: 500;"></td>
         <td>
             <input type="text" class="product-autocomplete form-input-modern" name="product_name[]" placeholder="Nhập tên / SKU..." autocomplete="off" style="padding: 6px 10px; font-size: 13px;" oninput="syncInvoicePreview()">
             <input type="hidden" name="product_id[]" class="product-id">
@@ -303,7 +306,7 @@ include __DIR__ . '/../../layout/header.php';
         <td><input type="number" name="quantity[]" class="qty form-input-modern" value="1" min="1" required style="text-align: right; padding: 6px 6px; font-size: 13px;" oninput="syncInvoicePreview()"></td>
         <td><input type="text" name="unit_price[]" class="price form-input-modern" step="1000" required style="text-align: right; padding: 6px 8px; font-size: 13px;" oninput="syncInvoicePreview()"></td>
         <td style="text-align: right;">
-            <input type="text" class="row-total form-input-modern" readonly style="text-align: right; font-weight: 600; background: transparent; border: none; padding: 6px 6px; color: var(--text-main); font-size: 13px;">
+            <input type="text" class="row-total form-input-modern" readonly style="text-align: right; font-weight: 700; background: transparent; border: none; padding: 6px 6px; color: var(--navy-darkest); font-size: 13px;">
         </td>
         <td class="text-center">
             <button type="button" class="btn-action-icon btn-action-delete" onclick="removeInboundRow(this)" title="Xóa dòng">

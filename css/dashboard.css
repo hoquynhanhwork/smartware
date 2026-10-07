@@ -1,313 +1,87 @@
-/*css/dashboard.css*/
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+/* =======================================================
+   DASHBOARD - THEME TRANH THỦY MẶC / CÁ KOI (KHO HÀNG)
+   Navy, Kem, Vàng điểm nhấn & Font Be Vietnam Pro
+======================================================= */
+:root {
+    --font-family-base: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    /* Base Palette */
+    --navy-darkest: #101A2C;       /* Sidebar, card đen tối, chữ chính, footer */
+    --navy-primary: #11284D;       /* Header bảng, nút primary, biểu đồ series 1 */
+    --blue-mid:     #264B6F;       /* Hover, links, biểu đồ series 2 */
+    --bg-page:      #F4EFDF;       /* Nền trang (body), dòng xen kẽ zebra */
+    --bg-card:      #FBF8EF;       /* Trắng pha kem cho card, modal, widget */
+    --gold-accent:  #D5B370;       /* Điểm nhấn vàng, active, viền trên KPI card */
+
+    /* Extended Neutrals & Muted */
+    --border-color: #E2DAC8;       /* Viền kem trầm đồng bộ */
+    --text-primary: #101A2C;       /* Chữ chính trên nền sáng */
+    --text-muted:   #5E6D82;       /* Chữ phụ, nhãn, subtitle */
+    --text-inverse: #F4EFDF;       /* Chữ trên nền Navy */
+
+    /* Semantic Status Colors */
+    --status-danger:  #C8553D;     /* Đỏ cam koi: Hết hàng, cảnh báo nguy hiểm */
+    --status-success: #3E8E7E;     /* Xanh ngọc trầm: Đã thanh toán, hoàn tất */
+    --status-warning: #D5B370;     /* Vàng: Tạm thời, cảnh báo */
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family-base);
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
 .dashboard-container {
     width: 100%;
     max-width: 1440px;
     margin: 0 auto;
+    padding: 10px 24px 40px 24px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
-.dashboard-header {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-}
 
-.btn-ai {
-    background: linear-gradient(135deg, #6c5ce7, #a363d9);
-    color: #fff;
-    padding: 9px 22px;
-    border-radius: 50px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 13.5px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 14px rgba(108,92,231,0.30);
-    transition: transform 0.25s, box-shadow 0.25s;
-    white-space: nowrap;
-}
-.btn-ai:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(108,92,231,0.40);
-    color: #fff;
-}
-
-.kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-}
-
-.kpi-card {
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
-    border: 1px solid rgba(0,0,0,0.03);
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    transition: transform 0.25s, box-shadow 0.25s;
-    overflow: hidden;
-}
-.kpi-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 32px rgba(0,0,0,0.07);
-}
-.kpi-card-danger {
-    background: #fffafa;
-    border-color: #fecaca;
-}
-
-.kpi-icon {
-    width: 52px; height: 52px;
-    border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
-    flex-shrink: 0;
-}
-.kpi-icon.blue   { background: #eff6ff; color: #3b82f6; }
-.kpi-icon.green  { background: #f0fdf4; color: #22c55e; }
-.kpi-icon.orange { background: #fff7ed; color: #f97316; }
-.kpi-icon.red    { background: #fef2f2; color: #ef4444; }
-
-.kpi-info { flex: 1; min-width: 0; }
-
-.kpi-value {
-    font-size: clamp(20px, 2.2vw, 28px);
-    font-weight: 700;
-    color: #1e293b;
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.kpi-label {
-    font-size: clamp(11px, 1.1vw, 13.5px);
-    color: #64748b;
-    margin-top: 4px;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.charts-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 16px;
-}
-
-.chart-box,
-.stats-box {
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
-    border: 1px solid rgba(0,0,0,0.03);
-    padding: 20px;
-    overflow: hidden;
-    min-width: 0;
-}
-
-.chart-box h3,
-.stats-box h3 {
-    font-size: 15px;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0 0 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.chart-placeholder {
-    height: clamp(180px, 22vh, 300px);
-    background: #f8fafc;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #94a3b8;
-    font-weight: 500;
-    border: 1px dashed #cbd5e1;
-}
-
-.stats-list { list-style: none; padding: 0; margin: 0; }
-.stats-list li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 13px 0;
-    border-bottom: 1px solid #f1f5f9;
-    gap: 8px;
-}
-.stats-list li:last-child { border-bottom: none; padding-bottom: 0; }
-.stat-label { color: #64748b; font-size: 13.5px; font-weight: 500; }
-.stat-value { font-weight: 700; color: #0f172a; font-size: 14px; white-space: nowrap; }
-
-.alerts-row,
-.recent-transactions-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-}
-
-.alerts-card {
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
-    border: 1px solid rgba(0,0,0,0.03);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    min-width: 0;
-}
-
-.alerts-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 20px;
-    border-bottom: 1px solid #f1f5f9;
-    font-weight: 600;
-    color: #1e293b;
-    font-size: 14px;
-    gap: 8px;
-    flex-shrink: 0;
-}
-
-.alerts-card-header a {
-    font-size: 12px;
-    text-decoration: none;
-    color: #3b82f6;
-    background: #eff6ff;
-    padding: 5px 11px;
-    border-radius: 6px;
-    font-weight: 500;
-    transition: background 0.2s, color 0.2s;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-.alerts-card-header a:hover { background: #3b82f6; color: #fff; }
-
-.alerts-card-body {
-    padding: 14px 20px;
-    flex: 1;
-    overflow-x: auto;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 32px 16px;
-    color: #94a3b8;
-    font-weight: 500;
-    font-size: 13.5px;
-}
-
-.dash-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-    min-width: 420px;
-}
-
-.dash-table th {
-    text-align: left;
-    padding: 10px 8px;
-    color: #64748b;
-    font-weight: 600;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-bottom: 1px solid #e2e8f0;
-    white-space: nowrap;
-}
-
-.dash-table td {
-    padding: 13px 8px;
-    border-bottom: 1px solid #f8fafc;
-    color: #334155;
-    vertical-align: middle;
-}
-.dash-table tr:last-child td { border-bottom: none; }
-
-.dash-table code {
-    background: #f1f5f9;
-    padding: 3px 7px;
-    border-radius: 5px;
-    font-size: 11.5px;
-    color: #475569;
-}
-
-@media (max-width: 1280px) {
-    .kpi-grid { grid-template-columns: repeat(4, 1fr); }
-    .charts-row { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 1024px) {
-    .alerts-row,
-    .recent-transactions-row { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 768px) {
-    .dashboard-container { gap: 14px; }
-    .kpi-grid { gap: 12px; }
-    .kpi-card { padding: 14px; gap: 12px; }
-    .kpi-icon { width: 44px; height: 44px; font-size: 19px; border-radius: 12px; }
-    .chart-box, .stats-box { padding: 16px; }
-    .alerts-card-header { padding: 13px 16px; }
-    .alerts-card-body { padding: 10px 14px; }
-    .dashboard-header { justify-content: flex-start; }
-}
-
-@media (max-width: 480px) {
-    .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .kpi-card { padding: 12px; gap: 10px; }
-    .kpi-icon { width: 38px; height: 38px; font-size: 17px; border-radius: 10px; }
-    .btn-ai { padding: 8px 16px; font-size: 12.5px; }
-}
-
-.dashboard-container {
-    padding: 0 20px 40px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-}
-
-/* Toolbar Filter Buttons */
+/* ── TOOLBAR FILTER ─────────────────────────────────────────── */
 .dashboard-toolbar {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 16px;
+    gap: 14px;
 }
 
 .filter-pills {
     display: flex;
-    background: #ffffff;
-    padding: 4px;
+    background: var(--bg-card);
+    padding: 3px;
     border-radius: 999px;
-    border: 1px solid #f1f1f4;
+    border: 1px solid var(--border-color);
 }
 
 .pill-btn {
     border: none;
     background: transparent;
-    padding: 6px 18px;
+    padding: 6px 16px;
     border-radius: 999px;
-    font-size: 13.5px;
+    font-size: 13px;
     font-weight: 500;
-    color: #71717a;
+    color: var(--text-muted);
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .pill-btn.active {
-    background: #52525b;
-    color: #ffffff;
+    background: var(--navy-primary);
+    color: var(--text-inverse);
     font-weight: 600;
 }
 
@@ -315,16 +89,21 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #ffffff;
-    border: 1px solid #f1f1f4;
-    padding: 8px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 7px 16px;
     border-radius: 999px;
-    font-size: 13.5px;
-    font-weight: 500;
-    color: #27272a;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy-darkest);
 }
 
-/* 4 KPI Cards */
+.date-range-badge i {
+    color: var(--blue-mid);
+    font-size: 15px;
+}
+
+/* ── KPI CARDS (4 CỘT) ──────────────────────────────────────── */
 .kpi-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -332,66 +111,74 @@
 }
 
 .kpi-card {
-    background: #ffffff;
-    border: 1px solid #f4f4f5;
-    border-radius: 20px;
-    padding: 22px 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-top: 3px solid var(--gold-accent); /* Viền trên 3px màu vàng điểm nhấn */
+    border-radius: 14px;
+    padding: 20px 22px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 120px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+    min-height: 125px;
+    box-shadow: 0 4px 12px rgba(16, 26, 44, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(16, 26, 44, 0.07);
 }
 
 .kpi-title {
-    font-size: 14px;
-    font-weight: 500;
-    color: #71717a;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-muted);
 }
 
 .kpi-value {
     font-size: 26px;
     font-weight: 700;
-    color: #18181b;
+    color: var(--navy-darkest);
     margin: 8px 0 6px 0;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.4px;
 }
 
 .kpi-trend {
-    font-size: 12.5px;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 600;
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
 .trend-up {
-    color: #10b981;
+    color: #276256; /* Xanh ngọc đậm dễ đọc */
 }
 
 .trend-down {
-    color: #ef4444;
+    color: var(--status-danger);
 }
 
-/* Thẻ đen tuyền góc trái */
+/* Thẻ đầu tiên màu Navy tối huyền bí */
 .kpi-card.card-dark {
-    background: #18181b;
-    border-color: #18181b;
+    background: var(--navy-darkest);
+    border-color: var(--navy-darkest);
+    border-top: 3px solid var(--gold-accent);
 }
 
 .kpi-card.card-dark .kpi-title {
-    color: #a1a1aa;
+    color: #A6B4C9;
 }
 
 .kpi-card.card-dark .kpi-value {
-    color: #ffffff;
+    color: var(--text-inverse);
 }
 
 .kpi-card.card-dark .trend-up {
-    color: #34d399;
+    color: #4ADE80;
 }
 
-/* Middle Layout: Chart + Side Widget */
+/* ── MIDDLE GRID (CHART + SIDE WIDGETS) ─────────────────────── */
 .dashboard-middle-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
@@ -399,25 +186,25 @@
 }
 
 .content-card {
-    background: #ffffff;
-    border: 1px solid #f4f4f5;
-    border-radius: 20px;
-    padding: 24px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 22px 24px;
+    box-shadow: 0 4px 12px rgba(16, 26, 44, 0.04);
 }
 
 .card-header-clean {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
 .card-header-clean h3 {
     margin: 0;
-    font-size: 17px;
-    font-weight: 600;
-    color: #18181b;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--navy-darkest);
 }
 
 .card-header-actions {
@@ -429,61 +216,65 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    border: 1px solid #e4e4e7;
-    background: #ffffff;
+    border: 1px solid var(--border-color);
+    background: #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #52525b;
+    color: var(--navy-darkest);
     cursor: pointer;
     font-size: 15px;
     transition: all 0.15s ease;
 }
 
 .btn-circle-icon:hover {
-    background: #18181b;
-    color: #ffffff;
-    border-color: #18181b;
+    background: var(--navy-primary);
+    color: var(--text-inverse);
+    border-color: var(--navy-primary);
 }
 
-/* Biểu đồ thanh bo góc mượt */
+/* Biểu đồ cột bo góc thanh mảnh */
 .mock-bar-chart {
     height: 220px;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    padding: 0 20px 10px 20px;
-    border-bottom: 1px solid #f4f4f5;
+    padding: 0 16px 10px 16px;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .bar-col {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     height: 100%;
     justify-content: flex-end;
     width: 44px;
 }
 
 .bar-fill {
-    width: 20px;
-    background: #18181b;
+    width: 22px;
+    background: var(--navy-primary); /* Series 1 màu Navy */
     border-radius: 12px;
-    transition: height 0.3s ease;
+    transition: height 0.3s ease, background-color 0.2s ease;
+}
+
+.bar-fill:hover {
+    background: var(--blue-mid);
 }
 
 .bar-fill.active-bar {
-    background: #71717a; /* Cột xám active như trong mẫu */
+    background: var(--gold-accent); /* Cột active dùng màu Vàng điểm nhấn */
 }
 
 .bar-col span {
-    font-size: 13px;
-    font-weight: 500;
-    color: #71717a;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-muted);
 }
 
-/* Side Widgets */
+/* ── SIDE WIDGETS ───────────────────────────────────────────── */
 .side-widgets {
     display: flex;
     flex-direction: column;
@@ -495,46 +286,54 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 15px;
-    font-weight: 600;
-    color: #18181b;
-    margin-bottom: 16px;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--navy-darkest);
+    margin-bottom: 14px;
 }
 
 .cal-nav {
     border: none;
     background: transparent;
     cursor: pointer;
-    color: #71717a;
+    color: var(--blue-mid);
     font-size: 18px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+
+.cal-nav:hover {
+    background: #EDE6D2;
 }
 
 .cal-days-strip {
     display: flex;
     justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
 }
 
 .day-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 10px 8px;
-    border-radius: 14px;
-    font-size: 13px;
-    color: #71717a;
+    gap: 6px;
+    padding: 9px 8px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    font-weight: 500;
 }
 
 .day-item.active-day {
-    background: #52525b;
-    color: #ffffff;
-    padding: 10px 12px;
-    border-radius: 14px;
+    background: var(--navy-primary);
+    color: var(--text-inverse);
+    padding: 9px 10px;
+    border-radius: 10px;
 }
 
 .day-item.active-day b {
-    color: #ffffff;
+    color: var(--gold-accent);
 }
 
 /* Progress card */
@@ -545,46 +344,73 @@
 }
 
 .progress-title {
-    font-size: 15px;
-    font-weight: 600;
-    color: #18181b;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--navy-darkest);
     margin-bottom: 4px;
 }
 
 .progress-circle {
-    width: 54px;
-    height: 54px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
-    border: 5px solid #18181b;
-    border-top-color: #e4e4e7;
+    border: 5px solid #EDE6D2;
+    border-top-color: var(--navy-primary);
+    border-right-color: var(--gold-accent);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 13px;
     font-weight: 700;
-    color: #18181b;
+    color: var(--navy-darkest);
 }
 
-/* Table Card */
+/* ── BẢNG GIAO DỊCH GẦN NHẤT ───────────────────────────────── */
+.table-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.table-card .card-header-clean {
+    padding: 20px 24px 14px 24px;
+    margin-bottom: 0;
+}
+
 .clean-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed; /* Khóa tỷ lệ cột không bị xô lệch khoảng cách */
 }
 
 .clean-table th {
+    background: var(--navy-primary);
+    color: var(--text-inverse);
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    padding: 12px 16px;
     text-align: left;
-    font-size: 13px;
-    font-weight: 500;
-    color: #71717a;
-    padding: 12px 14px;
-    border-bottom: 1px solid #f1f1f4;
+    border-bottom: 2px solid var(--navy-darkest);
+    white-space: nowrap;
 }
 
 .clean-table td {
-    padding: 16px 14px;
-    font-size: 14px;
-    color: #18181b;
-    border-bottom: 1px solid #fafafa;
+    padding: 14px 16px;
+    font-size: 13.5px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.clean-table tbody tr:nth-child(even) td {
+    background: rgba(244, 239, 223, 0.4);
+}
+
+.clean-table tbody tr:hover td {
+    background: rgba(38, 75, 111, 0.08);
 }
 
 .item-name-cell {
@@ -592,38 +418,64 @@
     align-items: center;
     gap: 12px;
     font-weight: 600;
+    color: var(--navy-darkest);
+    overflow: hidden;
+}
+
+.item-name-cell span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .item-thumb {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    background: #f4f4f5;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #EDE6D2;
+    border: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #71717a;
-    font-size: 18px;
+    color: var(--blue-mid);
+    font-size: 17px;
+    flex-shrink: 0;
 }
 
 .mono-id {
-    color: #71717a;
-    font-weight: 500;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-family: inherit;
 }
 
 .amount-cell {
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--navy-darkest);
 }
 
+/* Badge trạng thái */
 .status-pill {
     display: inline-block;
-    padding: 4px 14px;
-    border-radius: 999px;
-    font-size: 12.5px;
+    padding: 3px 12px;
+    border-radius: 6px;
+    font-size: 12px;
     font-weight: 600;
 }
 
 .status-paid {
-    background: #52525b;
-    color: #ffffff;
+    background: rgba(62, 142, 126, 0.15);
+    color: #276256;
+    border: 1px solid rgba(62, 142, 126, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 1280px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .dashboard-middle-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .dashboard-container { padding: 10px 16px 30px; gap: 16px; }
+    .kpi-grid { grid-template-columns: 1fr; }
+    .dashboard-toolbar { justify-content: flex-start; flex-wrap: wrap; }
 }

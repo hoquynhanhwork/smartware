@@ -73,6 +73,10 @@ $csrfToken = $csrf->getToken();
 
 include __DIR__ . '/../../layout/header.php';
 ?>
+<!-- Font Be Vietnam Pro & Style Chuẩn -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/suppliers.css">
 
 <!-- Script chống giật layout filter -->
@@ -167,7 +171,7 @@ include __DIR__ . '/../../layout/header.php';
                 </div>
             </div>
 
-            <!-- 5. BỘ CHỌN NGÀY TẠO (HIERARCHY VIEW: NGÀY -> THÁNG -> NĂM) -->
+            <!-- 5. BỘ CHỌN NGÀY TẠO -->
             <div class="filter-section" data-filter-key="date">
                 <div class="filter-sec-title">
                     <span><i class="ri-calendar-line"></i> Ngày tạo</span>
@@ -295,15 +299,15 @@ include __DIR__ . '/../../layout/header.php';
                         </tr>
                     <?php else: ?>
                         <?php foreach ($suppliers as $sup):
-                            $badgeClass = $sup['status'] === 'active' ? 'st-completed' : 'st-overdue';
-                            $badgeText  = $sup['status'] === 'active' ? 'Đang hợp tác' : 'Ngừng hợp tác';
+                            $isAct = ($sup['status'] ?? 'active') === 'active';
+                            $badgeClass = $isAct ? 'st-success' : 'st-danger';
+                            $badgeText  = $isAct ? 'Đang hợp tác' : 'Ngừng hợp tác';
                         ?>
                         <tr>
                             <td><input type="checkbox" class="row-checkbox" data-id="<?= $sup['id'] ?>"></td>
                             <td>
                                 <div class="task-title-cell">
                                     <div class="task-text-info">
-                                        <!-- LIÊN KẾT TRỰC TIẾP SANG TRANG CHI TIẾT ĐỐI TÁC DETAIL.PHP -->
                                         <a href="detail.php?id=<?= $sup['id'] ?>" class="item-name" style="text-decoration:none;">
                                             <?= htmlspecialchars($sup['name']) ?>
                                         </a>
@@ -483,7 +487,7 @@ include __DIR__ . '/../../layout/header.php';
                     </div>
 
                     <input type="text" name="address" id="supAddress" placeholder="Số nhà, tên đường chi tiết..." class="form-input-modern">
-                    <div id="address_display" style="font-size: 12px; color: #71717a; margin-top: 4px;"></div>
+                    <div id="address_display" style="font-size: 12px; color: var(--text-muted); margin-top: 4px;"></div>
 
                     <input type="hidden" name="province_code"  id="provinceCode">
                     <input type="hidden" name="ward_code"      id="wardCode">

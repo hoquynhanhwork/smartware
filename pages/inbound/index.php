@@ -67,6 +67,10 @@ $filterCount = count($supplier_filters) + count($status_filters)
 
 include __DIR__ . '/../../layout/header.php';
 ?>
+<!-- Font Be Vietnam Pro & CSS Đồng bộ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/suppliers.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/inbound.css">
 
@@ -104,7 +108,7 @@ include __DIR__ . '/../../layout/header.php';
                     </label>
                     <label class="filter-check-item">
                         <input type="checkbox" name="status[]" value="pending" <?= in_array('pending', $status_filters, true) ? 'checked' : '' ?> onchange="this.form.submit()">
-                        <span class="dot-indicator" style="background:#f59e0b"></span>
+                        <span class="dot-indicator" style="background:var(--gold-accent)"></span>
                         <span class="label-text">Tạm thời</span>
                     </label>
                     <label class="filter-check-item">
@@ -213,7 +217,7 @@ include __DIR__ . '/../../layout/header.php';
                     <i class="ri-search-line"></i>
                     <input type="text" id="searchInput" placeholder="Tìm kiếm phiếu nhập..." value="<?= htmlspecialchars($keyword) ?>" onkeyup="searchInboundTable()">
                 </div>
-                <a href="ocr.php" class="btn-tb-filter" style="text-decoration:none;">
+                <a href="ocr.php" class="btn-tb-secondary" style="text-decoration:none;">
                     <i class="ri-scan-2-line"></i> Nhập từ hóa đơn
                 </a>
                 <a href="create.php" class="btn-tb-primary" style="text-decoration:none;">
@@ -226,75 +230,75 @@ include __DIR__ . '/../../layout/header.php';
         <?php if ($flash_error):   ?><div class="alert alert-danger" style="margin-bottom:0;"><?= htmlspecialchars($flash_error) ?></div><?php endif; ?>
 
         <!-- BẢNG DỮ LIỆU HIỆN ĐẠI -->
-        <div class="task-table-card">
-            <table class="task-data-table" id="inboundTable">
-                <thead>
-                    <tr>
-                        <th width="42"><input type="checkbox" id="selectAll"></th>
-                        <th width="150">Mã phiếu</th>
-                        <th width="260">Nhà cung cấp</th>
-                        <th width="180">Người tạo</th>
-                        <th width="160">Ngày tạo</th>
-                        <th width="140">Trạng thái</th>
-                        <th width="110" class="text-right">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($inbounds)): ?>
-                        <tr>
-                            <td colspan="7" class="table-empty-cell">
-                                <i class="ri-inbox-line"></i>
-                                <p>Không tìm thấy phiếu nhập nào</p>
-                            </td>
-                        </tr>
-                    <?php else: ?>
-                        <?php
-                        $statusMap = [
-                            'completed' => ['st-completed', 'Hoàn thành'],
-                            'pending'   => ['st-pending',   'Tạm thời'],
-                            'cancelled' => ['st-overdue',   'Đã hủy'],
-                        ];
-                        foreach ($inbounds as $ib):
-                            [$badgeClass, $badgeText] = $statusMap[$ib['status']] ?? ['st-pending', $ib['status']];
-                            $canEdit   = ($ib['status'] === 'pending');
-                            $canDelete = hasRole('admin', 'manager') && ($ib['status'] === 'pending');
-                        ?>
-                        <tr>
-                            <td><input type="checkbox" class="row-checkbox" data-id="<?= $ib['id'] ?>"></td>
-                            <td>
-                                <a href="javascript:void(0)" onclick="viewInboundDetail(<?= $ib['id'] ?>)" class="item-name" style="text-decoration:none; cursor:pointer;">
-                                    <strong><?= htmlspecialchars($ib['ref_no'] ?? '—') ?></strong>
-                                </a>
-                            </td>
-                            <td><?= htmlspecialchars($ib['supplier_name'] ?? '—') ?></td>
-                            <td><?= htmlspecialchars($ib['user_name'] ?? '—') ?></td>
-                            <td><?= date('d/m/Y H:i', strtotime($ib['created'])) ?></td>
-                            <td>
-                                <span class="clean-badge <?= $badgeClass ?>">
-                                    <?= $badgeText ?>
-                                </span>
-                            </td>
-                            <td class="text-right actions-cell">
-                                <button type="button" class="btn-action-icon" onclick="viewInboundDetail(<?= $ib['id'] ?>)" title="Xem chi tiết">
-                                    <i class="ri-eye-line"></i>
-                                </button>
-                                <?php if ($canEdit): ?>
-                                    <button type="button" class="btn-action-icon" onclick="editInbound(<?= $ib['id'] ?>)" title="Sửa phiếu tạm">
-                                        <i class="ri-pencil-line"></i>
-                                    </button>
-                                <?php endif; ?>
-                                <?php if ($canDelete): ?>
-                                    <button type="button" class="btn-action-icon btn-action-delete" onclick="confirmDeleteInbound(<?= $ib['id'] ?>)" title="Xóa phiếu tạm">
-                                        <i class="ri-delete-bin-line"></i>
-                                    </button>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+<div class="task-table-card">
+    <table class="task-data-table" id="inboundTable">
+        <thead>
+            <tr>
+                <th style="width: 46px;" class="text-center"><input type="checkbox" id="selectAll"></th>
+                <th style="width: 220px;">Mã phiếu</th>
+                <th>Nhà cung cấp</th>
+                <th style="width: 180px;">Người tạo</th>
+                <th style="width: 180px;">Ngày tạo</th>
+                <th style="width: 140px;">Trạng thái</th>
+                <th style="width: 110px;" class="text-right">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (empty($inbounds)): ?>
+                <tr>
+                    <td colspan="7" class="table-empty-cell">
+                        <i class="ri-inbox-line"></i>
+                        <p>Không tìm thấy phiếu nhập nào</p>
+                    </td>
+                </tr>
+            <?php else: ?>
+                <?php
+                $statusMap = [
+                    'completed' => ['st-success', 'Hoàn thành'],
+                    'pending'   => ['st-warning', 'Tạm thời'],
+                    'cancelled' => ['st-danger',  'Đã hủy'],
+                ];
+                foreach ($inbounds as $ib):
+                    [$badgeClass, $badgeText] = $statusMap[$ib['status']] ?? ['st-warning', $ib['status']];
+                    $canEdit   = ($ib['status'] === 'pending');
+                    $canDelete = hasRole('admin', 'manager') && ($ib['status'] === 'pending');
+                ?>
+                <tr>
+                    <td class="text-center"><input type="checkbox" class="row-checkbox" data-id="<?= $ib['id'] ?>"></td>
+                    <td>
+                        <a href="javascript:void(0)" onclick="viewInboundDetail(<?= $ib['id'] ?>)" class="item-code-link" title="<?= htmlspecialchars($ib['ref_no'] ?? '') ?>">
+                            <?= htmlspecialchars($ib['ref_no'] ?? '—') ?>
+                        </a>
+                    </td>
+                    <td title="<?= htmlspecialchars($ib['supplier_name'] ?? '') ?>"><?= htmlspecialchars($ib['supplier_name'] ?? '—') ?></td>
+                    <td><?= htmlspecialchars($ib['user_name'] ?? '—') ?></td>
+                    <td><?= date('d/m/Y H:i', strtotime($ib['created'])) ?></td>
+                    <td>
+                        <span class="clean-badge <?= $badgeClass ?>">
+                            <?= $badgeText ?>
+                        </span>
+                    </td>
+                    <td class="text-right actions-cell">
+                        <button type="button" class="btn-action-icon" onclick="viewInboundDetail(<?= $ib['id'] ?>)" title="Xem chi tiết">
+                            <i class="ri-eye-line"></i>
+                        </button>
+                        <?php if ($canEdit): ?>
+                            <button type="button" class="btn-action-icon" onclick="editInbound(<?= $ib['id'] ?>)" title="Sửa phiếu tạm">
+                                <i class="ri-pencil-line"></i>
+                            </button>
+                        <?php endif; ?>
+                        <?php if ($canDelete): ?>
+                            <button type="button" class="btn-action-icon btn-action-delete" onclick="confirmDeleteInbound(<?= $ib['id'] ?>)" title="Xóa phiếu tạm">
+                                <i class="ri-delete-bin-line"></i>
+                            </button>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </tbody>
+    </table>
+</div>
 
         <!-- BULK ACTION BAR -->
         <div id="bulkActionBar" class="bulk-action-bar">
@@ -410,7 +414,7 @@ include __DIR__ . '/../../layout/header.php';
                     </div>
                 </div>
 
-                <div class="table-responsive" style="border:1px solid var(--tb-border); border-radius:10px; margin-bottom:12px;">
+                <div class="table-responsive" style="border:1px solid var(--border-color); border-radius:10px; margin-bottom:12px; overflow:hidden;">
                     <table class="task-data-table" id="editInboundItemsTable">
                         <thead>
                             <tr>
@@ -433,8 +437,8 @@ include __DIR__ . '/../../layout/header.php';
                     <button type="button" class="btn-modern-outline" onclick="addEditInboundRow()">
                         <i class="ri-add-line"></i> Thêm dòng mới
                     </button>
-                    <div style="font-size:14px; font-weight:600;">
-                        Tổng cộng: <span id="editTotalAmountDisplay" style="color:#2563eb;">0 đ</span>
+                    <div style="font-size:14px; font-weight:700; color:var(--navy-darkest);">
+                        Tổng cộng: <span id="editTotalAmountDisplay" style="color:var(--navy-primary);">0 đ</span>
                         <input type="hidden" name="total_amount" id="editTotalAmount" value="0">
                     </div>
                 </div>
@@ -467,7 +471,7 @@ include __DIR__ . '/../../layout/header.php';
         <td><input type="number" name="quantity[]" class="qty form-input-modern" value="1" min="1" required style="text-align:right; padding:6px 10px;"></td>
         <td><input type="text" name="unit_price[]" class="price form-input-modern" step="1000" required style="text-align:right; padding:6px 10px;"></td>
         <td style="text-align:right;">
-            <input type="text" class="row-total form-input-modern" readonly style="text-align:right; font-weight:600; background:transparent; border:none; padding:6px 10px;">
+            <input type="text" class="row-total form-input-modern" readonly style="text-align:right; font-weight:700; background:transparent; border:none; padding:6px 10px; color:var(--navy-darkest);">
         </td>
         <td class="text-center">
             <button type="button" class="btn-action-icon btn-action-delete" onclick="removeEditInboundRow(this)">

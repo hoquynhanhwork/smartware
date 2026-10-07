@@ -31,11 +31,18 @@ interface ProductRepositoryInterface
 
     // ── Tìm 1 bản ghi ────────────────────────────────────────────────────
     public function findById(int $id): array|false;
-    public function findBySku(string $sku, int $excludeId = 0): array|false;
+    /** $includeDeleted = true: tính cả sản phẩm đã xóa mềm (SKU của chúng vẫn bị "giữ chỗ"). */
+    public function findBySku(string $sku, int $excludeId = 0, bool $includeDeleted = false): array|false;
 
     // ── Ghi ───────────────────────────────────────────────────────────────
     /** @return int ID bản ghi mới */
     public function create(array $data): int;
+    /**
+     * Tạo sản phẩm với SKU tự sinh (SPxxxxx), sinh + ghi trong cùng 1 transaction có khóa
+     * để các request đồng thời không nhận trùng SKU.
+     * @return array{id:int, sku:string}
+     */
+    public function createWithAutoSku(array $data): array;
     public function update(int $id, array $data): bool;
     public function setStatus(int $id, string $status): void;
     public function softDelete(int $id): void;

@@ -11,7 +11,6 @@ use App\Services\DashboardService;
 
 requireLogin();
 
-
 // ── Composition Root ──────────────────────────────────────────────────────────
 $service   = new DashboardService(new DashboardRepository($pdo));
 $data      = $service->getDashboardData();
@@ -25,16 +24,20 @@ $recent_outbounds = $data['recent_outbounds'];
 
 include __DIR__ . '/../../layout/header.php';
 ?>
+<!-- Font Be Vietnam Pro -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/dashboard.css">
 
 <div class="dashboard-container">
     <!-- Header Filter Bar (Day / Week / Month / Year & Date Range) -->
     <div class="dashboard-toolbar">
         <div class="filter-pills">
-            <button type="button" class="pill-btn">Day</button>
-            <button type="button" class="pill-btn">Week</button>
-            <button type="button" class="pill-btn active">Month</button>
-            <button type="button" class="pill-btn">Year</button>
+            <button type="button" class="pill-btn">Ngày</button>
+            <button type="button" class="pill-btn">Tuần</button>
+            <button type="button" class="pill-btn active">Tháng</button>
+            <button type="button" class="pill-btn">Năm</button>
         </div>
         <div class="date-range-badge">
             <i class="ri-calendar-line"></i>
@@ -42,66 +45,65 @@ include __DIR__ . '/../../layout/header.php';
         </div>
     </div>
 
-    <!-- 4 KPI Cards (Thẻ đầu tiên màu đen huyền bí như trong ảnh) -->
+    <!-- 4 KPI Cards: Card đầu tiên mang sắc Navy tối sang trọng, viền trên vàng -->
     <div class="kpi-grid">
-        <!-- Card 1: Active Black Card -->
+        <!-- Card 1: Active Navy Card -->
         <div class="kpi-card card-dark">
             <div class="kpi-title">Tổng giá trị tồn kho</div>
-            <div class="kpi-value"><?= isset($total_inventory_value) ? number_format($total_inventory_value) . ' đ' : '239,020,000 đ' ?></div>
+            <div class="kpi-value"><?= isset($stats['inventory_value']) ? number_format($stats['inventory_value']) . ' ₫' : '239,020,000 ₫' ?></div>
             <div class="kpi-trend trend-up">
-                <i class="ri-arrow-right-up-line"></i> 4.2% so với tháng trước
+                <i class="ri-arrow-right-up-line"></i> +4.2% so với tháng trước
             </div>
         </div>
 
         <!-- Card 2 -->
         <div class="kpi-card">
             <div class="kpi-title">Tổng số mặt hàng</div>
-            <div class="kpi-value"><?= isset($total_products) ? number_format($total_products) : '16,815' ?></div>
+            <div class="kpi-value"><?= isset($kpis['total_products']) ? number_format($kpis['total_products']) : '16,815' ?></div>
             <div class="kpi-trend trend-up">
-                <i class="ri-arrow-right-up-line"></i> 1.7% so với tháng trước
+                <i class="ri-arrow-right-up-line"></i> +1.7% so với tháng trước
             </div>
         </div>
 
         <!-- Card 3 -->
         <div class="kpi-card">
             <div class="kpi-title">Đơn nhập kho tháng này</div>
-            <div class="kpi-value"><?= isset($total_inbound) ? number_format($total_inbound) : '1,457' ?></div>
+            <div class="kpi-value"><?= isset($kpis['inbounds_this_month']) ? number_format($kpis['inbounds_this_month']) : '1,457' ?></div>
             <div class="kpi-trend trend-down">
-                <i class="ri-arrow-right-down-line"></i> 2.9% so với tháng trước
+                <i class="ri-arrow-right-down-line"></i> -2.9% so với tháng trước
             </div>
         </div>
 
         <!-- Card 4 -->
         <div class="kpi-card">
             <div class="kpi-title">Đơn xuất kho hoàn tất</div>
-            <div class="kpi-value"><?= isset($total_outbound) ? number_format($total_outbound) : '2,023' ?></div>
+            <div class="kpi-value"><?= isset($kpis['outbounds_this_month']) ? number_format($kpis['outbounds_this_month']) : '2,023' ?></div>
             <div class="kpi-trend trend-up">
-                <i class="ri-arrow-right-up-line"></i> 0.9% so với tháng trước
+                <i class="ri-arrow-right-up-line"></i> +0.9% so với tháng trước
             </div>
         </div>
     </div>
 
-    <!-- Main Section: Chart (Left) + Mini Calendar & Widget (Right) -->
+    <!-- Main Section: Biểu đồ (Trái) + Mini Calendar & Widget (Phải) -->
     <div class="dashboard-middle-grid">
-        <!-- Biểu đồ cột bo góc thanh mảnh -->
+        <!-- Biểu đồ cột bo tròn -->
         <div class="content-card chart-card">
             <div class="card-header-clean">
-                <h3>Thống kê biến động kho</h3>
-                <button type="button" class="btn-circle-icon"><i class="ri-arrow-right-up-line"></i></button>
+                <h3>Thống kê biến động nhập kho</h3>
+                <button type="button" class="btn-circle-icon" title="Xem chi tiết"><i class="ri-arrow-right-up-line"></i></button>
             </div>
             
             <div class="mock-bar-chart">
-                <!-- Mô phỏng các cột bo tròn theo mẫu (Có thể dùng Chart.js hoặc CSS cột dưới) -->
-                <div class="bar-col"><div class="bar-fill" style="height: 60%;"></div><span>Jan</span></div>
-                <div class="bar-col"><div class="bar-fill" style="height: 48%;"></div><span>Feb</span></div>
-                <div class="bar-col"><div class="bar-fill active-bar" style="height: 85%;"></div><span>Mar</span></div>
-                <div class="bar-col"><div class="bar-fill" style="height: 52%;"></div><span>Apr</span></div>
-                <div class="bar-col"><div class="bar-fill" style="height: 80%;"></div><span>May</span></div>
-                <div class="bar-col"><div class="bar-fill" style="height: 35%;"></div><span>Jun</span></div>
+                <div class="bar-col"><div class="bar-fill" style="height: 60%;"></div><span>Th1</span></div>
+                <div class="bar-col"><div class="bar-fill" style="height: 48%;"></div><span>Th2</span></div>
+                <div class="bar-col"><div class="bar-fill" style="height: 70%;"></div><span>Th3</span></div>
+                <div class="bar-col"><div class="bar-fill" style="height: 52%;"></div><span>Th4</span></div>
+                <div class="bar-col"><div class="bar-fill active-bar" style="height: 85%;"></div><span>Th5</span></div>
+                <div class="bar-col"><div class="bar-fill" style="height: 42%;"></div><span>Th6</span></div>
             </div>
         </div>
 
-        <!-- Widget bên phải: Lịch & Tỷ lệ hoàn thành -->
+        <!-- Widget bên phải: Lịch & Hiệu suất -->
         <div class="side-widgets">
             <!-- Calendar Card -->
             <div class="content-card calendar-card">
@@ -111,20 +113,20 @@ include __DIR__ . '/../../layout/header.php';
                     <button type="button" class="cal-nav"><i class="ri-arrow-right-s-line"></i></button>
                 </div>
                 <div class="cal-days-strip">
-                    <div class="day-item"><span>Tue</span><b>17</b></div>
-                    <div class="day-item"><span>Wed</span><b>18</b></div>
-                    <div class="day-item active-day"><span>Thu</span><b>19</b></div>
-                    <div class="day-item"><span>Fri</span><b>20</b></div>
-                    <div class="day-item"><span>Sat</span><b>21</b></div>
+                    <div class="day-item"><span>T3</span><b>17</b></div>
+                    <div class="day-item"><span>T4</span><b>18</b></div>
+                    <div class="day-item active-day"><span>T5</span><b>19</b></div>
+                    <div class="day-item"><span>T6</span><b>20</b></div>
+                    <div class="day-item"><span>T7</span><b>21</b></div>
                 </div>
             </div>
 
             <!-- Tỉ lệ hoàn thành mục tiêu -->
             <div class="content-card progress-card">
                 <div class="progress-left">
-                    <div class="progress-title">Hiệu suất vận hành</div>
+                    <div class="progress-title">Hiệu suất luân chuyển</div>
                     <div class="kpi-trend trend-up">
-                        <i class="ri-arrow-right-up-line"></i> 0.9% từ tuần trước
+                        <i class="ri-arrow-right-up-line"></i> +0.9% từ tuần trước
                     </div>
                 </div>
                 <div class="progress-circle">
@@ -134,13 +136,13 @@ include __DIR__ . '/../../layout/header.php';
         </div>
     </div>
 
-    <!-- Bảng Giao dịch gần nhất (Course Purchases -> Chuyển thành Đơn hàng gần nhất) -->
+    <!-- Bảng Giao dịch gần nhất (table-layout fixed, canh lề chuẩn) -->
     <div class="content-card table-card">
         <div class="card-header-clean">
             <h3>Đơn hàng & Giao dịch mới nhất</h3>
             <div class="card-header-actions">
-                <button type="button" class="btn-circle-icon"><i class="ri-refresh-line"></i></button>
-                <button type="button" class="btn-circle-icon"><i class="ri-arrow-right-up-line"></i></button>
+                <button type="button" class="btn-circle-icon" onclick="window.location.reload()" title="Làm mới"><i class="ri-refresh-line"></i></button>
+                <a href="../inbound/index.php" class="btn-circle-icon" title="Xem tất cả"><i class="ri-arrow-right-up-line"></i></a>
             </div>
         </div>
 
@@ -148,30 +150,30 @@ include __DIR__ . '/../../layout/header.php';
             <table class="clean-table">
                 <thead>
                     <tr>
-                        <th>Tên sản phẩm / Đơn hàng</th>
+                        <th style="width: 320px;">Tên sản phẩm / Đơn hàng</th>
                         <th>Khách hàng / Đối tác</th>
-                        <th>Mã đơn</th>
-                        <th>Tổng tiền</th>
-                        <th>Trạng thái</th>
+                        <th style="width: 140px;">Mã đơn</th>
+                        <th style="width: 160px;">Tổng tiền</th>
+                        <th style="width: 130px;">Trạng thái</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Lặp dữ liệu PHP thực tế của bạn tại đây -->
-                    <?php if (!empty($recent_orders)): ?>
-                        <?php foreach ($recent_orders as $order): ?>
+                    <?php if (!empty($recent_inbounds)): ?>
+                        <?php foreach (array_slice($recent_inbounds, 0, 5) as $order): ?>
                             <tr>
                                 <td class="item-name-cell">
                                     <div class="item-thumb"><i class="ri-box-3-fill"></i></div>
-                                    <span><?= htmlspecialchars($order['product_name'] ?? 'Mặt hàng kho') ?></span>
+                                    <span title="<?= htmlspecialchars($order['note'] ?: 'Đơn nhập hàng kho') ?>">
+                                        <?= htmlspecialchars($order['note'] ?: 'Đơn nhập hàng kho') ?>
+                                    </span>
                                 </td>
-                                <td><?= htmlspecialchars($order['partner_name'] ?? 'Khách lẻ') ?></td>
-                                <td><span class="mono-id">#<?= htmlspecialchars($order['code'] ?? '100293') ?></span></td>
-                                <td class="amount-cell"><?= number_format($order['total'] ?? 0) ?> đ</td>
-                                <td><span class="status-pill status-paid">Hoàn tất</span></td>
+                                <td><?= htmlspecialchars($order['supplier_name'] ?? 'Nhà cung cấp đối tác') ?></td>
+                                <td><span class="mono-id">#<?= htmlspecialchars($order['ref_no'] ?? 'INB-00') ?></span></td>
+                                <td class="amount-cell"><?= number_format($order['total_amount'] ?? 0) ?> ₫</td>
+                                <td><span class="status-pill status-paid">Hoàn thành</span></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <!-- Hàng mẫu demo trực quan -->
                         <tr>
                             <td class="item-name-cell">
                                 <div class="item-thumb"><i class="ri-box-3-fill"></i></div>
@@ -179,8 +181,8 @@ include __DIR__ . '/../../layout/header.php';
                             </td>
                             <td>Công ty logistics Aria</td>
                             <td><span class="mono-id">#3456791</span></td>
-                            <td class="amount-cell">372,000 đ</td>
-                            <td><span class="status-pill status-paid">Đã thanh toán</span></td>
+                            <td class="amount-cell">372,000 ₫</td>
+                            <td><span class="status-pill status-paid">Hoàn tất</span></td>
                         </tr>
                         <tr>
                             <td class="item-name-cell">
@@ -189,8 +191,8 @@ include __DIR__ . '/../../layout/header.php';
                             </td>
                             <td>Tập đoàn Vận tải Viễn Đông</td>
                             <td><span class="mono-id">#3456792</span></td>
-                            <td class="amount-cell">1,850,000 đ</td>
-                            <td><span class="status-pill status-paid">Đã thanh toán</span></td>
+                            <td class="amount-cell">1,850,000 ₫</td>
+                            <td><span class="status-pill status-paid">Hoàn tất</span></td>
                         </tr>
                     <?php endif; ?>
                 </tbody>

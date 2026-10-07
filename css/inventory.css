@@ -554,3 +554,211 @@
 .fsb-children.open { display: block; }
 .fsb-child-row { padding-left: 36px; }
 .fsb-child-row .fsb-label { font-size: 13px; color: #475569; }
+
+/* =======================================================
+   INVENTORY MODULE (MINIMALIST NEO-CLEAN - MATCHING INBOUND)
+======================================================= */
+:root {
+    --tb-border: #f1f1f4;
+    --tb-bg-hover: #f9fafb;
+    --text-main: #18181b;
+    --text-muted: #71717a;
+    --primary-dark: #18181b;
+    --inbound-blue: #2563eb;
+    --inbound-gold: #c89114;
+}
+
+/* ── Container bao ngoài ─────────────────────────────────────── */
+.inventory-container {
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* ── Mini KPI Bar phía trên bảng ─────────────────────────────── */
+.inventory-mini-kpi-bar {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: #ffffff;
+    border: 1px solid var(--tb-border);
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-size: 13.5px;
+    color: var(--text-muted);
+}
+
+.kpi-mini-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.kpi-mini-item strong {
+    color: var(--text-main);
+    font-size: 14px;
+}
+
+.kpi-mini-item.text-danger strong {
+    color: #dc2626;
+}
+
+.kpi-mini-item.text-warning strong {
+    color: #d97706;
+}
+
+/* ── Subtitle sản phẩm & Code Lô hàng ────────────────────────── */
+.product-info-sub {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.batch-code {
+    background: #f4f4f5;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    color: #3f3f46;
+    border: 1px solid #e4e4e7;
+}
+
+/* ── Form Inputs trong Modal & Filter ────────────────────────── */
+.form-row-modern {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.form-label-modern {
+    font-size: 13px;
+    font-weight: 600;
+    color: #3f3f46;
+}
+
+.form-input-modern {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 13.5px;
+    color: var(--text-main);
+    background: #ffffff;
+    border: 1px solid #e4e4e7;
+    border-radius: 8px;
+    outline: none;
+    box-sizing: border-box;
+    transition: all 0.15s ease;
+}
+
+.form-input-modern:focus {
+    border-color: var(--primary-dark);
+    box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.05);
+}
+
+/* ── Type Toggle nhanh trên Toolbar (History) ────────────────── */
+.type-toggle {
+    display: inline-flex;
+    border: 1px solid #e4e4e7;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.type-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-right: 1px solid #e4e4e7;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.type-btn:last-child {
+    border-right: none;
+}
+
+.type-btn:hover {
+    background: #f4f4f5;
+    color: var(--text-main);
+}
+
+.type-btn.active {
+    background: #18181b;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* ── Qty chip (history page) ─────────────────────────────────── */
+.qty-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+    font-size: 13.5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.qty-chip--in {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.qty-chip--out {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+/* ── Autocomplete Suggestions Dropdown ───────────────────────── */
+.autocomplete-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid var(--tb-border);
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 9999;
+    margin-top: 4px;
+    padding: 4px 0;
+}
+
+.autocomplete-suggestions div {
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-main);
+    transition: background 0.12s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.autocomplete-suggestions div:hover {
+    background: #f4f4f5;
+}
+
+.autocomplete-suggestions div strong {
+    color: var(--primary-dark);
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .inventory-mini-kpi-bar {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+}

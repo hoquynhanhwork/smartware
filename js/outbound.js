@@ -1,12 +1,18 @@
-//  outbound.js
-
+// js/outbound.js
 'use strict';
 
+// ── CSRF & UTILS ──────────────────────────────────────────────────────────
 function getCsrfToken() {
-    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+    return document.querySelector('meta[name="csrf-token"]')?.content 
+        || document.querySelector('input[name="csrf_token"]')?.value 
+        || '';
 }
 
-// NCC đang chọn: trang tạo phiếu dùng #outboundSupplier, modal sửa dùng #editOutboundSupplierId.
+function appendCsrf(formData) {
+    formData.set('csrf_token', getCsrfToken());
+    return formData;
+}
+
 function getOutboundSupplierId() {
     const v = document.getElementById('outboundSupplier')?.value
            || document.getElementById('editOutboundSupplierId')?.value
@@ -14,20 +20,20 @@ function getOutboundSupplierId() {
     return parseInt(v, 10) || 0;
 }
 
+// ── GỢI Ý TÌM SẢN PHẨM (AUTOCOMPLETE) ──────────────────────────────────
 function getOutboundAutocompleteOptions() {
     return {
-        // Phiếu xuất thuộc đúng 1 NCC → chỉ gợi ý sản phẩm của NCC đó.
         searchUrl: `process.php?action=search_products&supplier_id=${getOutboundSupplierId()}`,
         onSelect: (product, row) => {
             loadBatchesForOutboundRow(row, product.id);
             if (typeof saveOutboundDraft === 'function') saveOutboundDraft();
+            if (typeof syncOutboundInvoicePreview === 'function') syncOutboundInvoicePreview();
         },
         position: 'above',
         minChars: 2
     };
 }
 
-// Chưa chọn NCC thì khóa ô tìm sản phẩm để không chọn nhầm hàng của NCC khác.
 function applyOutboundSupplierLock(row) {
     const input = row?.querySelector('.product-autocomplete-outbound');
     const select = document.getElementById('outboundSupplier');
@@ -41,7 +47,7 @@ function onOutboundSupplierChange(select) {
     const prev = select.dataset.prev || '';
     const hasProducts = [...document.querySelectorAll('#outboundItemsBody .product-id')].some(el => el.value);
     if (hasProducts && prev && prev !== select.value) {
-        if (!confirm('Đổi nhà cung cấp sẽ xóa các dòng sản phẩm đã chọn (mỗi phiếu chỉ dành cho một nhà cung cấp). Tiếp tục?')) {
+        if (!confirm('Đổi nhà cung cấp sẽ xóa các dòng sản phẩm đã chọn (mỗi phiếu chỉ xuất cho một nhà cung cấp). Tiếp tục?')) {
             select.value = prev;
             return;
         }
@@ -52,9 +58,10 @@ function onOutboundSupplierChange(select) {
         tbody.innerHTML = '';
         addOutboundRow();
     }
+    if (typeof syncOutboundInvoicePreview === 'function') syncOutboundInvoicePreview();
 }
 
-function loadBatchesForOutboundRow(row, productId) {
+function loadBatchesForOutboundRow(row, productId, selectedBatchNo = '') {
     const batchSelect = row.querySelector('.batch-select-outbound');
     const batchInfo   = row.querySelector('.batch-stock-info');
     if (!productId) {
@@ -65,29 +72,33 @@ function loadBatchesForOutboundRow(row, productId) {
     fetch(`get_batches.php?product_id=${productId}`)
         .then(res => res.json())
         .then(data => {
-            if (data.success && data.batches.length) {
+            if (data.success && data.batches && data.batches.length) {
                 let opts = '<option value="">-- Chọn lô --</option>';
                 data.batches.forEach(b => {
-                    opts += `<option value="${escapeHtml(b.batch_no)}" data-stock="${b.quantity}" data-exp="${b.exp_date || ''}">
-                        ${escapeHtml(b.batch_no)} (${b.exp_date ? 'HSD: ' + b.exp_date + ', ' : ''}còn: ${b.quantity})
+                    const isSel = selectedBatchNo && b.batch_no === selectedBatchNo ? 'selected' : '';
+                    opts += `<option value="${escapeHtml(b.batch_no)}" data-stock="${b.quantity}" data-exp="${b.exp_date || ''}" ${isSel}>
+                        ${escapeHtml(b.batch_no)} (${b.exp_date ? 'HSD: ' + b.exp_date + ', ' : ''}tồn: ${b.quantity})
                     </option>`;
                 });
                 if (batchSelect) batchSelect.innerHTML = opts;
                 if (batchInfo)   batchInfo.innerHTML   = '';
             } else {
                 if (batchSelect) batchSelect.innerHTML = '<option value="">-- Không có lô tồn --</option>';
-                if (batchInfo)   batchInfo.innerHTML   = '<span style="color:red">Sản phẩm này không còn lô hàng nào</span>';
+                if (batchInfo)   batchInfo.innerHTML   = '<span style="color:#ef4444;font-size:11px;">Hết lô hàng khả dụng</span>';
             }
+            if (typeof syncOutboundInvoicePreview === 'function') syncOutboundInvoicePreview();
         })
         .catch(err => console.error(err));
 }
 
+// ── QUẢN LÝ DÒNG HÀNG TRANG TẠO (CREATE) ───────────────────────────────
 function getEmptyOutboundRow() {
     const template = document.getElementById('outboundRowTemplate');
     if (!template) return null;
     const newRow = template.content.cloneNode(true).querySelector('tr');
     newRow.querySelectorAll('input, select').forEach(el => { el.value = ''; });
-    newRow.querySelector('.qty-outbound').value = '1';
+    const qty = newRow.querySelector('.qty-outbound');
+    if (qty) qty.value = '1';
     applyOutboundSupplierLock(newRow);
     return newRow;
 }
@@ -100,11 +111,12 @@ function addOutboundRow() {
     tbody.appendChild(newRow);
     attachOutboundRowEvents(newRow);
     const autocompleteInput = newRow.querySelector('.product-autocomplete-outbound');
-    if (autocompleteInput) {
+    if (autocompleteInput && typeof initAutocomplete === 'function') {
         initAutocomplete(autocompleteInput, getOutboundAutocompleteOptions());
     }
     updateOutboundStt();
     saveOutboundDraft();
+    if (typeof syncOutboundInvoicePreview === 'function') syncOutboundInvoicePreview();
 }
 
 function removeOutboundRow(btn) {
@@ -113,6 +125,7 @@ function removeOutboundRow(btn) {
         btn.closest('tr').remove();
         updateOutboundStt();
         saveOutboundDraft();
+        if (typeof syncOutboundInvoicePreview === 'function') syncOutboundInvoicePreview();
     } else {
         alert('Phải có ít nhất một dòng sản phẩm');
     }
@@ -124,6 +137,7 @@ function clearAllOutboundRows() {
         tbody.innerHTML = '';
         addOutboundRow();
         saveOutboundDraft();
+        if (typeof syncOutboundInvoicePreview === 'function') syncOutboundInvoicePreview();
     }
 }
 
@@ -134,39 +148,49 @@ function resetOutboundForm() {
         if (tbody) tbody.innerHTML = '';
         addOutboundRow();
         localStorage.removeItem('outbound_draft');
+        if (typeof syncOutboundInvoicePreview === 'function') syncOutboundInvoicePreview();
     }
 }
 
 function attachOutboundRowEvents(row) {
     const qty         = row.querySelector('.qty-outbound');
     const batchSelect = row.querySelector('.batch-select-outbound');
-    const batchInfo   = row.querySelector('.batch-stock-info');
 
     if (qty && qty.type === 'number') qty.type = 'text';
 
-    qty.addEventListener('input', () => saveOutboundDraft());
-    qty.addEventListener('blur', function () {
-        let val = this.value.trim() === '' ? 1 : unformatNumber(this.value);
-        if (isNaN(val) || val <= 0) val = 1;
-        const opt   = batchSelect?.options[batchSelect.selectedIndex];
-        const stock = opt ? parseInt(opt.getAttribute('data-stock')) : Infinity;
-        if (val > stock) { alert(`Số lượng xuất (${val}) vượt quá tồn kho lô (${stock})`); val = stock; }
-        this.value = formatNumberInput(val.toString());
-        saveOutboundDraft();
-    });
+    if (qty) {
+        qty.addEventListener('input', () => {
+            saveOutboundDraft();
+            if (typeof syncOutboundInvoicePreview === 'function') syncOutboundInvoicePreview();
+        });
+        qty.addEventListener('blur', function () {
+            let val = this.value.trim() === '' ? 1 : unformatNumber(this.value);
+            if (isNaN(val) || val <= 0) val = 1;
+            const opt   = batchSelect?.options[batchSelect.selectedIndex];
+            const stock = opt ? parseInt(opt.getAttribute('data-stock'), 10) : Infinity;
+            if (stock && val > stock) {
+                alert(`Số lượng xuất (${val}) vượt quá tồn kho của lô (${stock})`);
+                val = stock;
+            }
+            this.value = formatNumberInput(val.toString());
+            saveOutboundDraft();
+            if (typeof syncOutboundInvoicePreview === 'function') syncOutboundInvoicePreview();
+        });
+    }
 
     if (batchSelect) {
         batchSelect.addEventListener('change', function () {
             const opt   = this.options[this.selectedIndex];
             const stock = opt?.getAttribute('data-stock');
-            if (stock) {
+            if (stock && qty) {
                 const currentQty = unformatNumber(qty.value);
-                if (currentQty > parseInt(stock)) {
+                if (currentQty > parseInt(stock, 10)) {
                     alert(`Số lượng xuất (${currentQty}) vượt quá tồn kho lô (${stock})`);
                     qty.value = formatNumberInput(stock);
                 }
             }
             saveOutboundDraft();
+            if (typeof syncOutboundInvoicePreview === 'function') syncOutboundInvoicePreview();
         });
     }
 }
@@ -209,63 +233,126 @@ function validateOutboundFormBeforeSubmit() {
         const pid     = row.querySelector('.product-id').value;
         const batchNo = row.querySelector('.batch-select-outbound').value;
         const qty     = unformatNumber(row.querySelector('.qty-outbound').value);
-        row.querySelector('.product-autocomplete-outbound').style.border = (pid && pid != '0') ? '' : '2px solid red';
-        row.querySelector('.batch-select-outbound').style.border = batchNo ? '' : '2px solid red';
-        row.querySelector('.qty-outbound').style.border          = qty > 0 ? '' : '2px solid red';
+        row.querySelector('.product-autocomplete-outbound').style.border = (pid && pid != '0') ? '' : '2px solid #ef4444';
+        row.querySelector('.batch-select-outbound').style.border = batchNo ? '' : '2px solid #ef4444';
+        row.querySelector('.qty-outbound').style.border          = qty > 0 ? '' : '2px solid #ef4444';
         if (pid && pid != '0' && batchNo && qty > 0) hasValidRow = true;
     });
     if (!hasValidRow) {
-        alert('Vui lòng chọn ít nhất một sản phẩm hợp lệ (có lô, số lượng >0).');
+        alert('Vui lòng chọn ít nhất một sản phẩm hợp lệ (có lô và số lượng > 0).');
         return false;
     }
     return true;
 }
 
+// ── XEM TRƯỚC HÓA ĐƠN XUẤT (INVOICE PREVIEW CỘT PHẢI) ──────────────────
+function syncOutboundInvoicePreview() {
+    const supSelect = document.getElementById('outboundSupplier');
+    const prevSupName = document.getElementById('prevSupplierName');
+    if (supSelect && prevSupName) {
+        prevSupName.innerText = supSelect.selectedIndex > 0 ? supSelect.options[supSelect.selectedIndex].text : 'Chưa chọn đối tác';
+    }
+
+    const refInput = document.getElementById('refNoInput');
+    const prevRefNo = document.getElementById('prevRefNo');
+    if (refInput && prevRefNo) {
+        prevRefNo.innerText = refInput.value.trim() ? refInput.value.trim() : 'OUT-AUTO';
+    }
+
+    const dateInput = document.getElementById('createdDateInput');
+    const prevDate = document.getElementById('prevCreatedDate');
+    if (dateInput && prevDate && dateInput.value) {
+        const parts = dateInput.value.split('-');
+        if (parts.length === 3) prevDate.innerText = `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    const prevList = document.getElementById('prevItemsList');
+    const rows = document.querySelectorAll('#outboundItemsBody .item-row');
+    if (!prevList) return;
+
+    let itemsHtml = '';
+    let totalQty = 0;
+
+    rows.forEach(row => {
+        const name = row.querySelector('.product-autocomplete-outbound')?.value.trim();
+        const batchSelect = row.querySelector('.batch-select-outbound');
+        const batch = batchSelect && batchSelect.value ? batchSelect.value : '—';
+        const qty = parseFloat(unformatNumber(row.querySelector('.qty-outbound')?.value || '0')) || 0;
+        totalQty += qty;
+
+        if (name) {
+            itemsHtml += `
+                <div class="inv-doc-table-row">
+                    <span class="td-item">${escapeHtml(name)}</span>
+                    <span class="td-batch">${escapeHtml(batch)}</span>
+                    <span class="td-qty">${qty}</span>
+                </div>
+            `;
+        }
+    });
+
+    prevList.innerHTML = itemsHtml || '<div class="prev-empty-hint">Chưa có dòng sản phẩm nào</div>';
+    const totalEl = document.getElementById('prevGrandTotalQty');
+    if (totalEl) totalEl.innerText = formatNumberInput(String(totalQty));
+
+    const noteVal = document.getElementById('noteInput')?.value.trim();
+    const prevNote = document.getElementById('prevNote');
+    if (prevNote) {
+        prevNote.innerText = noteVal ? noteVal : 'Cảm ơn bạn đã hợp tác cùng hệ thống quản lý chuỗi cung ứng SmartWare.';
+    }
+}
+
+// ── XEM CHI TIẾT MODAL ──────────────────────────────────────────────────
+let currentOutboundDetailData = null;
+
 function viewOutboundDetail(id) {
-    fetch(`process.php?action=get_outbound_detail&id=${id}`)
+    fetch(`process.php?action=get_outbound_detail&id=${encodeURIComponent(id)}`)
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                window.currentOutboundDetail = data;
+                currentOutboundDetailData = data;
+                currentOutboundDetailData.id = id;
                 renderOutboundDetailModal(data);
                 document.getElementById('detailOutboundModal').style.display = 'flex';
             } else {
-                alert('Không thể tải chi tiết phiếu xuất');
+                alert('Không thể tải chi tiết phiếu xuất: ' + (data.message || ''));
             }
         })
-        .catch(err => alert('Lỗi: ' + err));
+        .catch(err => alert('Lỗi kết nối: ' + err.message));
 }
 
 function renderOutboundDetailModal(data) {
     let totalQuantity = 0;
-    data.items.forEach(item => { totalQuantity += parseFloat(item.quantity); });
+    (data.items || []).forEach(item => { totalQuantity += parseFloat(item.quantity); });
     let stt = 1;
-    const createdDisplay = escapeHtml(data.created || '');
     let html = `
-        <div style="margin-bottom:20px">
-            <p><strong>Mã phiếu:</strong> ${escapeHtml(data.ref_no)}</p>
-            <p><strong>Nhà cung cấp:</strong> ${escapeHtml(data.supplier_name || '—')}</p>
-            <p><strong>Người xuất:</strong> ${escapeHtml(data.user_name || '')}</p>
-            <p><strong>Ghi chú:</strong> ${escapeHtml(data.note || '')}</p>
-            <p><strong>Ngày tạo:</strong> ${createdDisplay}</p>
+        <div class="info-details-box" style="margin-bottom:16px;">
+            <div class="info-detail-row"><span class="row-label">Mã phiếu:</span><span class="row-value">${escapeHtml(data.ref_no)}</span></div>
+            <div class="info-detail-row"><span class="row-label">Nhà cung cấp / Đối tác:</span><span class="row-value">${escapeHtml(data.supplier_name || '—')}</span></div>
+            <div class="info-detail-row"><span class="row-label">Người tạo:</span><span class="row-value">${escapeHtml(data.user_name || '')}</span></div>
+            <div class="info-detail-row"><span class="row-label">Ngày tạo:</span><span class="row-value">${data.created}</span></div>
+            <div class="info-detail-row" style="grid-column: span 2;"><span class="row-label">Ghi chú:</span><span class="row-value">${escapeHtml(data.note || '—')}</span></div>
         </div>
-        <table class="data-table">
-            <thead><tr>
-                <th class="text-center">STT</th><th>Sản phẩm</th><th>Lô</th>
-                <th class="text-right">Số lượng</th>
-            </tr></thead>
-            <tbody>`;
-    data.items.forEach(item => {
+        <div style="border:1px solid var(--tb-border); border-radius:10px; overflow:hidden;">
+            <table class="task-data-table">
+                <thead><tr>
+                    <th class="text-center" width="40">STT</th>
+                    <th>Sản phẩm</th>
+                    <th>Lô xuất</th>
+                    <th class="text-right" width="100">Số lượng</th>
+                </tr></thead>
+                <tbody>`;
+    (data.items || []).forEach(item => {
         html += `<tr>
             <td class="text-center">${stt++}</td>
-            <td>${escapeHtml(item.product_name)}</td>
-            <td>${escapeHtml(item.batch_no)}</td>
-            <td class="text-right">${item.quantity}</td>
+            <td><strong>${escapeHtml(item.product_name)}</strong></td>
+            <td><code>${escapeHtml(item.batch_no || '—')}</code></td>
+            <td class="text-right font-medium">${formatNumberInput(item.quantity)}</td>
         </tr>`;
     });
-    html += `</tbody></table>
-        <div style="margin-top:20px;border-top:1px solid #ddd;padding-top:10px">
-            <div style="display:flex;justify-content:space-between"><strong>Tổng số lượng:</strong> <span>${formatNumberInput(totalQuantity)}</span></div>
+    html += `</tbody></table></div>
+        <div style="display:flex; justify-content:flex-end; font-size:15px; font-weight:700; margin-top:14px;">
+            Tổng số lượng xuất: <span style="color:#2563eb; margin-left:8px;">${formatNumberInput(totalQuantity)}</span>
         </div>`;
     document.getElementById('detailOutboundContent').innerHTML = html;
 }
@@ -274,29 +361,70 @@ function closeDetailOutboundModal() {
     document.getElementById('detailOutboundModal').style.display = 'none';
 }
 
-function confirmDeleteOutbound(id) {
-    if (!confirm('Bạn có chắc muốn xóa phiếu xuất này?\nPhiếu phải đang ở trạng thái Tạm thời mới xóa được.')) return;
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = 'process.php';
-    [
-        ['action',     'delete_outbound'],
-        ['id',         id],
-        ['csrf_token', getCsrfToken()],
-    ].forEach(([name, value]) => {
-        const input = document.createElement('input');
-        input.type = 'hidden'; input.name = name; input.value = value;
-        form.appendChild(input);
+function printOutboundDetail() {
+    if (!currentOutboundDetailData) return;
+    let totalQuantity = 0;
+    currentOutboundDetailData.items.forEach(item => { totalQuantity += parseFloat(item.quantity); });
+    let itemsHtml = '', stt = 1;
+    currentOutboundDetailData.items.forEach(item => {
+        itemsHtml += `<tr>
+            <td style="text-align:center">${stt++}</td>
+            <td>${escapeHtml(item.product_name)}</td>
+            <td style="text-align:center">${escapeHtml(item.batch_no || '—')}</td>
+            <td style="text-align:right">${formatNumberInput(item.quantity)}</td>
+        </tr>`;
     });
-    document.body.appendChild(form);
-    form.submit();
+    const html = `
+    <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:20px;font-weight:bold">PHIẾU XUẤT KHO</div>
+        <div style="font-size:12px;color:#555;margin-top:5px">Mã phiếu: ${escapeHtml(currentOutboundDetailData.ref_no)} &nbsp;|&nbsp; Ngày tạo: ${currentOutboundDetailData.created}</div>
+    </div>
+    <div style="margin-bottom:20px">
+        <p><strong>Nhà cung cấp / Đối tác:</strong> ${escapeHtml(currentOutboundDetailData.supplier_name || '')}</p>
+        <p><strong>Người lập phiếu:</strong> ${escapeHtml(currentOutboundDetailData.user_name || '')}</p>
+        <p><strong>Ghi chú:</strong> ${escapeHtml(currentOutboundDetailData.note || '')}</p>
+    </div>
+    <table border="1" cellpadding="6" cellspacing="0" style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:#f4f4f5"><th>STT</th><th>Sản phẩm</th><th>Số lô</th><th>SL</th></tr></thead>
+        <tbody>${itemsHtml}</tbody>
+    </table>
+    <div style="margin-top:20px;border-top:1px solid #ddd;padding-top:10px;text-align:right">
+        <strong>Tổng số lượng:</strong> ${formatNumberInput(totalQuantity)}
+    </div>
+    <div style="margin-top:80px;display:flex;justify-content:space-between">
+        <div style="text-align:center;width:40%"><hr><p>Người nhận hàng<br>(Ký, họ tên)</p></div>
+        <div style="text-align:center;width:40%"><hr><p>Thủ kho xuất<br>(Ký, họ tên)</p></div>
+    </div>`;
+    
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:absolute;width:0;height:0;border:none';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;margin:20px}table{border-collapse:collapse}</style></head><body>${html}</body></html>`);
+    doc.close();
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    setTimeout(() => document.body.removeChild(iframe), 1000);
 }
 
-function searchOutboundTable() {
-    const filter = document.getElementById('searchInput')?.value.toLowerCase() || '';
-    document.querySelectorAll('#outboundTable tbody tr').forEach(row => {
-        row.style.display = row.innerText.toLowerCase().includes(filter) ? '' : 'none';
-    });
+function exportOutboundDetailExcel() {
+    if (!currentOutboundDetailData) return;
+    fetch('../../pages/export/Export.php?type=outbound_detail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentOutboundDetailData)
+    })
+    .then(r => r.blob())
+    .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement('a');
+        a.href    = url;
+        a.download = `phieu_xuat_${currentOutboundDetailData.ref_no || 'detail'}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    })
+    .catch(err => alert('Lỗi xuất file: ' + err));
 }
 
 function exportOutboundExcel() {
@@ -304,212 +432,140 @@ function exportOutboundExcel() {
     window.location.href = '../../pages/export/Export.php?type=outbound_list&' + params.toString();
 }
 
-function exportOutboundDetailExcel() {
-    if (!window.currentOutboundDetail) return;
-    fetch('../../pages/export/Export.php?type=outbound_detail', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': getCsrfToken(),
-        },
-        body: JSON.stringify(window.currentOutboundDetail)
-    })
-    .then(r => r.blob())
-    .then(blob => {
-        const url = URL.createObjectURL(blob);
-        const a   = document.createElement('a');
-        a.href    = url;
-        a.download = `phieu_xuat_${window.currentOutboundDetail.ref_no || 'detail'}_${new Date().toISOString().slice(0,19)}.xls`;
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    })
-    .catch(err => alert('Lỗi xuất file: ' + err));
+let _searchTimer = null;
+function searchOutboundTable() {
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(() => {
+        const keyword = document.getElementById('searchInput')?.value.trim() ?? '';
+        const params  = new URLSearchParams(window.location.search);
+        params.delete('page');
+        keyword !== '' ? params.set('keyword', keyword) : params.delete('keyword');
+        window.location.href = 'index.php?' + params.toString();
+    }, 350);
 }
 
-function printOutboundDetail() {
-    if (!window.currentOutboundDetail) return;
-    let itemsHtml = '', stt = 1;
-    window.currentOutboundDetail.items.forEach(item => {
-        itemsHtml += `<tr>
-            <td style="text-align:center">${stt++}</td>
-            <td>${escapeHtml(item.product_name)}</td>
-            <td>${escapeHtml(item.batch_no)}</td>
-            <td style="text-align:right">${item.quantity}</td>
-        </tr>`;
-    });
-    const d = window.currentOutboundDetail;
-    const win = window.open('', '_blank');
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Phiếu xuất ${escapeHtml(d.ref_no)}</title>
-    <style>body{font-family:sans-serif;font-size:13px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:6px 10px}th{background:#f5f5f5}</style>
-    </head><body>
-    <h2 style="text-align:center">PHIẾU XUẤT KHO</h2>
-    <p><strong>Mã phiếu:</strong> ${escapeHtml(d.ref_no)} &nbsp; <strong>Ngày:</strong> ${escapeHtml(d.created || '')}</p>
-    <p><strong>Người xuất:</strong> ${escapeHtml(d.user_name || '')} &nbsp; <strong>Ghi chú:</strong> ${escapeHtml(d.note || '')}</p>
-    <table><thead><tr><th>STT</th><th>Sản phẩm</th><th>Số lô</th><th>SL</th></tr></thead>
-    <tbody>${itemsHtml}</tbody></table>
-    <p><\/p>
-    <script>window.print();<\/script></body></html>`);
-    win.document.close();
-}
+function confirmDeleteOutbound(id) {
+    if (!confirm('Bạn có chắc muốn xóa phiếu xuất tạm này?')) return;
+    const formData = new FormData();
+    formData.append('action', 'delete_outbound');
+    formData.append('id', id);
+    formData.append('csrf_token', getCsrfToken());
 
-function editOutbound(id) {
-    fetch(`process.php?action=get_outbound_detail&id=${id}`)
+    fetch('process.php', { method: 'POST', body: formData })
         .then(res => res.json())
         .then(data => {
-            if (!data.success) { alert('Không thể tải phiếu xuất'); return; }
-            renderEditOutboundModal(data);
-            document.getElementById('editOutboundModal').style.display = 'flex';
+            if (data.ok) {
+                const row = document.querySelector(`input.row-checkbox[data-id="${id}"]`)?.closest('tr');
+                if (row) row.remove();
+                else window.location.reload();
+            } else {
+                alert('Lỗi: ' + (data.message || 'Không thể xóa phiếu'));
+            }
         })
-        .catch(err => alert('Lỗi: ' + err));
+        .catch(err => alert('Lỗi kết nối: ' + err.message));
 }
 
-function renderEditOutboundModal(data) {
-    const html = `
-    <form id="editOutboundForm" method="POST" action="process.php">
-        <input type="hidden" name="action" value="edit_outbound">
-        <input type="hidden" name="outbound_id" value="${data.id}">
-        <input type="hidden" name="csrf_token" value="${escapeHtml(getCsrfToken())}">
+// ── SỬA PHIẾU TẠM MODAL (EDIT) ───────────────────────────────────────────
+function editOutbound(id) {
+    fetch(`process.php?action=get_outbound_detail&id=${encodeURIComponent(id)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) { alert('Không thể tải phiếu xuất để sửa'); return; }
 
-        <div class="inv-header-strip">
-            <div class="inv-strip-label">Sửa phiếu xuất</div>
-        </div>
+            document.getElementById('editOutboundId').value = id;
+            document.getElementById('editRefNo').value     = data.ref_no || '';
+            document.getElementById('editNote').value      = data.note || '';
+            document.getElementById('editStatus').value    = data.status || 'pending';
 
-        <div class="inv-header-grid" style="padding:16px">
-            <div class="inv-col">
-                <div class="form-group">
-                    <label>Số tham chiếu</label>
-                    <input type="text" name="ref_no" class="inv-field-input" value="${escapeHtml(data.ref_no || '')}">
-                </div>
-                <div class="form-group" style="margin-top:12px">
-                    <label>Nhà cung cấp</label>
-                    <div class="inv-field-input" style="background:#f4f4f5">${escapeHtml(data.supplier_name || 'Chưa xác định (suy ra từ sản phẩm khi lưu)')}</div>
-                    <input type="hidden" id="editOutboundSupplierId" value="${escapeHtml(String(data.supplier_id || ''))}">
-                </div>
-            </div>
-            <div class="inv-col">
-                <div class="form-group">
-                    <label>Trạng thái</label>
-                    <select name="status" id="editStatus" class="inv-field-input">
-                        <option value="pending"   ${data.status === 'pending'   ? 'selected' : ''}>Tạm thời</option>
-                        <option value="completed" ${data.status === 'completed' ? 'selected' : ''}>Hoàn thành</option>
-                        <option value="cancelled" ${data.status === 'cancelled' ? 'selected' : ''}>Đã hủy</option>
-                    </select>
-                </div>
-            </div>
-        </div>
+            const supSel = document.getElementById('editOutboundSupplierId');
+            if (supSel) supSel.value = data.supplier_id || '';
 
-        <div class="inv-body" style="padding:0 16px">
-            <table class="data-table" id="editOutboundItemsTable">
-                <thead><tr>
-                    <th style="width:36px;text-align:center">#</th>
-                    <th style="min-width:200px">Sản phẩm</th>
-                    <th style="width:220px">Số lô (tồn kho)</th>
-                    <th style="width:100px;text-align:right">SL</th>
-                    <th style="width:36px"></th>
-                </tr></thead>
-                <tbody id="editOutboundItemsBody"></tbody>
-            </table>
-            <div class="inv-add-row" style="margin-top:8px">
-                <button type="button" class="btn-add-line" onclick="addEditOutboundRow()">
-                    <i class="ri-add-line"></i> Thêm dòng
-                </button>
-            </div>
-        </div>
-
-        <div class="inv-footer-grid" style="padding:16px">
-            <div class="inv-note-section">
-                <label>Ghi chú</label>
-                <textarea name="note" class="inv-textarea">${escapeHtml(data.note || '')}</textarea>
-            </div>
-        </div>
-
-        <div class="inv-actions" style="padding:0 16px 16px">
-            <button type="button" class="btn inv-btn-cancel" onclick="closeEditOutboundModal()">Hủy bỏ</button>
-            <button type="submit" class="btn inv-btn-save"><i class="ri-check-line"></i> Lưu thay đổi</button>
-        </div>
-    </form>`;
-
-    document.querySelector('#editOutboundModal .modal-content').innerHTML = html;
-
-    const editStatusEl = document.getElementById('editStatus');
-    if (editStatusEl) {
-        editStatusEl.addEventListener('change', function () {
-            const existing = document.getElementById('_completedWarning');
-            if (this.value === 'completed' && !existing) {
-                const div = document.createElement('div');
-                div.id = '_completedWarning';
-                div.style.cssText = 'background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px 12px;font-size:12px;margin-top:8px;color:#856404';
-                div.innerHTML = '⚠️ <strong>Chuyển sang Hoàn thành</strong> sẽ trừ tồn kho ngay lập tức và không thể hoàn tác.';
-                this.parentNode.appendChild(div);
-            } else if (this.value !== 'completed' && existing) {
-                existing.remove();
+            const tbody = document.getElementById('editOutboundItemsBody');
+            if (tbody) {
+                tbody.innerHTML = '';
+                if (data.items && data.items.length) {
+                    data.items.forEach(item => addEditOutboundRowWithData(item));
+                } else {
+                    addEditOutboundRow();
+                }
             }
-        });
-    }
-
-    const editForm = document.getElementById('editOutboundForm');
-    if (editForm) {
-        editForm.addEventListener('submit', function (e) {
-            if (!_validateEditOutboundForm()) { e.preventDefault(); return; }
-            document.querySelectorAll('#editOutboundItemsBody .qty-outbound').forEach(el => { el.value = unformatNumber(el.value); });
-        });
-    }
-
-    if (data.items?.length) {
-        data.items.forEach(item => addEditOutboundRow(item));
-    } else {
-        addEditOutboundRow();
-    }
+            updateEditOutboundStt();
+            document.getElementById('editOutboundModal').style.display = 'flex';
+        })
+        .catch(err => alert('Lỗi kết nối: ' + err.message));
 }
 
 function closeEditOutboundModal() {
     document.getElementById('editOutboundModal').style.display = 'none';
 }
 
-function addEditOutboundRow(item = null) {
+function getEmptyEditOutboundRow() {
+    const template = document.getElementById('outboundRowTemplateEdit');
+    if (template) {
+        const newRow = template.content.cloneNode(true).querySelector('tr');
+        newRow.querySelectorAll('input, select').forEach(el => { el.value = ''; });
+        const qty = newRow.querySelector('.qty-outbound');
+        if (qty) qty.value = '1';
+        return newRow;
+    }
+    return document.createElement('tr');
+}
+
+function addEditOutboundRow() {
     const tbody = document.getElementById('editOutboundItemsBody');
     if (!tbody) return;
-    const idx = tbody.querySelectorAll('.item-row').length + 1;
-
-    const tr = document.createElement('tr');
-    tr.className = 'item-row';
-    tr.innerHTML = `
-        <td class="stt-cell" style="text-align:center">${idx}</td>
-        <td style="position:relative">
-            <input type="text" class="product-autocomplete-outbound" name="product_name[]"
-                   value="${escapeHtml(item?.product_name || '')}" placeholder="Nhập tên sản phẩm" autocomplete="off" style="width:100%">
-            <input type="hidden" name="product_id[]" class="product-id" value="${escapeHtml(String(item?.product_id || ''))}">
-        </td>
-        <td>
-            <select name="batch_no[]" class="batch-select-outbound" style="width:100%">
-                <option value="${escapeHtml(item?.batch_no || '')}" selected>${escapeHtml(item?.batch_no || '-- Chọn lô --')}</option>
-            </select>
-            <div class="batch-stock-info" style="font-size:11px;margin-top:2px"></div>
-        </td>
-        <td><input type="text" name="quantity[]" class="qty-outbound" value="${formatNumberInput(String(item?.quantity || 1))}" style="width:80px;text-align:right"></td>
-        <td style="text-align:center"><button type="button" class="remove-row" onclick="removeEditOutboundRow(this)"><i class="ri-delete-bin-line"></i></button></td>
-    `;
-    tbody.appendChild(tr);
-    attachEditOutboundRowEvents(tr);
-
-    // Thêm dòng mới trong modal sửa: chỉ gợi ý sản phẩm của NCC phiếu, rồi tải lô của sản phẩm đó.
-    const acInput = tr.querySelector('.product-autocomplete-outbound');
-    if (acInput) {
+    const newRow = getEmptyEditOutboundRow();
+    tbody.appendChild(newRow);
+    attachEditOutboundRowEvents(newRow);
+    const acInput = newRow.querySelector('.product-autocomplete-outbound');
+    if (acInput && typeof initAutocomplete === 'function') {
         initAutocomplete(acInput, {
             searchUrl: `process.php?action=search_products&supplier_id=${getOutboundSupplierId()}`,
-            onSelect: (product, row) => _loadEditOutboundBatches(row, product.id, ''),
+            onSelect: (product, row) => loadBatchesForOutboundRow(row, product.id),
             position: 'above',
             minChars: 2
         });
     }
+    updateEditOutboundStt();
+}
 
-    if (item?.product_id) _loadEditOutboundBatches(tr, item.product_id, item.batch_no);
+function addEditOutboundRowWithData(item) {
+    const tbody = document.getElementById('editOutboundItemsBody');
+    if (!tbody) return;
+    const newRow = getEmptyEditOutboundRow();
+    newRow.querySelector('.product-autocomplete-outbound').value = item.product_name || '';
+    newRow.querySelector('.product-id').value                   = item.product_id || '';
+    newRow.querySelector('.qty-outbound').value                 = formatNumberInput(String(item.quantity || 1));
+    tbody.appendChild(newRow);
+    attachEditOutboundRowEvents(newRow);
+    loadBatchesForOutboundRow(newRow, item.product_id, item.batch_no);
+    const acInput = newRow.querySelector('.product-autocomplete-outbound');
+    if (acInput && typeof initAutocomplete === 'function') {
+        initAutocomplete(acInput, {
+            searchUrl: `process.php?action=search_products&supplier_id=${getOutboundSupplierId()}`,
+            onSelect: (product, row) => loadBatchesForOutboundRow(row, product.id),
+            position: 'above',
+            minChars: 2
+        });
+    }
+    updateEditOutboundStt();
 }
 
 function removeEditOutboundRow(btn) {
     const rows = document.querySelectorAll('#editOutboundItemsBody .item-row');
-    if (rows.length > 1) { btn.closest('tr').remove(); }
-    else alert('Phải có ít nhất một dòng sản phẩm');
+    if (rows.length > 1) {
+        btn.closest('tr').remove();
+        updateEditOutboundStt();
+    } else {
+        alert('Phải có ít nhất một dòng sản phẩm');
+    }
+}
+
+function updateEditOutboundStt() {
+    document.querySelectorAll('#editOutboundItemsBody .item-row').forEach((row, idx) => {
+        const cell = row.querySelector('.stt-cell');
+        if (cell) cell.textContent = idx + 1;
+    });
 }
 
 function attachEditOutboundRowEvents(row) {
@@ -518,244 +574,254 @@ function attachEditOutboundRowEvents(row) {
 
     if (qty && qty.type === 'number') qty.type = 'text';
 
-    qty.addEventListener('blur', function () {
-        let val = unformatNumber(this.value);
-        if (isNaN(val) || val <= 0) val = 1;
-        const opt   = batchSelect?.options[batchSelect.selectedIndex];
-        const stock = parseInt(opt?.getAttribute('data-stock') || '999999');
-        if (val > stock) { alert(`Số lượng (${val}) vượt quá tồn kho lô này (${stock} đơn vị)`); val = stock; }
-        this.value = formatNumberInput(val.toString());
-    });
-    if (batchSelect) {
-        batchSelect.addEventListener('change', function () {
-            const opt     = this.options[this.selectedIndex];
-            const stock   = opt?.getAttribute('data-stock');
-            if (stock) {
-                const currentQty = unformatNumber(row.querySelector('.qty-outbound').value);
-                if (currentQty > parseInt(stock)) {
-                    alert(`Số lượng (${currentQty}) vượt quá tồn kho lô này (${stock}). Đã điều chỉnh lại.`);
-                    row.querySelector('.qty-outbound').value = formatNumberInput(stock);
-                }
+    if (qty) {
+        qty.addEventListener('blur', function () {
+            let val = unformatNumber(this.value);
+            if (isNaN(val) || val <= 0) val = 1;
+            const opt   = batchSelect?.options[batchSelect.selectedIndex];
+            const stock = parseInt(opt?.getAttribute('data-stock'), 10);
+            if (stock && val > stock) {
+                alert(`Số lượng (${val}) vượt quá tồn kho lô (${stock})`);
+                val = stock;
             }
+            this.value = formatNumberInput(val.toString());
         });
     }
 }
 
-function _loadEditOutboundBatches(row, productId, selectedBatchNo) {
-    const batchEl = row.querySelector('.batch-select-outbound');
-    const infoEl  = row.querySelector('.batch-stock-info');
-    if (!batchEl) return;
-    batchEl.innerHTML = '<option value="">Đang tải lô...</option>';
-    fetch(`get_batches.php?product_id=${productId}`)
-        .then(r => r.json())
-        .then(data => {
-            if (!data.success || !data.batches.length) {
-                batchEl.innerHTML = '<option value="">-- Không có lô tồn --</option>';
-                if (infoEl) infoEl.innerHTML = '<span style="color:red">Sản phẩm không còn lô hàng nào</span>';
-                return;
-            }
-            batchEl.innerHTML = '<option value="">-- Chọn lô --</option>' +
-                data.batches.map(b => {
-                    const expLabel = b.exp_date ? ` | HSD: ${b.exp_date}` : '';
-                    const dayLabel = b.days_to_exp != null
-                        ? (b.days_to_exp < 0 ? ' ⚠️ Hết hạn' : b.days_to_exp <= 30 ? ` ⚠️ Còn ${b.days_to_exp}ngày` : '')
-                        : '';
-                    const selected = selectedBatchNo && b.batch_no === selectedBatchNo ? 'selected' : '';
-                    return `<option value="${escapeHtml(b.batch_no)}" data-stock="${b.quantity}" data-exp="${b.exp_date || ''}" ${selected}>
-                        ${escapeHtml(b.batch_no)} (Tồn: ${b.quantity}${expLabel}${dayLabel})
-                    </option>`;
-                }).join('');
-            batchEl.dispatchEvent(new Event('change'));
-        })
-        .catch(err => {
-            console.error('Lỗi load batches:', err);
-            batchEl.innerHTML = '<option value="">-- Lỗi tải lô --</option>';
-        });
-}
-
-function _validateEditOutboundForm() {
-    let valid = true;
-    let messages = [];
-
-    document.querySelectorAll('#editOutboundItemsBody .item-row').forEach((row, i) => {
-        const rowNum  = i + 1;
-        const pid     = row.querySelector('.product-id')?.value;
-        const nameEl  = row.querySelector('.product-autocomplete-outbound');
-        const batchEl = row.querySelector('.batch-select-outbound');
-        const batchNo = batchEl?.value;
-        const qty     = unformatNumber(row.querySelector('.qty-outbound')?.value || '0');
-
-        if (nameEl)  nameEl.style.border  = '';
-        if (batchEl) batchEl.style.border = '';
-
-        const isLoading = batchEl?.options[0]?.text === 'Đang tải lô...';
-        if (isLoading) {
-            messages.push(`Dòng ${rowNum}: Vui lòng chờ lô hàng tải xong.`);
-            if (batchEl) batchEl.style.border = '2px solid orange';
-            valid = false;
-            return;
-        }
-
-        const errors = [];
-        if (!pid || pid === '0' || pid === 'undefined') errors.push(`Dòng ${rowNum}: sản phẩm chưa hợp lệ`);
-        if (!batchNo)  errors.push(`Dòng ${rowNum}: chưa chọn lô hàng`);
-        if (qty <= 0)  errors.push(`Dòng ${rowNum}: số lượng phải > 0`);
-
-        if (errors.length) {
-            valid = false;
-            messages.push(...errors);
-            if (!pid || pid === '0' || pid === 'undefined') nameEl  && (nameEl.style.border  = '2px solid red');
-            if (!batchNo)                                    batchEl && (batchEl.style.border = '2px solid red');
-        }
-    });
-
-    if (!valid) alert(messages.join('\n'));
-    return valid;
-}
-
-function openProductModal(action) {
-    const modal = document.getElementById('productModal');
-    if (!modal) return;
-    if (action === 'add') {
-        document.getElementById('prodName').value = '';
-        document.getElementById('prodSku').value = '';
-        document.getElementById('prodCategory').value = '';
-        document.getElementById('prodSupplier').value = '';
-        document.getElementById('prodCostPrice').value = '0';
-        document.getElementById('prodPrice').value = '';
-        document.getElementById('prodUnit').value = '';
-        document.getElementById('prodDesc').value = '';
+function validateEditOutboundFormBeforeSubmit() {
+    const supId = document.getElementById('editOutboundSupplierId')?.value;
+    if (!supId) {
+        alert('Vui lòng chọn nhà cung cấp');
+        return false;
     }
-    modal.style.display = 'flex';
+    const rows = document.querySelectorAll('#editOutboundItemsBody .item-row');
+    if (rows.length === 0) {
+        alert('Phải có ít nhất một dòng sản phẩm');
+        return false;
+    }
+    document.querySelectorAll('#editOutboundItemsBody .qty-outbound').forEach(el => {
+        el.value = unformatNumber(el.value);
+    });
+    return true;
 }
 
-function closeProductModal() {
-    const modal = document.getElementById('productModal');
-    if (modal) modal.style.display = 'none';
-}
-
-// Ghi chú: modal này thêm sản phẩm mới vào danh mục hàng hóa (products.price
-// là giá bán của sản phẩm) — không liên quan đến giá trên phiếu xuất, vốn
-// không còn được lưu theo schema hiện tại.
-function submitNewProduct(event) {
-    event.preventDefault();
-    const form = document.getElementById('productForm');
-    const costEl = document.getElementById('prodCostPrice');
-    const priceEl = document.getElementById('prodPrice');
-    if (costEl) costEl.value = unformatNumber(costEl.value);
-    if (priceEl) priceEl.value = unformatNumber(priceEl.value);
-    const formData = new FormData(form);
-    formData.append('action', 'add_product');
-    formData.append('csrf_token', getCsrfToken());
-    fetch('process.php', { method: 'POST', body: formData })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                addOutboundRowWithData({
-                    product_name: data.name,
-                    product_id: data.id,
-                    batch_no: '',
-                    quantity: 1
-                });
-                closeProductModal();
-                alert('Thêm sản phẩm thành công!');
-            } else {
-                alert('Lỗi: ' + (data.message || 'Không thể thêm sản phẩm'));
-            }
-        })
-        .catch(err => { console.error(err); alert('Có lỗi xảy ra'); });
-}
-
-function addOutboundRowWithData(item) {
-    const tbody = document.getElementById('outboundItemsBody');
-    if (!tbody) return;
-    const newRow = getEmptyOutboundRow();
-    if (!newRow) return;
-    newRow.querySelector('.product-autocomplete-outbound').value = item.product_name || '';
-    newRow.querySelector('.product-id').value = item.product_id || '';
-    newRow.querySelector('.batch-select-outbound').innerHTML = `<option value="${escapeHtml(item.batch_no)}" selected>${escapeHtml(item.batch_no)}</option>`;
-    newRow.querySelector('.qty-outbound').value = formatNumberInput((item.quantity || 1).toString());
-    tbody.appendChild(newRow);
-    attachOutboundRowEvents(newRow);
-    const autocompleteInput = newRow.querySelector('.product-autocomplete-outbound');
-    if (autocompleteInput) initAutocomplete(autocompleteInput, getOutboundAutocompleteOptions());
-    updateOutboundStt();
-    saveOutboundDraft();
-}
-function updateBulkBar() {
+// ── BULK ACTION BAR ──────────────────────────────────────────────────────
+function updateOutboundBulkBar() {
     const checked = document.querySelectorAll('#outboundTable .row-checkbox:checked');
     const bar     = document.getElementById('bulkActionBar');
     const count   = document.getElementById('bulkCount');
     if (!bar) return;
     bar.style.display = checked.length > 0 ? 'flex' : 'none';
-    if (count) count.textContent = `${checked.length} phiếu đã chọn`;
+    if (count) count.textContent = `${checked.length} phiếu xuất đã chọn`;
 }
- 
-function clearSelection() {
-    document.querySelectorAll('#outboundTable .row-checkbox')
-        .forEach(cb => cb.checked = false);
+
+function clearOutboundSelection() {
+    document.querySelectorAll('#outboundTable .row-checkbox').forEach(cb => cb.checked = false);
     const selectAll = document.getElementById('selectAll');
     if (selectAll) { selectAll.checked = false; selectAll.indeterminate = false; }
-    updateBulkBar();
+    updateOutboundBulkBar();
 }
- 
-function exportSelectedExcel() {
+
+function exportSelectedOutboundExcel() {
     const ids = [...document.querySelectorAll('#outboundTable .row-checkbox:checked')]
         .map(cb => cb.dataset.id)
         .filter(Boolean);
- 
+
     if (ids.length === 0) {
         alert('Chưa chọn phiếu xuất nào.');
         return;
     }
- 
+
     const params = new URLSearchParams(window.location.search);
     ids.forEach(id => params.append('selected_ids[]', id));
     window.location.href = '../../pages/export/Export.php?type=outbound_list&' + params.toString();
 }
- 
-document.addEventListener('DOMContentLoaded', function () {
-    const table = document.getElementById('outboundTable');
-    if (!table) return; 
-    const selectAllCb = document.getElementById('selectAll');
- 
-    if (selectAllCb) {
-        selectAllCb.addEventListener('change', function () {
-            table.querySelectorAll('.row-checkbox')
-                .forEach(cb => cb.checked = this.checked);
-            updateBulkBar();
-        });
+
+// ── BỘ CHỌN LỊCH NEO-DATEPICKER ──────────────────────────────────────────
+let _calCurrentYear = 2026;
+let _calCurrentMonth = 9; // 0-based: Tháng 10
+let _calRangeStart = null;
+let _calRangeEnd = null;
+
+function toggleDatePickerPopover(e) {
+    if (e) e.stopPropagation();
+    const pop = document.getElementById('neoDatePickerPopover');
+    if (!pop) return;
+    pop.style.display = pop.style.display === 'block' ? 'none' : 'block';
+}
+
+function selectQuickDate(type) {
+    const fromInput = document.getElementById('neoDateFrom');
+    const toInput = document.getElementById('neoDateTo');
+    const today = new Date();
+    let fromDate = new Date();
+    let toDate = new Date();
+
+    if (type === 'today') {
+        // Hôm nay
+    } else if (type === 'yesterday') {
+        fromDate.setDate(today.getDate() - 1);
+        toDate.setDate(today.getDate() - 1);
+    } else if (type === 'last7') {
+        fromDate.setDate(today.getDate() - 7);
+    } else if (type === 'last14') {
+        fromDate.setDate(today.getDate() - 14);
+    } else if (type === 'last30') {
+        fromDate.setDate(today.getDate() - 30);
     }
- 
-    table.querySelectorAll('.row-checkbox').forEach(cb => {
-        cb.addEventListener('change', function () {
-            const all     = table.querySelectorAll('.row-checkbox');
-            const checked = table.querySelectorAll('.row-checkbox:checked');
-            if (selectAllCb) {
-                selectAllCb.checked       = checked.length === all.length && all.length > 0;
-                selectAllCb.indeterminate = checked.length > 0 && checked.length < all.length;
-            }
-            updateBulkBar();
-        });
-    });
-});
+
+    const fmt = d => d.toISOString().split('T')[0];
+    if (fromInput) fromInput.value = fmt(fromDate);
+    if (toInput) toInput.value = fmt(toDate);
+
+    document.getElementById('filterForm')?.submit();
+}
+
+function openCalendarPicker() {
+    const presets = document.getElementById('datepickerPresetList');
+    const panel = document.getElementById('datepickerCalendarPanel');
+    if (presets) presets.style.display = 'none';
+    if (panel) panel.style.display = 'block';
+    renderCalendarGrid();
+}
+
+function backToPresets() {
+    const presets = document.getElementById('datepickerPresetList');
+    const panel = document.getElementById('datepickerCalendarPanel');
+    if (presets) presets.style.display = 'block';
+    if (panel) panel.style.display = 'none';
+}
+
+function changeMonth(delta) {
+    _calCurrentMonth += delta;
+    if (_calCurrentMonth > 11) { _calCurrentMonth = 0; _calCurrentYear++; }
+    if (_calCurrentMonth < 0) { _calCurrentMonth = 11; _calCurrentYear--; }
+    renderCalendarGrid();
+}
+
+function renderCalendarGrid() {
+    const lbl = document.getElementById('calMonthLabel');
+    if (lbl) lbl.textContent = `Tháng ${_calCurrentMonth + 1} ${_calCurrentYear}`;
+
+    const grid = document.getElementById('calDaysGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const firstDay = new Date(_calCurrentYear, _calCurrentMonth, 1).getDay();
+    const daysInMonth = new Date(_calCurrentYear, _calCurrentMonth + 1, 0).getDate();
+
+    for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('span');
+        grid.appendChild(emptyCell);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = d;
+        btn.className = 'cal-day-btn';
+        btn.onclick = () => onSelectCalDay(new Date(_calCurrentYear, _calCurrentMonth, d));
+        grid.appendChild(btn);
+    }
+}
+
+function onSelectCalDay(date) {
+    const hint = document.getElementById('calRangeHint');
+    if (!_calRangeStart || (_calRangeStart && _calRangeEnd)) {
+        _calRangeStart = date;
+        _calRangeEnd = null;
+        if (hint) hint.textContent = `Bắt đầu: ${date.toLocaleDateString('vi-VN')}`;
+    } else {
+        if (date < _calRangeStart) {
+            _calRangeEnd = _calRangeStart;
+            _calRangeStart = date;
+        } else {
+            _calRangeEnd = date;
+        }
+        if (hint) hint.textContent = `${_calRangeStart.toLocaleDateString('vi-VN')} - ${_calRangeEnd.toLocaleDateString('vi-VN')}`;
+    }
+}
+
+function applyCustomRange() {
+    if (!_calRangeStart) return;
+    const fmt = d => d.toISOString().split('T')[0];
+    const fromInput = document.getElementById('neoDateFrom');
+    const toInput = document.getElementById('neoDateTo');
+    if (fromInput) fromInput.value = fmt(_calRangeStart);
+    if (toInput) toInput.value = fmt(_calRangeEnd || _calRangeStart);
+    document.getElementById('filterForm')?.submit();
+}
+
+// ── DOM INITIALIZATION ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
-    const pageType    = document.body.dataset.page || '';
+    const pageType     = document.body.dataset.page || '';
     const isCreatePage = pageType === 'outbound-create';
     const isIndexPage  = pageType === 'outbound-index';
 
-    const outboundBody = document.getElementById('outboundItemsBody');
-    if (outboundBody) {
+    // 1. Sidebar Lọc ẩn/hiện
+    const toggleBtn     = document.getElementById('btnToggleSidebar');
+    const filterSidebar = document.getElementById('taskFilterSidebar');
+    const toggleTxt     = document.getElementById('txtToggleSidebar');
+
+    const isFilterHidden = localStorage.getItem('outbound_filter_hidden') === 'true';
+    if (toggleTxt) toggleTxt.textContent = isFilterHidden ? 'Show Filters' : 'Hide Filters';
+    if (isFilterHidden && filterSidebar) filterSidebar.classList.add('hidden');
+
+    if (toggleBtn && filterSidebar) {
+        toggleBtn.addEventListener('click', function () {
+            const willHide = !filterSidebar.classList.contains('hidden');
+            if (willHide) {
+                filterSidebar.classList.add('hidden');
+                document.documentElement.classList.add('inbound-filter-hidden');
+                if (toggleTxt) toggleTxt.textContent = 'Show Filters';
+            } else {
+                filterSidebar.classList.remove('hidden');
+                document.documentElement.classList.remove('inbound-filter-hidden');
+                if (toggleTxt) toggleTxt.textContent = 'Hide Filters';
+            }
+            localStorage.setItem('outbound_filter_hidden', willHide);
+        });
+    }
+
+    // 2. Xử lý checkbox bulk action
+    const table = document.getElementById('outboundTable');
+    if (table) {
+        const selectAllCb = document.getElementById('selectAll');
+        if (selectAllCb) {
+            selectAllCb.addEventListener('change', function () {
+                table.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = this.checked);
+                updateOutboundBulkBar();
+            });
+        }
+        table.querySelectorAll('.row-checkbox').forEach(cb => {
+            cb.addEventListener('change', function () {
+                const all     = table.querySelectorAll('.row-checkbox');
+                const checked = table.querySelectorAll('.row-checkbox:checked');
+                if (selectAllCb) {
+                    selectAllCb.checked       = checked.length === all.length && all.length > 0;
+                    selectAllCb.indeterminate = checked.length > 0 && checked.length < all.length;
+                }
+                updateOutboundBulkBar();
+            });
+        });
+    }
+
+    // 3. Xử lý trang Create
+    if (isCreatePage) {
         const supplierSelect = document.getElementById('outboundSupplier');
         if (supplierSelect) {
             supplierSelect.dataset.prev = supplierSelect.value;
             supplierSelect.addEventListener('change', () => onOutboundSupplierChange(supplierSelect));
         }
 
-        if (outboundBody.children.length === 0) addOutboundRow();
+        const tbody = document.getElementById('outboundItemsBody');
+        if (tbody && tbody.children.length === 0) {
+            addOutboundRow();
+        }
 
         const outboundForm = document.getElementById('outboundForm');
-        if (outboundForm?.getAttribute('action')?.includes('process.php')) {
+        if (outboundForm) {
             outboundForm.addEventListener('submit', function (e) {
                 if (!validateOutboundFormBeforeSubmit()) { e.preventDefault(); return; }
                 document.querySelectorAll('#outboundItemsBody .qty-outbound').forEach(el => {
@@ -763,72 +829,49 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
                 localStorage.removeItem('outbound_draft');
             });
-
-            const draft = localStorage.getItem('outbound_draft');
-            if (draft) {
-                try {
-                    const data = JSON.parse(draft);
-                    if (data.items?.length) {
-                        // Khôi phục NCC trước khi dựng lại các dòng (ô tìm sản phẩm phụ thuộc NCC).
-                        if (supplierSelect && data.supplier_id &&
-                            [...supplierSelect.options].some(o => o.value === String(data.supplier_id))) {
-                            supplierSelect.value = String(data.supplier_id);
-                            supplierSelect.dataset.prev = supplierSelect.value;
-                        }
-                        outboundBody.innerHTML = '';
-                        data.items.forEach(item => {
-                            addOutboundRow();
-                            const lastRow = outboundBody.querySelector('.item-row:last-child');
-                            if (lastRow) {
-                                lastRow.querySelector('.product-autocomplete-outbound').value = item.product_name;
-                                lastRow.querySelector('.product-id').value = item.product_id;
-                                lastRow.querySelector('.batch-select-outbound').innerHTML = `<option value="${item.batch_no}" selected>${item.batch_no}</option>`;
-                                lastRow.querySelector('.qty-outbound').value = formatNumberInput(item.quantity.toString());
-                                if (item.product_id) loadBatchesForOutboundRow(lastRow, item.product_id);
-                            }
-                        });
-                        const refEl  = document.querySelector('#outboundForm input[name="ref_no"]');
-                        const noteEl = document.querySelector('#outboundForm textarea[name="note"]');
-                        if (refEl)  refEl.value  = data.ref_no || '';
-                        if (noteEl) noteEl.value = data.note   || '';
-                    }
-                } catch (e) { /* draft hỏng → bỏ qua */ }
-            }
         }
     }
 
+    // 4. Đóng popover / modal khi click ra ngoài
     window.addEventListener('click', function (e) {
-        if (e.target === document.getElementById('editOutboundModal'))   closeEditOutboundModal();
+        const pop = document.getElementById('neoDatePickerPopover');
+        const trigger = document.querySelector('.neo-datepicker-trigger');
+        if (pop && pop.style.display === 'block' && !pop.contains(e.target) && !trigger?.contains(e.target)) {
+            pop.style.display = 'none';
+        }
+
         if (e.target === document.getElementById('detailOutboundModal')) closeDetailOutboundModal();
-        if (e.target === document.getElementById('productModal')) closeProductModal();
-        if (e.target === document.getElementById('supplierModal') && typeof closeSupplierModal === 'function') closeSupplierModal();
-        if (e.target === document.getElementById('categoryModal') && typeof closeCategoryModal === 'function') closeCategoryModal();
+        if (e.target === document.getElementById('editOutboundModal'))   closeEditOutboundModal();
     });
 });
 
-window.addOutboundRow              = addOutboundRow;
-window.removeOutboundRow           = removeOutboundRow;
-window.clearAllOutboundRows        = clearAllOutboundRows;
-window.resetOutboundForm           = resetOutboundForm;
-window.loadBatchesForOutboundRow   = loadBatchesForOutboundRow;
-window.saveOutboundDraft           = saveOutboundDraft;
+// Gán toàn bộ hàm vào window object
+window.addOutboundRow                   = addOutboundRow;
+window.removeOutboundRow                = removeOutboundRow;
+window.clearAllOutboundRows             = clearAllOutboundRows;
+window.resetOutboundForm                = resetOutboundForm;
+window.loadBatchesForOutboundRow        = loadBatchesForOutboundRow;
+window.saveOutboundDraft                = saveOutboundDraft;
 window.validateOutboundFormBeforeSubmit = validateOutboundFormBeforeSubmit;
-window.viewOutboundDetail          = viewOutboundDetail;
-window.closeDetailOutboundModal    = closeDetailOutboundModal;
-window.confirmDeleteOutbound       = confirmDeleteOutbound;
-window.searchOutboundTable         = searchOutboundTable;
-window.exportOutboundExcel         = exportOutboundExcel;
-window.exportOutboundDetailExcel   = exportOutboundDetailExcel;
-window.printOutboundDetail         = printOutboundDetail;
-window.editOutbound                = editOutbound;
-window.closeEditOutboundModal      = closeEditOutboundModal;
-window.addEditOutboundRow          = addEditOutboundRow;
-window.removeEditOutboundRow       = removeEditOutboundRow;
-window.attachEditOutboundRowEvents = attachEditOutboundRowEvents;
-window.openProductModal            = openProductModal;
-window.closeProductModal           = closeProductModal;
-window.submitNewProduct            = submitNewProduct;
-window.addOutboundRowWithData      = addOutboundRowWithData;
-window.updateBulkBar       = updateBulkBar;
-window.clearSelection      = clearSelection;
-window.exportSelectedExcel = exportSelectedExcel;
+window.syncOutboundInvoicePreview       = syncOutboundInvoicePreview;
+window.viewOutboundDetail               = viewOutboundDetail;
+window.closeDetailOutboundModal         = closeDetailOutboundModal;
+window.printOutboundDetail              = printOutboundDetail;
+window.exportOutboundDetailExcel        = exportOutboundDetailExcel;
+window.exportOutboundExcel              = exportOutboundExcel;
+window.searchOutboundTable              = searchOutboundTable;
+window.confirmDeleteOutbound            = confirmDeleteOutbound;
+window.editOutbound                     = editOutbound;
+window.closeEditOutboundModal           = closeEditOutboundModal;
+window.addEditOutboundRow               = addEditOutboundRow;
+window.removeEditOutboundRow            = removeEditOutboundRow;
+window.validateEditOutboundFormBeforeSubmit = validateEditOutboundFormBeforeSubmit;
+window.updateOutboundBulkBar            = updateOutboundBulkBar;
+window.clearOutboundSelection           = clearOutboundSelection;
+window.exportSelectedOutboundExcel       = exportSelectedOutboundExcel;
+window.toggleDatePickerPopover          = toggleDatePickerPopover;
+window.selectQuickDate                  = selectQuickDate;
+window.openCalendarPicker               = openCalendarPicker;
+window.backToPresets                    = backToPresets;
+window.changeMonth                      = changeMonth;
+window.applyCustomRange                 = applyCustomRange;

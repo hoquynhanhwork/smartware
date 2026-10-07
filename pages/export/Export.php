@@ -85,7 +85,16 @@ if ($type === 'products') {
     $statuses     = array_filter((array)($_GET['status'] ?? []));
     $stock_min    = $_GET['stock_min'] ?? '';
     $stock_max    = $_GET['stock_max'] ?? '';
-    $selected_ids = array_filter(array_map('intval', (array)($_GET['selected_ids'] ?? [])));
+    // JS gửi ids dạng chuỗi "1,2,3" (products.js); vẫn nhận selected_ids[] cho tương thích ngược.
+    $rawIds = $_GET['ids'] ?? ($_GET['selected_ids'] ?? []);
+    if (is_string($rawIds)) {
+        $rawIds = explode(',', $rawIds);
+    }
+    $selected_ids = array_values(array_filter(array_map('intval', (array) $rawIds), fn($v) => $v > 0));
+    // "Chọn tất cả N" (all=1): bỏ qua danh sách id, xuất theo đúng bộ lọc hiện tại.
+    if (($_GET['all'] ?? '') === '1') {
+        $selected_ids = [];
+    }
 
     $where  = "p.deleted_at IS NULL";
     $params = [];

@@ -8,6 +8,7 @@ interface CategoryRepositoryInterface
     public function listWithCount(): array;
     public function listActive(): array;
     public function findById(int $id): array|false;
+    public function existsByName(string $name, int $excludeId = 0): bool;
 
     /** @return int ID bản ghi mới */
     public function create(array $data): int;

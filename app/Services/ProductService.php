@@ -75,19 +75,28 @@ class ProductService
     {
         $data = $this->sanitize($input);
 
-        if ($data['name'] === '') {
-            return ['ok' => false, 'message' => 'Tên sản phẩm không được để trống.'];
+        if ($error = $this->validate($input, $data)) {
+            return ['ok' => false, 'message' => $error];
         }
 
-        if ($data['sku'] === '') {
-            $data['sku'] = $this->generateSku();
-        } else {
-            if ($this->repo->findBySku($data['sku'])) {
+        try {
+            if ($data['sku'] === '') {
+                // SKU tự sinh: sinh + ghi trong 1 transaction có khóa → không trùng khi thêm đồng thời.
+                $created = $this->repo->createWithAutoSku($data);
+                $newId   = $created['id'];
+                $data['sku'] = $created['sku'];
+            } else {
+                if ($msg = $this->skuTakenMessage($data['sku'])) {
+                    return ['ok' => false, 'message' => $msg];
+                }
+                $newId = $this->repo->create($data);
+            }
+        } catch (\PDOException $e) {
+            if ($this->isUniqueViolation($e)) {
                 return ['ok' => false, 'message' => 'SKU đã tồn tại. Vui lòng dùng SKU khác.'];
             }
+            throw $e;
         }
-
-        $newId = $this->repo->create($data);
 
         return [
             'ok'      => true,
@@ -105,8 +114,8 @@ class ProductService
 
         $data = $this->sanitize($input);
 
-        if ($data['name'] === '') {
-            return ['ok' => false, 'message' => 'Tên sản phẩm không được để trống.'];
+        if ($error = $this->validate($input, $data)) {
+            return ['ok' => false, 'message' => $error];
         }
         if ($data['sku'] === '') {
             return ['ok' => false, 'message' => 'SKU không được để trống khi cập nhật.'];
@@ -114,11 +123,18 @@ class ProductService
         if (!$this->repo->findById($id)) {
             return ['ok' => false, 'message' => 'Không tìm thấy sản phẩm.'];
         }
-        if ($this->repo->findBySku($data['sku'], excludeId: $id)) {
-            return ['ok' => false, 'message' => 'SKU đã tồn tại. Vui lòng dùng SKU khác.'];
+        if ($msg = $this->skuTakenMessage($data['sku'], $id)) {
+            return ['ok' => false, 'message' => $msg];
         }
 
-        $this->repo->update($id, $data);
+        try {
+            $this->repo->update($id, $data);
+        } catch (\PDOException $e) {
+            if ($this->isUniqueViolation($e)) {
+                return ['ok' => false, 'message' => 'SKU đã tồn tại. Vui lòng dùng SKU khác.'];
+            }
+            throw $e;
+        }
 
         return ['ok' => true, 'message' => "Cập nhật sản phẩm \"{$data['name']}\" thành công."];
     }
@@ -135,25 +151,25 @@ class ProductService
             return ['ok' => false, 'message' => 'Không tìm thấy sản phẩm.'];
         }
 
-        // Business rule: active → inactive (soft), inactive + không có lịch sử → xóa hẳn
+        // Business rule: active → inactive; inactive + không tồn kho/lịch sử → xóa (xóa mềm, dữ liệu vẫn còn trong DB)
         if ($product['status'] === 'active') {
             $this->repo->setStatus($id, 'inactive');
             return ['ok' => true, 'message' => 'Sản phẩm đã được đánh dấu ngừng kinh doanh.'];
         }
 
         if ($this->repo->hasStockHistory($id)) {
-            return ['ok' => false, 'message' => 'Không thể xóa vĩnh viễn — sản phẩm đã có lịch sử nhập/xuất kho.'];
+            return ['ok' => false, 'message' => 'Không thể xóa — sản phẩm đang có tồn kho hoặc đã có lịch sử nhập/xuất. Hãy giữ ở trạng thái Ngừng kinh doanh.'];
         }
 
         $this->repo->softDelete($id);
-        return ['ok' => true, 'message' => 'Đã xóa sản phẩm vĩnh viễn.'];
+        return ['ok' => true, 'message' => 'Đã xóa sản phẩm.'];
     }
 
     // ── Kiểm tra SKU (AJAX) ───────────────────────────────────────────────────
     public function checkSku(string $sku, int $excludeId = 0): bool
     {
         if ($sku === '') return false;
-        return (bool) $this->repo->findBySku(trim($sku), $excludeId);
+        return (bool) $this->repo->findBySku(trim($sku), $excludeId, true);
     }
 
     // ── Thêm danh mục nhanh (từ context sản phẩm) ────────────────────────────
@@ -161,7 +177,10 @@ class ProductService
     {
         $name = trim($name);
         if ($name === '') {
-            return ['ok' => false, 'message' => 'Tên danh mục không được để trống.'];
+            return ['ok' => false, 'success' => false, 'message' => 'Tên danh mục không được để trống.'];
+        }
+        if ($this->categoryRepo->existsByName($name)) {
+            return ['ok' => false, 'success' => false, 'message' => "Danh mục \"{$name}\" đã tồn tại."];
         }
 
         $newId = $this->categoryRepo->create([
@@ -180,10 +199,73 @@ class ProductService
     }
 
     // ── Helpers nội bộ ───────────────────────────────────────────────────────
-    private function generateSku(): string
+    /**
+     * Trả về thông báo lỗi nếu SKU đã bị chiếm (kể cả bởi sản phẩm đã xóa mềm, vì DB có thể
+     * vẫn giữ ràng buộc unique với dòng đã xóa), ngược lại trả null.
+     */
+    private function skuTakenMessage(string $sku, int $excludeId = 0): ?string
     {
-        $next = $this->repo->nextSkuNumber();
-        return 'SP' . str_pad((string) $next, 5, '0', STR_PAD_LEFT);
+        $found = $this->repo->findBySku($sku, $excludeId, true);
+        if (!$found) {
+            return null;
+        }
+        return empty($found['deleted_at'])
+            ? 'SKU đã tồn tại. Vui lòng dùng SKU khác.'
+            : 'SKU này thuộc một sản phẩm đã xóa. Vui lòng dùng SKU khác.';
+    }
+
+    private function isUniqueViolation(\PDOException $e): bool
+    {
+        return ($e->errorInfo[0] ?? $e->getCode()) === '23505';
+    }
+
+    /**
+     * Kiểm tra dữ liệu phía server (không tin vào validate của JS).
+     * Trả về chuỗi lỗi, hoặc null nếu hợp lệ.
+     */
+    private function validate(array $input, array $data): ?string
+    {
+        if ($data['name'] === '') {
+            return 'Tên sản phẩm không được để trống.';
+        }
+
+        $numericFields = [
+            'price'      => 'Giá bán',
+            'cost_price' => 'Giá vốn',
+            'min_stock'  => 'Tồn kho tối thiểu',
+            'max_stock'  => 'Tồn kho tối đa',
+        ];
+        foreach ($numericFields as $field => $label) {
+            $raw = trim((string) ($input[$field] ?? ''));
+            if ($raw !== '' && !is_numeric($raw)) {
+                return "{$label} không hợp lệ.";
+            }
+        }
+
+        if ($data['price'] === null) {
+            return 'Vui lòng nhập giá bán.';
+        }
+        if ($data['price'] < 0) {
+            return 'Giá bán không được âm.';
+        }
+        if ($data['cost_price'] < 0) {
+            return 'Giá vốn không được âm.';
+        }
+        if ($data['min_stock'] < 0 || $data['max_stock'] < 0) {
+            return 'Tồn kho tối thiểu/tối đa không được âm.';
+        }
+        if ($data['max_stock'] > 0 && $data['min_stock'] > $data['max_stock']) {
+            return 'Tồn kho tối thiểu không được lớn hơn tồn kho tối đa.';
+        }
+
+        if ($data['category_id'] !== null && !$this->categoryRepo->findById($data['category_id'])) {
+            return 'Danh mục không tồn tại.';
+        }
+        if ($data['supplier_id'] !== null && !$this->supplierRepo->findById($data['supplier_id'])) {
+            return 'Nhà cung cấp không tồn tại.';
+        }
+
+        return null;
     }
 
     private function sanitize(array $input): array
@@ -197,7 +279,7 @@ class ProductService
             'sku'         => trim($input['sku']         ?? ''),
             'category_id' => !empty($input['category_id'])  ? (int)   $input['category_id']  : null,
             'supplier_id' => !empty($input['supplier_id'])  ? (int)   $input['supplier_id']  : null,
-            'unit'        => trim($input['unit']        ?? ''),
+            'unit'        => trim($input['unit']        ?? '') ?: 'cái',
             'price'       => isset($input['price'])      && $input['price'] !== ''
                                 ? (float) $input['price']      : null,
             'cost_price'  => isset($input['cost_price']) && $input['cost_price'] !== ''

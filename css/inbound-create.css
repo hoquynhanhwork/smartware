@@ -1,13 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
 /* =======================================================
    INBOUND CREATE PAGE - SPLIT SCREEN & INVOICE PREVIEW
+   Hệ màu Kem - Navy - Vàng điểm nhấn theo nguyên tắc
 ======================================================= */
 
-/* Container bao ngoài: Tạo khoảng cách đệm rõ rệt với Sidebar */
 .inbound-create-wrapper {
     width: 100%;
     max-width: 1440px;
     margin: 0 auto;
-    padding: 10px 28px 40px 28px; /* Tăng padding 28px để không bị dính mép sidebar */
+    padding: 10px 24px 40px 24px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -25,11 +27,11 @@
 
 /* ── CỘT TRÁI: PANEL FORM NHẬP LIỆU ──────────────────────── */
 .split-form-panel {
-    background: #ffffff !important;
-    border: 1px solid var(--tb-border, #f1f1f4) !important;
-    border-radius: 18px !important;
-    padding: 26px 28px !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 16px !important;
+    padding: 24px 26px !important;
+    box-shadow: 0 4px 12px rgba(16, 26, 44, 0.04) !important;
     display: flex;
     flex-direction: column;
 }
@@ -45,27 +47,27 @@
     margin: 0;
     font-size: 16.5px;
     font-weight: 700;
-    color: var(--text-main, #18181b);
+    color: var(--navy-darkest);
 }
 
 .panel-subtitle {
     margin: 4px 0 0 0;
     font-size: 12.5px;
-    color: var(--text-muted, #71717a);
+    color: var(--text-muted);
 }
 
 .split-divider {
     height: 1px;
-    background: var(--tb-border, #f1f1f4);
+    background: var(--border-color);
     margin: 20px 0;
 }
 
 /* Bảng nhập liệu sản phẩm bên trong form */
 .split-table-wrap {
-    border: 1px solid var(--tb-border, #f1f1f4);
-    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
     overflow: hidden;
-    background: #ffffff;
+    background: #FFFFFF;
     margin-bottom: 14px;
 }
 
@@ -75,47 +77,29 @@
 }
 
 #itemsTable th {
-    background: #fafafa;
-    color: #a1a1aa;
+    background: var(--navy-primary);
+    color: var(--text-inverse);
     font-size: 11.5px;
     font-weight: 600;
     padding: 10px 10px;
     text-align: left;
-    border-bottom: 1px solid var(--tb-border, #f1f1f4);
+    border-bottom: 2px solid var(--navy-darkest);
 }
 
 #itemsTable td {
     padding: 8px 8px;
-    border-bottom: 1px solid var(--tb-border, #f1f1f4);
+    border-bottom: 1px solid var(--border-color);
     font-size: 13px;
-    color: var(--text-main, #18181b);
+    color: var(--text-primary);
     vertical-align: middle;
 }
 
-#itemsTable input.form-input-modern {
-    font-size: 13px;
-    border: 1px solid transparent;
-    background: transparent;
-    box-shadow: none;
-    border-radius: 6px;
-    transition: all 0.15s ease;
+#itemsTable tr:nth-child(even) td {
+    background: rgba(244, 239, 223, 0.35);
 }
 
-#itemsTable tr:hover input.form-input-modern {
-    border-color: #e4e4e7;
-    background: #ffffff;
-}
-
-#itemsTable input.form-input-modern:focus {
-    border-color: var(--primary-dark, #18181b);
-    background: #ffffff;
-    box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.05);
-}
-
-#itemsTable input[readonly] {
-    cursor: default;
-    border-color: transparent !important;
-    background: transparent !important;
+#itemsTable tr:hover td {
+    background: rgba(38, 75, 111, 0.08);
 }
 
 .split-form-footer-actions {
@@ -125,17 +109,17 @@
     gap: 10px;
     margin-top: 24px;
     padding-top: 18px;
-    border-top: 1px solid var(--tb-border, #f1f1f4);
+    border-top: 1px solid var(--border-color);
 }
 
 /* ── CỘT PHẢI: TỜ HÓA ĐƠN XEM TRƯỚC (INVOICE PAPER) ──────── */
 .invoice-paper-preview {
-    background: #ffffff;
-    border: 1px solid #e4e4e7;
-    border-radius: 18px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
     padding: 32px 30px;
     position: relative;
-    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 2px 6px -2px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 10px 30px rgba(16, 26, 44, 0.08);
     display: flex;
     flex-direction: column;
     min-height: 560px;
@@ -149,7 +133,7 @@
     right: 0;
     width: 24px;
     height: 24px;
-    background: linear-gradient(135deg, transparent 50%, #e4e4e7 50%);
+    background: linear-gradient(135deg, transparent 50%, var(--border-color) 50%);
     border-bottom-left-radius: 6px;
 }
 
@@ -163,17 +147,18 @@
 .inv-doc-title {
     font-size: 20px;
     font-weight: 800;
-    color: #18181b;
+    color: var(--navy-darkest);
     letter-spacing: -0.4px;
 }
 
 .inv-doc-code {
     font-size: 13px;
     font-weight: 700;
-    color: #2563eb;
-    background: #eff6ff;
+    color: var(--navy-primary);
+    background: #EDE6D2;
     padding: 4px 10px;
     border-radius: 6px;
+    border: 1px solid var(--border-color);
 }
 
 .inv-doc-party-grid {
@@ -181,7 +166,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 18px;
     padding-bottom: 16px;
-    border-bottom: 1px solid #f1f1f4;
+    border-bottom: 1px solid var(--border-color);
     margin-bottom: 16px;
 }
 
@@ -193,22 +178,22 @@
 
 .party-role {
     font-size: 10.5px;
-    color: #a1a1aa;
+    color: var(--blue-mid);
     text-transform: uppercase;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0.5px;
 }
 
 .party-name {
     font-size: 14px;
-    color: #18181b;
+    color: var(--navy-darkest);
     font-weight: 700;
     margin-top: 2px;
 }
 
 .party-desc {
     font-size: 12px;
-    color: #71717a;
+    color: var(--text-muted);
 }
 
 .inv-doc-dates-grid {
@@ -226,12 +211,12 @@
 
 .date-lbl {
     font-size: 11px;
-    color: #a1a1aa;
+    color: var(--text-muted);
 }
 
 .date-val {
     font-size: 13px;
-    color: #18181b;
+    color: var(--navy-darkest);
     font-weight: 600;
 }
 
@@ -242,13 +227,13 @@
 
 .inv-doc-table-head {
     display: grid;
-    grid-template-columns: 1fr 40px 85px 95px;
+    grid-template-columns: 1fr 40px 90px 100px;
     font-size: 11px;
     font-weight: 700;
-    color: #a1a1aa;
+    color: var(--blue-mid);
     text-transform: uppercase;
     padding-bottom: 8px;
-    border-bottom: 1px solid #f1f1f4;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .inv-doc-table-head .th-qty,
@@ -259,16 +244,16 @@
 
 .inv-doc-table-row {
     display: grid;
-    grid-template-columns: 1fr 40px 85px 95px;
+    grid-template-columns: 1fr 40px 90px 100px;
     font-size: 12.5px;
     padding: 9px 0;
-    border-bottom: 1px solid #f8fafc;
+    border-bottom: 1px solid rgba(226, 218, 200, 0.4);
     align-items: center;
 }
 
 .inv-doc-table-row .td-item {
     font-weight: 600;
-    color: #18181b;
+    color: var(--navy-darkest);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -279,29 +264,29 @@
 .inv-doc-table-row .td-cost,
 .inv-doc-table-row .td-total {
     text-align: right;
-    color: #52525b;
+    color: var(--text-muted);
 }
 
 .inv-doc-table-row .td-total {
-    font-weight: 600;
-    color: #18181b;
+    font-weight: 700;
+    color: var(--navy-darkest);
 }
 
 .prev-empty-hint {
     text-align: center;
-    color: #a1a1aa;
+    color: var(--text-muted);
     font-size: 12px;
     padding: 30px 0;
 }
 
 .inv-doc-summary-box {
     margin-left: auto;
-    width: 220px;
+    width: 240px;
     display: flex;
     flex-direction: column;
     gap: 7px;
     padding-top: 12px;
-    border-top: 1px solid #f1f1f4;
+    border-top: 1px solid var(--border-color);
     margin-bottom: 18px;
 }
 
@@ -309,27 +294,27 @@
     display: flex;
     justify-content: space-between;
     font-size: 12.5px;
-    color: #71717a;
+    color: var(--text-muted);
 }
 
 .sum-line.sum-total {
     font-size: 15px;
     font-weight: 800;
-    color: #18181b;
-    border-top: 1.5px solid #18181b;
+    color: var(--navy-darkest);
+    border-top: 2px solid var(--navy-darkest);
     padding-top: 8px;
 }
 
 .inv-doc-footer-note {
     margin-top: auto;
     padding-top: 10px;
-    border-top: 1px dashed #f1f1f4;
+    border-top: 1px dashed var(--border-color);
 }
 
 .inv-doc-footer-note p {
     margin: 0;
     font-size: 11px;
-    color: #a1a1aa;
+    color: var(--text-muted);
     font-style: italic;
     line-height: 1.4;
 }

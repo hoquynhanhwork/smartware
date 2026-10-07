@@ -61,11 +61,18 @@ $filterCount = count($categoryIds) + count($statuses) + count($supplierIds)
 
 $csrfToken = $csrf->getToken();
 
+// Chỉ admin/manager được sửa/xóa; staff chỉ được thêm mới.
+$canManage = hasRole('admin', 'manager');
+
 include __DIR__ . '/../../layout/header.php';
 ?>
+<!-- Font Be Vietnam Pro & Stylesheet -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/products.css">
 
-<!-- Script chống giật khi tải trang (không dùng !important) -->
+<!-- Script chống giật layout khi lưu trạng thái sidebar -->
 <script>
     (function () {
         if (localStorage.getItem('product_filter_hidden') === 'true') {
@@ -212,13 +219,16 @@ include __DIR__ . '/../../layout/header.php';
                         <?php foreach ($products as $p):
                             $stock = (int) $p['total_stock'];
                             if ($p['status'] === 'inactive') {
-                                $statusClass = 'st-overdue';
+                                // Ngừng kinh doanh: Đỏ cam cá koi #C8553D
+                                $statusClass = 'st-danger';
                                 $statusText  = 'Ngừng KD';
                             } elseif ($stock <= (int) $p['min_stock']) {
-                                $statusClass = 'st-pending';
+                                // Cảnh báo nhập hàng: Nền Vàng #D5B370, chữ navy tối
+                                $statusClass = 'st-warning';
                                 $statusText  = 'Cần nhập';
                             } else {
-                                $statusClass = 'st-completed';
+                                // Hợp lý / Còn hàng: Xanh ngọc trầm #3E8E7E
+                                $statusClass = 'st-success';
                                 $statusText  = 'Còn hàng';
                             }
                         ?>
@@ -248,12 +258,14 @@ include __DIR__ . '/../../layout/header.php';
                                 <span class="stock-pill"><?= number_format($stock) ?> <?= htmlspecialchars($p['unit'] ?? 'cái') ?></span>
                             </td>
                             <td class="text-right actions-cell">
+                                <?php if ($canManage): ?>
                                 <button type="button" class="btn-action-icon" onclick="openProductModal('edit', <?= htmlspecialchars(json_encode($p), ENT_QUOTES) ?>)" title="Sửa">
                                     <i class="ri-pencil-line"></i>
                                 </button>
-                                <button type="button" class="btn-action-icon btn-action-delete" onclick="confirmDeleteProduct(<?= $p['id'] ?>, '<?= $p['status'] ?>')" title="Xóa">
+                                <button type="button" class="btn-action-icon btn-action-delete" onclick="confirmDeleteProduct(<?= (int) $p['id'] ?>, '<?= htmlspecialchars($p['status'], ENT_QUOTES) ?>', <?= $stock ?>)" title="<?= $p['status'] === 'active' ? 'Ngừng kinh doanh' : 'Xóa' ?>">
                                     <i class="ri-delete-bin-line"></i>
                                 </button>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -422,7 +434,7 @@ include __DIR__ . '/../../layout/header.php';
                         </div>
                     </div>
 
-                    <!-- MÔ TẢ SẢN PHẨM: FULL-WIDTH RỘNG RÃI -->
+                    <!-- MÔ TẢ SẢN PHẨM -->
                     <div class="form-row-modern">
                         <label class="form-label-modern">Mô tả sản phẩm</label>
                         <textarea name="description" id="prodDesc" rows="3" placeholder="Nhập ghi chú hoặc mô tả về sản phẩm..." class="form-input-modern"></textarea>

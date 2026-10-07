@@ -1,21 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
 /* =======================================================
-   INBOUND MODULE (MINIMALIST NEO-CLEAN STYLE)
+   DESIGN SYSTEM - THEME TRANH THỦY MẶC / CÁ KOI (NHẬP KHO)
+   Navy, Kem, Vàng điểm nhấn & Font Be Vietnam Pro
 ======================================================= */
 :root {
-    --tb-border: #f1f1f4;
-    --tb-bg-hover: #f9fafb;
-    --text-main: #18181b;
-    --text-muted: #71717a;
-    --primary-dark: #18181b;
-    --inbound-blue: #18181b;
-    --inbound-gold: #c89114;
+    --font-family-base: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    /* Base Palette */
+    --navy-darkest: #101A2C;       /* Chữ chính, footer, viền tối */
+    --navy-primary: #11284D;       /* Header table, primary buttons, viền active */
+    --blue-mid:     #264B6F;       /* Hover, links, viền focus, text link */
+    --bg-page:      #F4EFDF;       /* Nền trang (body), xen kẽ bảng */
+    --bg-card:      #FBF8EF;       /* Trắng pha kem cho card, modal, sidebar */
+    --gold-accent:  #D5B370;       /* Điểm nhấn vàng, active indicator */
+
+    /* Neutrals & Semantic */
+    --border-color: #E2DAC8;       /* Viền kem trầm đồng bộ */
+    --text-primary: #101A2C;       /* Chữ chính */
+    --text-muted:   #5E6D82;       /* Chữ phụ, SKU, nhãn mờ */
+    --text-inverse: #F4EFDF;       /* Chữ trên nền Navy */
+
+    /* Semantic Status Colors */
+    --status-danger:  #C8553D;     /* Đỏ cam cá koi: Đã hủy, xóa */
+    --status-success: #3E8E7E;     /* Xanh ngọc trầm: Hoàn thành */
+    --status-warning: #D5B370;     /* Vàng: Tạm thời, cảnh báo */
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family-base);
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+input, button, select, textarea {
+    font-family: var(--font-family-base);
 }
 
 /* ── Container bao ngoài ─────────────────────────────────────── */
 .inbound-container,
 .inbound-create-wrapper {
     width: 100%;
-    max-width: 1380px;
+    max-width: 1400px;
     margin: 0 auto;
     box-sizing: border-box;
     display: flex;
@@ -23,7 +56,7 @@
     gap: 18px;
 }
 
-/* ── Cơ chế ẩn/hiện Sidebar lọc chống giật layout ─────────────── */
+/* ── Ẩn Sidebar lọc chống giật ─────────────────────────────────── */
 .inbound-filter-hidden .task-filter-sidebar {
     display: none !important;
 }
@@ -38,7 +71,7 @@
     width: 4px;
 }
 .filter-scroll-box::-webkit-scrollbar-thumb {
-    background: #e4e4e7;
+    background: #D9CEB9;
     border-radius: 4px;
 }
 
@@ -54,31 +87,47 @@
     gap: 10px;
 }
 .alert-success {
-    background: #ecfdf5;
-    color: #065f46;
-    border-left: 4px solid #10b981;
+    background: rgba(62, 142, 126, 0.15);
+    color: #276256;
+    border: 1px solid rgba(62, 142, 126, 0.3);
 }
 .alert-danger {
-    background: #fee2e2;
-    color: #991b1b;
-    border-left: 4px solid #ef4444;
+    background: rgba(200, 85, 61, 0.15);
+    color: #9C3822;
+    border: 1px solid rgba(200, 85, 61, 0.35);
 }
 
 /* ── Badges trạng thái phiếu nhập ────────────────────────────── */
+.clean-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+/* Hoàn thành: Xanh ngọc trầm */
+.st-success,
 .st-completed {
-    background: #e0f2fe;
-    color: #0284c7;
+    background: rgba(62, 142, 126, 0.15);
+    color: #276256;
+    border: 1px solid rgba(62, 142, 126, 0.3);
 }
+/* Tạm thời: Nền vàng, chữ Navy tối */
+.st-warning,
 .st-pending {
-    background: #fef3c7;
-    color: #b45309;
+    background: var(--gold-accent);
+    color: var(--navy-darkest);
+    border: 1px solid #BF9E5A;
 }
+/* Đã hủy: Đỏ cam cá koi */
+.st-danger,
 .st-overdue {
-    background: #fee2e2;
-    color: #dc2626;
+    background: rgba(200, 85, 61, 0.15);
+    color: #9C3822;
+    border: 1px solid rgba(200, 85, 61, 0.35);
 }
 
-/* ── Định dạng bảng nhập hàng (create & edit) ────────────────── */
+/* ── Bảng nhập hàng (create & edit) ──────────────────────────── */
 #itemsTable,
 #editInboundItemsTable {
     width: 100%;
@@ -93,19 +142,20 @@
     box-shadow: none;
     border-radius: 6px;
     transition: all 0.15s ease;
+    color: var(--navy-darkest);
 }
 
 #itemsTable tr:hover input.form-input-modern,
 #editInboundItemsTable tr:hover input.form-input-modern {
-    border-color: #e4e4e7;
-    background: #ffffff;
+    border-color: var(--border-color);
+    background: #FFFFFF;
 }
 
 #itemsTable input.form-input-modern:focus,
 #editInboundItemsTable input.form-input-modern:focus {
-    border-color: var(--primary-dark);
-    background: #ffffff;
-    box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.05);
+    border-color: var(--blue-mid);
+    background: #FFFFFF;
+    box-shadow: 0 0 0 2px rgba(38, 75, 111, 0.12);
 }
 
 #itemsTable input[readonly],
@@ -121,10 +171,10 @@
     top: 100%;
     left: 0;
     right: 0;
-    background: #ffffff;
-    border: 1px solid var(--tb-border);
+    background: #FFFFFF;
+    border: 1px solid var(--border-color);
     border-radius: 10px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 25px rgba(16, 26, 44, 0.12);
     max-height: 220px;
     overflow-y: auto;
     z-index: 9999;
@@ -136,7 +186,7 @@
     padding: 8px 12px;
     font-size: 13px;
     cursor: pointer;
-    color: var(--text-main);
+    color: var(--text-primary);
     transition: background 0.12s ease;
     white-space: nowrap;
     overflow: hidden;
@@ -144,16 +194,16 @@
 }
 
 .autocomplete-suggestions div:hover {
-    background: #f4f4f5;
+    background: #F4EFDF;
 }
 
 .autocomplete-suggestions div strong {
-    color: var(--primary-dark);
+    color: var(--navy-darkest);
 }
 
 .product-info {
     font-size: 11px;
-    color: #a1a1aa;
+    color: var(--text-muted);
     margin-top: 2px;
     padding-left: 2px;
 }
@@ -167,8 +217,8 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px 24px;
-    background: #fbfbfc;
-    border: 1px solid var(--tb-border);
+    background: #FFFFFF;
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 16px 20px;
 }
@@ -179,7 +229,7 @@
     align-items: center;
     font-size: 13.5px;
     padding-bottom: 6px;
-    border-bottom: 1px dashed #f1f1f4;
+    border-bottom: 1px dashed var(--border-color);
 }
 
 #detailContent .info-detail-row .row-label {
@@ -188,7 +238,7 @@
 }
 
 #detailContent .info-detail-row .row-value {
-    color: var(--text-main);
+    color: var(--navy-darkest);
     font-weight: 600;
 }
 
@@ -200,24 +250,24 @@
 }
 
 .upload-zone {
-    border: 2px dashed #d4d4d8;
+    border: 2px dashed var(--border-color);
     border-radius: 16px;
     padding: 48px 24px;
     text-align: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    background: #ffffff;
+    background: var(--bg-card);
 }
 
 .upload-zone:hover,
 .upload-zone.dragover {
-    border-color: var(--inbound-blue);
-    background: #eff6ff;
+    border-color: var(--blue-mid);
+    background: #EDE6D2;
 }
 
 .upload-zone i {
     font-size: 48px;
-    color: #a1a1aa;
+    color: var(--blue-mid);
     display: block;
     margin-bottom: 12px;
 }
@@ -229,7 +279,7 @@
 }
 
 .upload-zone strong {
-    color: var(--inbound-blue);
+    color: var(--navy-darkest);
 }
 
 .ocr-loading {
@@ -241,8 +291,8 @@
 .ocr-loading .spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid #e4e4e7;
-    border-top-color: var(--inbound-blue);
+    border: 4px solid var(--border-color);
+    border-top-color: var(--navy-primary);
     border-radius: 50%;
     animation: ocrSpin 0.8s linear infinite;
     margin: 0 auto 16px;
@@ -257,8 +307,8 @@
 }
 
 .preview-header {
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
+    background: rgba(62, 142, 126, 0.12);
+    border: 1px solid rgba(62, 142, 126, 0.3);
     border-radius: 12px;
     padding: 14px 18px;
     margin-bottom: 18px;
@@ -271,18 +321,18 @@
     font-size: 12px;
     font-weight: 600;
 }
-.conf-high   { background: #dcfce7; color: #166534; }
-.conf-medium { background: #fef3c7; color: #92400e; }
-.conf-low    { background: #fee2e2; color: #991b1b; }
+.conf-high   { background: rgba(62, 142, 126, 0.2); color: #276256; }
+.conf-medium { background: var(--gold-accent); color: var(--navy-darkest); }
+.conf-low    { background: rgba(200, 85, 61, 0.2); color: #9C3822; }
 
 .ocr-warnings {
-    background: #fffbeb;
-    border: 1px solid #fcd34d;
+    background: rgba(213, 179, 112, 0.15);
+    border: 1px solid var(--gold-accent);
     border-radius: 10px;
     padding: 12px 16px;
     margin-bottom: 16px;
     font-size: 13px;
-    color: #92400e;
+    color: #634710;
 }
 .ocr-warnings ul {
     margin: 4px 0 0 16px;
@@ -297,18 +347,18 @@
 }
 
 .ocr-items th {
-    background: #f8fafc;
+    background: var(--navy-primary);
     padding: 10px 12px;
     text-align: left;
     font-size: 12px;
     font-weight: 600;
-    color: var(--text-muted);
-    border-bottom: 1px solid var(--tb-border);
+    color: var(--text-inverse);
+    border-bottom: 2px solid var(--navy-darkest);
 }
 
 .ocr-items td {
     padding: 8px 10px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .ocr-items input {
@@ -319,22 +369,23 @@
     font-size: 13px;
     background: transparent;
     box-sizing: border-box;
+    color: var(--text-primary);
 }
 
 .ocr-items input:focus {
     outline: none;
-    border-color: var(--inbound-blue);
-    background: #ffffff;
+    border-color: var(--blue-mid);
+    background: #FFFFFF;
 }
 
 .ocr-items tr:hover td {
-    background: #f8fafc;
+    background: rgba(38, 75, 111, 0.06);
 }
 
 .btn-del-row {
     background: transparent;
     border: none;
-    color: #ef4444;
+    color: var(--status-danger);
     cursor: pointer;
     font-size: 18px;
     line-height: 1;
@@ -342,17 +393,31 @@
 }
 
 .error-banner {
-    background: #fee2e2;
-    border: 1px solid #fca5a5;
+    background: rgba(200, 85, 61, 0.15);
+    border: 1px solid rgba(200, 85, 61, 0.35);
     border-radius: 10px;
     padding: 12px 16px;
-    color: #991b1b;
+    color: #9C3822;
     font-size: 13.5px;
     margin-bottom: 16px;
     display: none;
 }
 
-/* ── Responsive cơ bản ───────────────────────────────────────── */
+/* ── Hạn dùng không theo dõi ─────────────────────────────────── */
+input.exp-not-tracked {
+    background: #EDE6D2 !important;
+    color: transparent !important;
+    border-style: dashed !important;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+.exp-na-note {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 900px) {
     .inbound-container,
     .inbound-create-wrapper {
@@ -367,350 +432,37 @@
         grid-template-columns: 1fr;
     }
 }
-
-/* =======================================================
-   BỐ CỤC FORM TẠO PHIẾU NHẬP (MINIMALIST 2-COLUMN CŨ)
-======================================================= */
-.inbound-form-grid {
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 18px;
-    align-items: start;
+/* ── BẢNG DANH SÁCH PHIẾU NHẬP (KHẮC PHỤC LỆCH CỘT & MÃ PHIẾU) ── */
+#inboundTable {
+    table-layout: fixed;
+    width: 100%;
 }
 
-.inbound-items-card {
-    min-height: 520px;
-}
-
-.inbound-side-col {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-}
-
-/* Hộp tổng kết tiền thanh toán */
-.inbound-summary-box {
-    background: #fbfbfc;
-    border: 1px solid var(--tb-border);
-    border-radius: 12px;
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 14px;
-}
-
-.summary-line {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13.5px;
-    color: var(--text-muted);
-}
-
-.summary-line.total-highlight {
-    border-top: 1px dashed var(--tb-border);
-    padding-top: 10px;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text-main);
-}
-
-.inbound-actions-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-@media (max-width: 1100px) {
-    .inbound-form-grid {
-        grid-template-columns: 1fr;
-    }
-    .inbound-items-card {
-        min-height: auto;
-    }
-}
-
-/* =======================================================
-   SPLIT SCREEN INVOICE CREATION LAYOUT (CHUẨN ẢNH MẪU)
-======================================================= */
-.split-invoice-layout {
-    display: grid;
-    grid-template-columns: 1.15fr 0.85fr;
-    gap: 24px;
-    align-items: start;
-}
-
-/* Panel Form bên trái */
-.split-form-panel {
-    padding: 24px 26px;
-    border-radius: 18px;
-}
-
-.split-section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 14px;
-}
-
-.panel-main-title {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text-main);
-}
-
-.panel-subtitle {
-    margin: 3px 0 0 0;
-    font-size: 12.5px;
-    color: var(--text-muted);
-}
-
-.split-divider {
-    height: 1px;
-    background: var(--tb-border);
-    margin: 18px 0;
-}
-
-.split-form-footer-actions {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 10px;
-    margin-top: 20px;
-    padding-top: 16px;
-    border-top: 1px solid var(--tb-border);
-}
-
-/* ── CỘT PHẢI: TỜ GIẤY HÓA ĐƠN XEM TRƯỚC (INVOICE PAPER) ──────── */
-.invoice-paper-preview {
-    background: #ffffff;
-    border: 1px solid #e4e4e7;
-    border-radius: 18px;
-    padding: 32px 30px;
-    position: relative;
-    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 2px 6px -2px rgba(0, 0, 0, 0.02);
-    display: flex;
-    flex-direction: column;
-    min-height: 580px;
-    overflow: hidden;
-}
-
-/* Nếp gấp trang giấy góc trên bên phải */
-.paper-fold-corner {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 24px;
-    height: 24px;
-    background: linear-gradient(135deg, transparent 50%, #e4e4e7 50%);
-    border-bottom-left-radius: 6px;
-}
-
-/* Header hóa đơn */
-.inv-doc-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-}
-
-.inv-doc-title {
-    font-size: 22px;
-    font-weight: 800;
-    color: #18181b;
-    letter-spacing: -0.5px;
-}
-
-.inv-doc-code {
-    font-size: 13.5px;
-    font-weight: 700;
-    color: #18181b;
-    background: #eff6ff;
-    padding: 4px 10px;
-    border-radius: 6px;
-}
-
-/* Lưới Billed to & Billed by */
-.inv-doc-party-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    padding-bottom: 18px;
-    border-bottom: 1px solid #f1f1f4;
-    margin-bottom: 16px;
-}
-
-.party-col {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.party-role {
-    font-size: 11px;
-    color: #a1a1aa;
-    text-transform: uppercase;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-
-.party-name {
-    font-size: 14.5px;
-    color: #18181b;
-    font-weight: 700;
-    margin-top: 2px;
-}
-
-.party-desc {
-    font-size: 12px;
-    color: #71717a;
-}
-
-/* Khối ngày tháng */
-.inv-doc-dates-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.date-col {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.date-lbl {
-    font-size: 11px;
-    color: #a1a1aa;
-}
-
-.date-val {
-    font-size: 13px;
-    color: #18181b;
-    font-weight: 600;
-}
-
-/* Bảng danh sách sản phẩm trong tờ hóa đơn xem trước */
-.inv-doc-items-box {
-    flex: 1;
-    margin-bottom: 20px;
-}
-
-.inv-doc-table-head {
-    display: grid;
-    grid-template-columns: 1fr 45px 90px 100px;
-    font-size: 11.5px;
-    font-weight: 700;
-    color: #a1a1aa;
-    text-transform: uppercase;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #f1f1f4;
-}
-
-.inv-doc-table-head .th-qty,
-.inv-doc-table-head .th-cost,
-.inv-doc-table-head .th-total {
-    text-align: right;
-}
-
-.inv-doc-table-row {
-    display: grid;
-    grid-template-columns: 1fr 45px 90px 100px;
-    font-size: 13px;
-    padding: 10px 0;
-    border-bottom: 1px solid #f8fafc;
-    align-items: center;
-}
-
-.inv-doc-table-row .td-item {
-    font-weight: 600;
-    color: #18181b;
+#inboundTable th,
+#inboundTable td {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-right: 8px;
+    vertical-align: middle;
 }
 
-.inv-doc-table-row .td-qty,
-.inv-doc-table-row .td-cost,
-.inv-doc-table-row .td-total {
-    text-align: right;
-    color: #52525b;
+/* Định dạng mã phiếu: Navy tối, không bị xanh dương, chỉ hover mới đổi màu */
+#inboundTable .item-code-link {
+    color: var(--navy-darkest) !important;
+    font-weight: 700;
+    text-decoration: none;
+    font-family: inherit;
+    display: inline-block;
+    transition: color 0.15s ease;
 }
 
-.inv-doc-table-row .td-total {
-    font-weight: 600;
-    color: #18181b;
+#inboundTable .item-code-link:hover {
+    color: var(--blue-mid) !important;
+    text-decoration: underline;
 }
 
-.prev-empty-hint {
+/* Căn lề chuẩn cho cột checkbox và thao tác */
+#inboundTable td:first-child,
+#inboundTable th:first-child {
     text-align: center;
-    color: #a1a1aa;
-    font-size: 12.5px;
-    padding: 30px 0;
-}
-
-/* Tổng kết số tiền bên góc dưới phải */
-.inv-doc-summary-box {
-    margin-left: auto;
-    width: 240px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding-top: 14px;
-    border-top: 1px solid #f1f1f4;
-    margin-bottom: 24px;
-}
-
-.sum-line {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    color: #71717a;
-}
-
-.sum-line.sum-total {
-    font-size: 16px;
-    font-weight: 800;
-    color: #18181b;
-    border-top: 1.5px solid #18181b;
-    padding-top: 8px;
-}
-
-.inv-doc-footer-note {
-    margin-top: auto;
-    padding-top: 12px;
-    border-top: 1px dashed #f1f1f4;
-}
-
-.inv-doc-footer-note p {
-    margin: 0;
-    font-size: 11.5px;
-    color: #a1a1aa;
-    font-style: italic;
-    line-height: 1.5;
-}
-
-/* Responsive */
-@media (max-width: 1050px) {
-    .split-invoice-layout {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Hạn dùng: danh mục không theo dõi hạn thì ô bị làm mờ, không nhập được */
-input.exp-not-tracked {
-    background: #f4f4f5 !important;
-    color: transparent !important;
-    border-style: dashed !important;
-    cursor: not-allowed;
-    pointer-events: none;
-}
-.exp-na-note {
-    font-size: 11px;
-    color: #71717a;
-    margin-top: 2px;
 }

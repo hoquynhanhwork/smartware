@@ -89,10 +89,14 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
         ", [':id' => $id]);
     }
 
-    public function findBySku(string $sku, int $excludeId = 0): array|false
+    public function findBySku(string $sku, int $excludeId = 0, bool $includeDeleted = false): array|false
     {
-        $sql    = "SELECT id FROM products WHERE sku = :sku AND deleted_at IS NULL";
+        $sql    = "SELECT id, deleted_at FROM products WHERE sku = :sku";
         $params = [':sku' => $sku];
+
+        if (!$includeDeleted) {
+            $sql .= " AND deleted_at IS NULL";
+        }
 
         if ($excludeId > 0) {
             $sql              .= " AND id != :exclude";
@@ -128,6 +132,36 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
             ':min_stock'   => $data['min_stock']   ?? 0,
             ':max_stock'   => $data['max_stock']   ?? 0,
         ]);
+    }
+
+    // Khóa tư vấn (advisory lock) dùng riêng cho việc sinh SKU; số bất kỳ nhưng phải cố định.
+    private const SKU_LOCK_KEY = 7305001;
+
+    public function createWithAutoSku(array $data): array
+    {
+        $ownsTx = !$this->pdo->inTransaction();
+        if ($ownsTx) {
+            $this->pdo->beginTransaction();
+        }
+
+        try {
+            // Các request sinh SKU song song xếp hàng ở đây; khóa tự nhả khi commit/rollback.
+            $this->execute("SELECT pg_advisory_xact_lock(" . self::SKU_LOCK_KEY . ")");
+
+            $data['sku'] = 'SP' . str_pad((string) ($this->maxSkuNumber() + 1), 5, '0', STR_PAD_LEFT);
+            $id = $this->create($data);
+
+            if ($ownsTx) {
+                $this->pdo->commit();
+            }
+            return ['id' => $id, 'sku' => $data['sku']];
+
+        } catch (\Throwable $e) {
+            if ($ownsTx && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
     }
 
     // ── Cập nhật ──────────────────────────────────────────────────────────────
@@ -231,41 +265,39 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     }
 
     // ── Misc ──────────────────────────────────────────────────────────────────
+    /**
+     * Số SKU kế tiếp. Lưu ý: chỉ an toàn khi đồng thời nếu dùng trong createWithAutoSku();
+     * tự gọi hàm này rồi create() riêng vẫn có thể trùng khi 2 người thêm cùng lúc.
+     */
     public function nextSkuNumber(): int
     {
-        $this->pdo->beginTransaction();
-
-        try {
-            $max = $this->fetchColumn("
-                SELECT COALESCE(
-                    MAX(CAST(REGEXP_REPLACE(sku, '[^0-9]', '', 'g') AS INTEGER)),
-                    0
-                )
-                FROM   products
-                WHERE  sku LIKE 'SP%'
-                AND    deleted_at IS NULL
-            ");
-
-            $this->pdo->commit();
-            return ((int) $max) + 1;
-
-        } catch (\Throwable $e) {
-            $this->pdo->rollBack();
-            throw $e;
-        }
+        return $this->maxSkuNumber() + 1;
     }
 
+    /** Lớn nhất trong các SKU dạng SP + 1–9 chữ số. Tính cả sản phẩm đã xóa mềm để không tái dùng SKU cũ. */
+    private function maxSkuNumber(): int
+    {
+        return (int) $this->fetchColumn("
+            SELECT COALESCE(MAX(CAST(SUBSTRING(sku FROM 3) AS BIGINT)), 0)
+            FROM   products
+            WHERE  sku ~ '^SP[0-9]{1,9}$'
+        ");
+    }
+
+    /** Đã phát sinh nhập/xuất, có lô tồn, hoặc có lịch sử kho → không được xóa. */
     public function hasStockHistory(int $id): bool
     {
-        $inbound  = (int) $this->fetchColumn(
-            "SELECT COUNT(*) FROM stock_inbound_items  WHERE product_id = :id LIMIT 1",
-            [':id' => $id]
-        );
-        $outbound = (int) $this->fetchColumn(
-            "SELECT COUNT(*) FROM stock_outbound_items WHERE product_id = :id LIMIT 1",
-            [':id' => $id]
-        );
-        return $inbound > 0 || $outbound > 0;
+        return (bool) $this->fetchColumn("
+            SELECT EXISTS (SELECT 1 FROM stock_inbound_items  WHERE product_id = :id_in)
+                OR EXISTS (SELECT 1 FROM stock_outbound_items WHERE product_id = :id_out)
+                OR EXISTS (SELECT 1 FROM inventory_batches    WHERE product_id = :id_batch)
+                OR EXISTS (SELECT 1 FROM inventory_history    WHERE product_id = :id_hist)
+        ", [
+            ':id_in'    => $id,
+            ':id_out'   => $id,
+            ':id_batch' => $id,
+            ':id_hist'  => $id,
+        ]);
     }
 
     // ── Helpers nội bộ ───────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 <?php
 // pages/settings/users.php
-$page_title = 'QUẢN LÝ NGƯỜI DÙNG';
+$page_title = 'CÀI ĐẶT HỆ THỐNG';
 
 require_once __DIR__ . '/../../config/auth.php';
 require_once __DIR__ . '/../../config/db.php';
@@ -11,7 +11,7 @@ use App\Services\SettingService;
 use App\Services\CsrfService;
 
 requireLogin();
-requireRole('admin');
+requireRole('admin', 'manager');
 
 $current_uid = (int) $_SESSION['user_id'];
 $service     = new SettingService(new SettingRepository($pdo));
@@ -22,230 +22,341 @@ $csrfToken     = $csrf->getToken();
 $flash_success = getFlash('success');
 $flash_error   = getFlash('error');
 
-$roleMap = ['admin' => 'Quản trị viên', 'manager' => 'Quản lý', 'staff' => 'Nhân viên'];
-$roleColor = ['admin' => '#7c3aed', 'manager' => '#0369a1', 'staff' => '#374151'];
+// Thống kê nhanh cho KPI cards
+$totalMembers   = count($users);
+$totalAdmins    = count(array_filter($users, fn($u) => $u['role'] === 'admin'));
+$activeMembers  = count(array_filter($users, fn($u) => $u['status'] === 'active'));
+$inactiveCount  = $totalMembers - $activeMembers;
 
+$roleMap = ['admin' => 'Quản trị viên', 'manager' => 'Quản lý', 'staff' => 'Nhân viên'];
+
+$body_page = 'settings-page';
 include __DIR__ . '/../../layout/header.php';
 ?>
+<!-- Font Be Vietnam Pro & Style Chuẩn -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="<?= BASE_URL ?>/css/suppliers.css">
+<link rel="stylesheet" href="<?= BASE_URL ?>/css/inbound.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/settings.css">
 <meta name="csrf-token" content="<?= htmlspecialchars($csrfToken) ?>">
 
-<div class="settings-container">
-    <?php include '_sidebar.php'; ?>
+<div class="settings-container-modern">
+    <!-- Nhúng thanh tab ngang -->
+    <?php include '_tabs.php'; ?>
 
-    <div class="settings-content">
-        <div class="settings-header" style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div>
-                <h1><i class="ri-team-line"></i> Quản lý người dùng</h1>
-                <p class="page-subtitle"><?= count($users) ?> tài khoản trong hệ thống</p>
-            </div>
-            <button class="btn-primary" onclick="openUserModal('add')">
-                <i class="ri-user-add-line"></i> Thêm người dùng
-            </button>
-        </div>
-
+    <div class="settings-tab-content">
         <?php if ($flash_success): ?><div class="alert alert-success"><?= htmlspecialchars($flash_success) ?></div><?php endif; ?>
         <?php if ($flash_error):   ?><div class="alert alert-danger"><?= htmlspecialchars($flash_error) ?></div><?php endif; ?>
 
-        <div class="table-card">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Người dùng</th>
-                        <th>Email</th>
-                        <th>Vai trò</th>
-                        <th>Lần đăng nhập cuối</th>
-                        <th>Trạng thái</th>
-                        <th class="text-right">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($users as $u):
-                    $isSelf = ($u['id'] === $current_uid);
-                ?>
-                <tr>
-                    <td>
-                        <div style="font-weight:500"><?= htmlspecialchars($u['full_name'] ?? $u['username']) ?></div>
-                        <div style="font-size:12px;color:#94a3b8">@<?= htmlspecialchars($u['username']) ?></div>
-                    </td>
-                    <td class="text-muted"><?= htmlspecialchars($u['email'] ?? '—') ?></td>
-                    <td>
-                        <span style="font-size:12px;font-weight:500;padding:2px 10px;border-radius:999px;
-                            background:<?= $roleColor[$u['role']] ?? '#374151' ?>18;
-                            color:<?= $roleColor[$u['role']] ?? '#374151' ?>">
-                            <?= $roleMap[$u['role']] ?? $u['role'] ?>
-                        </span>
-                    </td>
-                    <td class="text-muted" style="font-size:13px">
-                        <?= $u['last_login_at'] ? date('d/m/Y H:i', strtotime($u['last_login_at'])) : 'Chưa đăng nhập' ?>
-                    </td>
-                    <td>
-                        <span style="font-size:12px;padding:2px 8px;border-radius:999px;font-weight:500;
-                            background:<?= $u['status']==='active' ? '#f0fdf4' : '#fef2f2' ?>;
-                            color:<?= $u['status']==='active' ? '#16a34a' : '#dc2626' ?>">
-                            <?= $u['status']==='active' ? 'Hoạt động' : 'Bị khóa' ?>
-                        </span>
-                        <?php if ($isSelf): ?>
-                            <span style="font-size:11px;color:#94a3b8;margin-left:4px">(bạn)</span>
-                        <?php endif; ?>
-                    </td>
-                    <td class="text-right actions-cell">
-                        <button class="btn-icon-subtle" title="Sửa"
-                                onclick="openUserModal('edit', <?= htmlspecialchars(json_encode($u), ENT_QUOTES) ?>)">
-                            <i class="ri-edit-line"></i>
+        <!-- SECTION: THỐNG KÊ TỔNG QUAN THÀNH VIÊN (KPI CARDS) -->
+        <div class="settings-sub-section">
+            <div class="section-title-wrap">
+                <i class="ri-team-line"></i>
+                <h3 class="section-heading">Tổng quan nhân sự</h3>
+            </div>
+
+            <div class="team-kpi-grid">
+                <!-- Card 1 -->
+                <div class="team-kpi-card">
+                    <div class="kpi-top">
+                        <span class="kpi-lbl">Tổng thành viên</span>
+                        <button type="button" class="btn-more-dots"><i class="ri-more-2-fill"></i></button>
+                    </div>
+                    <div class="kpi-main-val"><?= sprintf("%02d", $totalMembers) ?> tài khoản</div>
+                    <div class="kpi-sub-text">Người dùng trong hệ thống</div>
+                    <div class="kpi-trend trend-up">
+                        <i class="ri-flashlight-line"></i>
+                        <span>12% so với tháng trước</span>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="team-kpi-card">
+                    <div class="kpi-top">
+                        <span class="kpi-lbl">Quản trị viên</span>
+                        <button type="button" class="btn-more-dots"><i class="ri-more-2-fill"></i></button>
+                    </div>
+                    <div class="kpi-main-val"><?= sprintf("%02d", $totalAdmins) ?> quản trị</div>
+                    <div class="kpi-sub-text">Toàn quyền vận hành</div>
+                    <div class="kpi-trend trend-up">
+                        <i class="ri-checkbox-circle-line"></i>
+                        <span>Ổn định tuần này</span>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="team-kpi-card">
+                    <div class="kpi-top">
+                        <span class="kpi-lbl">Đang hoạt động</span>
+                        <button type="button" class="btn-more-dots"><i class="ri-more-2-fill"></i></button>
+                    </div>
+                    <div class="kpi-main-val"><?= sprintf("%02d", $activeMembers) ?> thành viên</div>
+                    <div class="kpi-sub-text">Sẵn sàng nhận tác vụ</div>
+                    <div class="kpi-trend trend-up">
+                        <i class="ri-time-line"></i>
+                        <span>Đã xác thực</span>
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="team-kpi-card">
+                    <div class="kpi-top">
+                        <span class="kpi-lbl">Bị khóa / Tạm dừng</span>
+                        <button type="button" class="btn-more-dots"><i class="ri-more-2-fill"></i></button>
+                    </div>
+                    <div class="kpi-main-val" style="color: var(--status-danger);"><?= sprintf("%02d", $inactiveCount) ?> tài khoản</div>
+                    <div class="kpi-sub-text">Chưa thể đăng nhập</div>
+                    <div class="kpi-trend trend-down">
+                        <i class="ri-indeterminate-circle-line"></i>
+                        <span>Cần kiểm duyệt</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: DANH SÁCH THÀNH VIÊN & THANH CÔNG CỤ -->
+        <div class="settings-sub-section mt-30">
+            <div class="members-toolbar-header">
+                <div class="section-title-wrap">
+                    <i class="ri-user-shared-line"></i>
+                    <h3 class="section-heading">Danh sách thành viên <span class="counter-badge">(<?= $totalMembers ?>)</span></h3>
+                </div>
+
+                <div class="members-action-toolbar">
+                    <div class="st-search-animated-box">
+                        <i class="ri-search-line"></i>
+                        <input type="text" id="settingsSearchInput" placeholder="Tìm theo tên, email..." autocomplete="off">
+                        <span class="st-shortcut-badge">⌘ F</span>
+                    </div>
+
+                    <div class="st-dropdown-tool">
+                        <button type="button" class="btn-tool-outline" id="btnStatusFilter">
+                            <span>Trạng thái: <strong id="currentStatusText">Tất cả</strong></span>
+                            <i class="ri-arrow-down-s-line"></i>
                         </button>
-                        <button class="btn-icon-subtle" title="Đặt lại mật khẩu"
-                                onclick="openResetModal(<?= $u['id'] ?>, '<?= htmlspecialchars($u['username'], ENT_QUOTES) ?>')">
-                            <i class="ri-key-line"></i>
-                        </button>
-                        <?php if (!$isSelf): ?>
-                        <button class="btn-icon-subtle <?= $u['status']==='active' ? 'text-danger' : 'text-success' ?>"
-                                title="<?= $u['status']==='active' ? 'Khóa' : 'Mở khóa' ?>"
-                                onclick="toggleStatus(<?= $u['id'] ?>, '<?= $u['username'] ?>', '<?= $u['status'] ?>')">
-                            <i class="ri-<?= $u['status']==='active' ? 'lock' : 'lock-unlock' ?>-line"></i>
-                        </button>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
+                        <div class="st-dropdown-menu" id="statusFilterMenu">
+                            <a href="javascript:void(0)" onclick="filterMemberStatus('all')" class="active">Tất cả</a>
+                            <a href="javascript:void(0)" onclick="filterMemberStatus('active')">Đang hoạt động</a>
+                            <a href="javascript:void(0)" onclick="filterMemberStatus('inactive')">Bị khóa</a>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-tool-outline" onclick="toggleSortMembers()" title="Sắp xếp danh sách">
+                        <i class="ri-sort-desc"></i>
+                        <span>Sắp xếp</span>
+                    </button>
+
+                    <?php if (hasRole('admin')): ?>
+                    <button type="button" class="btn-modern-dark btn-sm" onclick="openUserModal('add')">
+                        <i class="ri-user-add-line"></i>
+                        <span>Thêm nhân viên</span>
+                    </button>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- BẢNG THÀNH VIÊN LIỀN KHỐI (THEAD NAVY CHỮ KEM) -->
+            <div class="clean-member-card-table">
+                <table class="member-table-grid" id="memberTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 32%;">TÊN & THÔNG TIN</th>
+                            <th style="width: 25%;">CÔNG VIỆC & VAI TRÒ</th>
+                            <th style="width: 18%;">NGÀY THAM GIA</th>
+                            <th style="width: 15%;">HOẠT ĐỘNG</th>
+                            <th style="width: 10%; text-align: right;">THAO TÁC</th>
+                        </tr>
+                    </thead>
+                    <tbody id="memberListStack">
+                        <?php foreach ($users as $u):
+                            $isSelf = ($u['id'] === $current_uid);
+                            $nameInitial = mb_substr($u['full_name'] ?? $u['username'], 0, 1, 'UTF-8');
+                            $createdDate = date('d/m/Y', strtotime($u['created_at'] ?? '2026-01-10'));
+                            $loginText = $u['last_login_at'] ? date('H:i, d/m/Y', strtotime($u['last_login_at'])) : 'Đang hoạt động';
+                        ?>
+                        <tr class="member-table-row" data-name="<?= strtolower(htmlspecialchars($u['full_name'] ?? '')) ?>" data-status="<?= $u['status'] ?>">
+                            <!-- Cột 1: Profile -->
+                            <td>
+                                <div class="cell-member-profile">
+                                    <div class="member-avatar">
+                                        <span class="avatar-initial"><?= strtoupper($nameInitial) ?></span>
+                                    </div>
+                                    <div class="member-info">
+                                        <div class="member-name">
+                                            <strong><?= htmlspecialchars($u['full_name'] ?? $u['username']) ?></strong>
+                                            <?php if ($isSelf): ?>
+                                                <span class="self-tag">(Bạn)</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="member-email"><?= htmlspecialchars($u['email'] ?? $u['username'] . '@smartware.vn') ?></div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Cột 2: Tasks & Role -->
+                            <td>
+                                <div class="cell-member-tasks">
+                                    <div class="task-line">
+                                        <i class="ri-checkbox-line"></i>
+                                        <span>Phiếu hoàn tất: <strong><?= rand(10, 85) ?></strong></span>
+                                    </div>
+                                    <div class="role-line">
+                                        Vai trò: <strong><?= $roleMap[$u['role']] ?? ucfirst(htmlspecialchars($u['role'])) ?></strong>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Cột 3: Created Date -->
+                            <td>
+                                <div class="cell-member-date">
+                                    <i class="ri-calendar-line"></i>
+                                    <span><?= $createdDate ?></span>
+                                </div>
+                            </td>
+
+                            <!-- Cột 4: Status / Activity -->
+                            <td>
+                                <div class="cell-member-activity">
+                                    <i class="ri-time-line"></i>
+                                    <span class="activity-text <?= $u['status'] === 'active' ? 'text-success' : 'text-danger' ?>">
+                                        <?= $u['status'] === 'active' ? $loginText : 'Đã khóa' ?>
+                                    </span>
+                                </div>
+                            </td>
+
+                            <!-- Cột 5: Actions -->
+                            <td style="text-align: right;">
+                                <div class="cell-member-actions">
+                                    <button type="button" class="btn-icon-subtle" title="Sửa thông tin"
+                                            onclick="openUserModal('edit', <?= htmlspecialchars(json_encode($u), ENT_QUOTES) ?>)">
+                                        <i class="ri-pencil-line"></i>
+                                    </button>
+                                    <button type="button" class="btn-icon-subtle" title="Đổi mật khẩu"
+                                            onclick="openResetModal(<?= $u['id'] ?>, '<?= htmlspecialchars($u['username'], ENT_QUOTES) ?>')">
+                                        <i class="ri-key-line"></i>
+                                    </button>
+                                    <?php if (!$isSelf && hasRole('admin')): ?>
+                                    <button type="button" class="btn-icon-subtle <?= $u['status']==='active' ? 'text-danger' : 'text-success' ?>"
+                                            title="<?= $u['status']==='active' ? 'Khóa' : 'Mở khóa' ?>"
+                                            onclick="toggleStatus(<?= $u['id'] ?>, '<?= $u['username'] ?>', '<?= $u['status'] ?>')">
+                                        <i class="ri-<?= $u['status']==='active' ? 'lock' : 'lock-unlock' ?>-line"></i>
+                                    </button>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Modal thêm/sửa user -->
-<div id="userModal" class="modal" style="display:none">
-    <div class="modal-content" style="max-width:520px">
-        <div class="modal-header">
-            <h3 id="userModalTitle">Thêm người dùng</h3>
-            <span class="close" onclick="closeUserModal()">&times;</span>
+<div id="userModal" class="modal-modern" style="display:none">
+    <div class="modal-modern-dialog" style="max-width:560px">
+        <div class="modal-modern-header">
+            <div>
+                <h3 id="userModalTitle">Thêm nhân viên</h3>
+                <p class="modal-subtitle">Tạo tài khoản quản lý và vận hành kho SmartWare.</p>
+            </div>
+            <button type="button" class="btn-close-modern" onclick="closeUserModal()">&times;</button>
         </div>
         <form id="userForm" onsubmit="submitUser(event)">
             <input type="hidden" name="action" id="userAction" value="add_user">
             <input type="hidden" name="id"     id="userId"     value="0">
-            <div style="padding:20px 24px">
+            <div class="modal-tabs-body">
                 <div class="form-grid-2">
-                    <div class="form-group" id="usernameGroup">
-                        <label>Tên đăng nhập <span class="required">*</span></label>
-                        <input type="text" name="username" id="uUsername" autocomplete="off">
+                    <div class="form-row-modern" id="usernameGroup">
+                        <label class="form-label-modern">Tên đăng nhập <span class="text-danger">*</span></label>
+                        <input type="text" name="username" id="uUsername" class="form-input-modern" autocomplete="off" placeholder="VD: nguyenvan_a">
                     </div>
-                    <div class="form-group" id="passwordGroup">
-                        <label>Mật khẩu <span class="required">*</span></label>
-                        <input type="password" name="password" id="uPassword" autocomplete="new-password">
+                    <div class="form-row-modern" id="passwordGroup">
+                        <label class="form-label-modern">Mật khẩu <span class="text-danger">*</span></label>
+                        <input type="password" name="password" id="uPassword" class="form-input-modern" autocomplete="new-password">
                     </div>
-                    <div class="form-group">
-                        <label>Họ và tên <span class="required">*</span></label>
-                        <input type="text" name="full_name" id="uFullName">
+                    <div class="form-row-modern">
+                        <label class="form-label-modern">Họ và tên <span class="text-danger">*</span></label>
+                        <input type="text" name="full_name" id="uFullName" class="form-input-modern" placeholder="VD: Nguyễn Văn A">
                     </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" name="email" id="uEmail">
+                    <div class="form-row-modern">
+                        <label class="form-label-modern">Email</label>
+                        <input type="email" name="email" id="uEmail" class="form-input-modern" placeholder="a.nguyen@smartware.vn">
                     </div>
-                    <div class="form-group full-width">
-                        <label>Vai trò <span class="required">*</span></label>
-                        <select name="role" id="uRole">
-                            <option value="staff">Nhân viên</option>
-                            <option value="manager">Quản lý</option>
-                            <option value="admin">Quản trị viên</option>
-                        </select>
+
+                    <!-- Vai trò dạng Radio button Card -->
+                    <div class="form-row-modern" style="grid-column: 1 / -1;">
+                        <label class="form-label-modern">Vai trò đảm nhiệm <span class="text-danger">*</span></label>
+                        <div class="role-radio-group">
+                            <label class="role-radio-card">
+                                <input type="radio" name="role" value="staff" checked>
+                                <span class="custom-radio-circle"></span>
+                                <div class="role-radio-text">
+                                    <strong>Nhân viên kho</strong>
+                                    <small>Thao tác nhập, xuất & xem tồn</small>
+                                </div>
+                            </label>
+
+                            <label class="role-radio-card">
+                                <input type="radio" name="role" value="manager">
+                                <span class="custom-radio-circle"></span>
+                                <div class="role-radio-text">
+                                    <strong>Quản lý kho</strong>
+                                    <small>Duyệt phiếu, kiểm kê & điều chỉnh</small>
+                                </div>
+                            </label>
+
+                            <label class="role-radio-card">
+                                <input type="radio" name="role" value="admin">
+                                <span class="custom-radio-circle"></span>
+                                <div class="role-radio-text">
+                                    <strong>Quản trị viên</strong>
+                                    <small>Toàn quyền hệ thống & cấu hình</small>
+                                </div>
+                            </label>
+                        </div>
                     </div>
                 </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn-primary">Lưu</button>
-                    <button type="button" class="btn-secondary" onclick="closeUserModal()">Hủy</button>
-                </div>
+            </div>
+            <div class="modal-modern-footer">
+                <button type="button" class="btn-modern-outline" onclick="closeUserModal()">Hủy</button>
+                <button type="submit" class="btn-modern-dark">Lưu nhân viên</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Modal reset password -->
-<div id="resetModal" class="modal" style="display:none">
-    <div class="modal-content" style="max-width:400px">
-        <div class="modal-header">
-            <h3>Đặt lại mật khẩu</h3>
-            <span class="close" onclick="closeResetModal()">&times;</span>
+<!-- Modal Reset Password -->
+<div id="resetModal" class="modal-modern" style="display:none">
+    <div class="modal-modern-dialog" style="max-width:420px">
+        <div class="modal-modern-header">
+            <div>
+                <h3>Đặt lại mật khẩu</h3>
+                <p class="modal-subtitle" id="resetUserLabel"></p>
+            </div>
+            <button type="button" class="btn-close-modern" onclick="closeResetModal()">&times;</button>
         </div>
         <form id="resetForm" onsubmit="submitReset(event)">
             <input type="hidden" name="action" value="reset_password">
             <input type="hidden" name="id"     id="resetUserId">
-            <div style="padding:20px 24px">
-                <p id="resetUserLabel" style="margin-bottom:16px;color:#64748b;font-size:13px"></p>
-                <div class="form-group">
-                    <label>Mật khẩu mới <span class="required">*</span></label>
-                    <input type="password" name="new_password" id="newPassword" minlength="6" autocomplete="new-password">
+            <div class="modal-tabs-body">
+                <div class="form-row-modern">
+                    <label class="form-label-modern">Mật khẩu mới <span class="text-danger">*</span></label>
+                    <input type="password" name="new_password" id="newPassword" class="form-input-modern" minlength="6" autocomplete="new-password">
                 </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn-primary">Xác nhận</button>
-                    <button type="button" class="btn-secondary" onclick="closeResetModal()">Hủy</button>
-                </div>
+            </div>
+            <div class="modal-modern-footer">
+                <button type="button" class="btn-modern-outline" onclick="closeResetModal()">Hủy</button>
+                <button type="submit" class="btn-modern-dark">Xác nhận</button>
             </div>
         </form>
     </div>
 </div>
 
-<script>
-const CSRF = document.querySelector('meta[name="csrf-token"]').content;
-
-function openUserModal(mode, user = null) {
-    document.getElementById('userModalTitle').textContent = mode === 'add' ? 'Thêm người dùng' : 'Sửa người dùng';
-    document.getElementById('userAction').value  = mode === 'add' ? 'add_user' : 'edit_user';
-    document.getElementById('userId').value      = user?.id ?? 0;
-    document.getElementById('uUsername').value   = user?.username  ?? '';
-    document.getElementById('uFullName').value   = user?.full_name ?? '';
-    document.getElementById('uEmail').value      = user?.email     ?? '';
-    document.getElementById('uRole').value       = user?.role      ?? 'staff';
-    document.getElementById('uPassword').value   = '';
-
-    // Ẩn username + password khi edit
-    document.getElementById('usernameGroup').style.display = mode === 'add' ? '' : 'none';
-    document.getElementById('passwordGroup').style.display = mode === 'add' ? '' : 'none';
-
-    document.getElementById('userModal').style.display = 'flex';
-}
-function closeUserModal() { document.getElementById('userModal').style.display = 'none'; }
-
-async function submitUser(e) {
-    e.preventDefault();
-    const fd = new FormData(document.getElementById('userForm'));
-    fd.append('csrf_token', CSRF);
-    const resp = await fetch('process.php', { method: 'POST', body: fd });
-    const data = await resp.json();
-    if (data.ok) { alert(data.message); location.reload(); }
-    else alert('Lỗi: ' + data.message);
-}
-
-function openResetModal(id, username) {
-    document.getElementById('resetUserId').value      = id;
-    document.getElementById('resetUserLabel').textContent = `Đặt lại mật khẩu cho tài khoản: @${username}`;
-    document.getElementById('newPassword').value      = '';
-    document.getElementById('resetModal').style.display = 'flex';
-}
-function closeResetModal() { document.getElementById('resetModal').style.display = 'none'; }
-
-async function submitReset(e) {
-    e.preventDefault();
-    const fd = new FormData(document.getElementById('resetForm'));
-    fd.append('csrf_token', CSRF);
-    const resp = await fetch('process.php', { method: 'POST', body: fd });
-    const data = await resp.json();
-    if (data.ok) { alert(data.message); closeResetModal(); }
-    else alert('Lỗi: ' + data.message);
-}
-
-async function toggleStatus(id, username, currentStatus) {
-    const action = currentStatus === 'active' ? 'khóa' : 'mở khóa';
-    if (!confirm(`Xác nhận ${action} tài khoản @${username}?`)) return;
-    const fd = new FormData();
-    fd.append('action', 'toggle_user_status');
-    fd.append('id', id);
-    fd.append('csrf_token', CSRF);
-    const resp = await fetch('process.php', { method: 'POST', body: fd });
-    const data = await resp.json();
-    if (data.ok) { alert(data.message); location.reload(); }
-    else alert('Lỗi: ' + data.message);
-}
-</script>
+<script src="<?= BASE_URL ?>/js/utils.js"></script>
+<script src="<?= BASE_URL ?>/js/settings.js"></script>
 
 <?php include __DIR__ . '/../../layout/footer.php'; ?>

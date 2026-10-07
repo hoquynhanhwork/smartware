@@ -39,6 +39,19 @@ class CategoryRepository extends BaseRepository implements CategoryRepositoryInt
         ", [':id' => $id]);
     }
 
+    /** Trùng tên (không phân biệt hoa thường, bỏ khoảng trắng đầu/cuối), chỉ xét danh mục chưa xóa. */
+    public function existsByName(string $name, int $excludeId = 0): bool
+    {
+        return (bool) $this->fetchColumn("
+            SELECT EXISTS (
+                SELECT 1 FROM categories
+                WHERE  deleted_at IS NULL
+                  AND  LOWER(TRIM(name)) = LOWER(TRIM(:name))
+                  AND  id <> :exclude
+            )
+        ", [':name' => $name, ':exclude' => $excludeId]);
+    }
+
     public function create(array $data): int
     {
         return $this->insertReturningId("
