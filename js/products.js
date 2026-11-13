@@ -12,6 +12,34 @@ function _setVal(id, val, prop = 'value') {
     if (el) el[prop] = val;
 }
 
+/**
+ * Đọc số tiền người dùng nhập. Trả về { empty, valid, value }.
+ *  - Rỗng → empty (KHÔNG coi là 0: server mới là nơi báo "Vui lòng nhập giá bán").
+ *  - Có dấu phẩy → kiểu VN: "." là phân cách nghìn, "," là thập phân ("1.234,5" = 1234.5).
+ *  - Chỉ có dấu chấm: dạng nhóm 3 chữ số ("1.234", "1.234.567") là phân cách nghìn;
+ *    còn lại ("1000.5", "0.5") là thập phân.
+ *  - Chữ lung tung → valid:false (trước đây bị đổi âm thầm thành 0).
+ */
+function parseMoneyInput(raw) {
+    let t = String(raw ?? '').replace(/[\s₫đĐ]|vn[dđ]/gi, '');
+    if (t === '') return { empty: true, valid: true, value: null };
+
+    if (t.includes(',')) {
+        t = t.replace(/\./g, '').replace(',', '.');
+    } else if (/^-?\d{1,3}(\.\d{3})+$/.test(t)) {
+        t = t.replace(/\./g, '');
+    }
+    if (!/^-?\d+(\.\d+)?$/.test(t)) return { empty: false, valid: false, value: NaN };
+    return { empty: false, valid: true, value: parseFloat(t) };
+}
+
+// true khi server xác nhận SKU đã tồn tại (lỗi mạng KHÔNG đặt cờ này — xem checkSku)
+let _skuExists = false;
+
+function _showPricingTab() {
+    document.querySelector('.tab-pill-btn[data-tab="tab-pricing"]')?.click();
+}
+
 function _ensureTextInput(id) {
     const el = document.getElementById(id);
     if (el && el.type === 'number') el.type = 'text';
@@ -29,6 +57,7 @@ function openProductModal(action, data = null) {
             const el = document.getElementById(id);
             if (el) el.innerText = '';
         });
+        _skuExists = false;
     };
 
     // Reset về tab đầu tiên
@@ -81,8 +110,9 @@ function openProductModal(action, data = null) {
         _setVal('prodName', data.name);
         _setVal('prodSku', data.sku || '');
         _setVal('prodUnit', data.unit || '');
-        _setVal('prodCostPrice', data.cost_price ? formatNumberInput(String(data.cost_price)) : '');
-        _setVal('prodPrice', data.price ? formatNumberInput(String(data.price)) : '');
+        const hasNum = v => v !== null && v !== undefined && v !== '';
+        _setVal('prodCostPrice', hasNum(data.cost_price) ? formatNumberInput(String(data.cost_price)) : '');
+        _setVal('prodPrice', hasNum(data.price) ? formatNumberInput(String(data.price)) : '');
         _setVal('prodDesc', data.description || '');
         _setVal('prodMinStock', data.min_stock ?? '');
         _setVal('prodMaxStock', data.max_stock ?? '');
@@ -222,10 +252,30 @@ function searchProductTable() {
     _searchTimer = setTimeout(() => {
         const keyword = document.getElementById('searchInput')?.value.trim() ?? '';
         const params  = new URLSearchParams(window.location.search);
+
+        // Từ khóa không đổi so với trang hiện tại (vd. chỉ gõ thêm dấu cách) → khỏi tải lại.
+        if (keyword === (params.get('keyword') ?? '')) return;
+
         params.delete('page');
         keyword !== '' ? params.set('keyword', keyword) : params.delete('keyword');
+        try { sessionStorage.setItem('product_search_refocus', '1'); } catch (e) { /* bỏ qua */ }
         window.location.href = 'index.php?' + params.toString();
-    }, 350);
+    }, 500);
+}
+
+// Sau khi trang tải lại vì tìm kiếm: trả focus về ô tìm, con trỏ ở cuối chữ.
+function restoreSearchFocus() {
+    let flag = null;
+    try {
+        flag = sessionStorage.getItem('product_search_refocus');
+        sessionStorage.removeItem('product_search_refocus');
+    } catch (e) { return; }
+    if (flag !== '1') return;
+    const input = document.getElementById('searchInput');
+    if (!input) return;
+    input.focus();
+    const end = input.value.length;
+    input.setSelectionRange(end, end);
 }
 
 // ── 4. VALIDATE TIỀN TỆ & SKU ────────────────────────────────────────────────
@@ -236,36 +286,46 @@ function checkSku() {
     const skuVal    = sku.value.trim();
     const id        = document.getElementById('productId')?.value ?? 0;
     const errorSpan = document.getElementById('skuError');
-    if (skuVal === '') { if (errorSpan) errorSpan.innerText = ''; return; }
-
     clearTimeout(skuCheckTimeout);
+    if (skuVal === '') {
+        _skuExists = false;
+        if (errorSpan) errorSpan.innerText = '';
+        return;
+    }
+
     skuCheckTimeout = setTimeout(() => {
         fetch(`process.php?action=check_sku&sku=${encodeURIComponent(skuVal)}&id=${id}`)
-            .then(r => r.json())
-            .then(data => { if (errorSpan) errorSpan.innerText = data.exists ? 'SKU đã tồn tại!' : ''; })
-            .catch(err => console.error('Lỗi kiểm tra SKU:', err));
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+            .then(data => {
+                if (sku.value.trim() !== skuVal) return; // người dùng đã sửa SKU, bỏ kết quả cũ
+                _skuExists = !!data.exists;
+                if (errorSpan) errorSpan.innerText = _skuExists ? 'SKU đã tồn tại!' : '';
+            })
+            .catch(err => {
+                console.error('Lỗi kiểm tra SKU:', err);
+                if (sku.value.trim() !== skuVal) return;
+                // Lỗi mạng ≠ SKU trùng: báo cho người dùng biết nhưng không chặn lưu (server vẫn kiểm tra lại).
+                _skuExists = false;
+                if (errorSpan) errorSpan.innerText = 'Chưa kiểm tra được SKU (lỗi mạng). Hệ thống sẽ kiểm tra lại khi lưu.';
+            });
     }, 300);
 }
 
-function validatePrice() {
-    const input = document.getElementById('prodPrice');
-    const err   = document.getElementById('priceError');
+function _validateMoneyField(inputId, errId, label, { required = false } = {}) {
+    const input = document.getElementById(inputId);
+    const err   = document.getElementById(errId);
     if (!input) return true;
-    const val = parseFloat(unformatNumber(input.value));
-    if (isNaN(val) || val >= 0) { if (err) err.innerText = ''; return true; }
-    if (err) err.innerText = 'Giá bán không được âm!';
-    return false;
+    const r = parseMoneyInput(input.value);
+    let msg = '';
+    if (r.empty)            msg = required ? `Vui lòng nhập ${label}!` : '';
+    else if (!r.valid)      msg = `${label.charAt(0).toUpperCase() + label.slice(1)} không hợp lệ!`;
+    else if (r.value < 0)   msg = `${label.charAt(0).toUpperCase() + label.slice(1)} không được âm!`;
+    if (err) err.innerText = msg;
+    return msg === '';
 }
 
-function validateCostPrice() {
-    const input = document.getElementById('prodCostPrice');
-    const err   = document.getElementById('costPriceError');
-    if (!input) return true;
-    const val = parseFloat(unformatNumber(input.value));
-    if (isNaN(val) || val >= 0) { if (err) err.innerText = ''; return true; }
-    if (err) err.innerText = 'Giá vốn không được âm!';
-    return false;
-}
+function validatePrice()     { return _validateMoneyField('prodPrice',     'priceError',     'giá bán', { required: true }); }
+function validateCostPrice() { return _validateMoneyField('prodCostPrice', 'costPriceError', 'giá vốn'); }
 
 function attachPriceFormatEvents() {
     ['prodCostPrice', 'prodPrice'].forEach(id => {
@@ -273,7 +333,10 @@ function attachPriceFormatEvents() {
         if (!el) return;
         if (el.type === 'number') el.type = 'text';
         el.addEventListener('blur', function () {
-            this.value = formatNumberInput(unformatNumber(this.value).toString());
+            const r = parseMoneyInput(this.value);
+            // Rỗng hoặc không hợp lệ: giữ nguyên chữ người dùng gõ (validate sẽ báo lỗi), không đổi thành 0.
+            if (r.empty || !r.valid) return;
+            this.value = formatNumberInput(String(r.value));
         });
     });
 }
@@ -373,7 +436,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const isFilterHidden = localStorage.getItem('product_filter_hidden') === 'true';
     if (toggleTxt) {
-        toggleTxt.textContent = isFilterHidden ? 'Show Filters' : 'Hide Filters';
+        toggleTxt.textContent = isFilterHidden ? 'Hiện bộ lọc' : 'Ẩn bộ lọc';
     }
 
     if (isFilterHidden) {
@@ -393,11 +456,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (willHide) {
                 filterSidebar.classList.add('hidden');
                 document.documentElement.classList.add('product-filter-hidden');
-                if (toggleTxt) toggleTxt.textContent = 'Show Filters';
+                if (toggleTxt) toggleTxt.textContent = 'Hiện bộ lọc';
             } else {
                 filterSidebar.classList.remove('hidden');
                 document.documentElement.classList.remove('product-filter-hidden');
-                if (toggleTxt) toggleTxt.textContent = 'Hide Filters';
+                if (toggleTxt) toggleTxt.textContent = 'Ẩn bộ lọc';
             }
             localStorage.setItem('product_filter_hidden', willHide);
         });
@@ -447,12 +510,16 @@ document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('.row-checkbox').forEach(cb => {
                 cb.checked = isChecked;
             });
+            // Bỏ tick "chọn cả trang" thì cũng hết ý "tất cả N mục".
+            if (!isChecked) window._isAllTotalSelected = false;
             updateSelectAllTotalState();
         });
     }
 
     document.addEventListener('change', function (e) {
         if (e.target.classList.contains('row-checkbox')) {
+            // Bỏ tick 1 dòng → không còn là "tất cả N mục": nếu giữ cờ, export all=1 vẫn xuất cả dòng vừa bỏ.
+            if (!e.target.checked) window._isAllTotalSelected = false;
             const allCheckboxes     = document.querySelectorAll('.row-checkbox');
             const checkedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
             if (selectAllCheckbox) {
@@ -476,14 +543,33 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // 6.5 Click ngoài đóng Dropdown & Modal
+    // Nhớ nơi nhấn chuột xuống: bôi đen chữ trong ô rồi thả chuột ngoài vùng modal
+    // sinh ra click trên nền modal — không được coi là "click ra ngoài".
+    let mouseDownTarget = null;
+    document.addEventListener('mousedown', function(e) { mouseDownTarget = e.target; });
+
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.custom-select-dropdown')) {
             document.querySelectorAll('.custom-select-dropdown').forEach(el => {
                 el.classList.remove('is-open');
             });
         }
-        if (e.target === document.getElementById('productModal'))  closeProductModal();
-        if (e.target === document.getElementById('categoryModal')) closeCategoryModal();
+        const productModal  = document.getElementById('productModal');
+        const categoryModal = document.getElementById('categoryModal');
+        if (e.target === productModal  && mouseDownTarget === productModal)  closeProductModal();
+        if (e.target === categoryModal && mouseDownTarget === categoryModal) closeCategoryModal();
+
+        // 14. Nút Sửa: đọc dữ liệu từ data-product thay vì nhúng JSON vào onclick
+        const editBtn = e.target.closest?.('.btn-edit-product');
+        if (editBtn) {
+            let data = null;
+            try { data = JSON.parse(editBtn.dataset.product || '{}'); } catch (err) { data = null; }
+            if (!data || !data.id) {
+                alert('Không đọc được dữ liệu sản phẩm. Vui lòng tải lại trang.');
+                return;
+            }
+            openProductModal('edit', data);
+        }
     });
 
     // 6.6 Submit Form & Phím tắt tìm kiếm
@@ -494,19 +580,28 @@ document.addEventListener('DOMContentLoaded', function () {
         productForm.addEventListener('submit', function (e) {
             const costEl  = document.getElementById('prodCostPrice');
             const priceEl = document.getElementById('prodPrice');
-            if (costEl)  costEl.value  = unformatNumber(costEl.value);
-            if (priceEl) priceEl.value = unformatNumber(priceEl.value);
 
-            if (!validatePrice() || !validateCostPrice()) {
+            // Kiểm tra TRƯỚC, chưa đụng vào giá trị ô: lỗi thì ô vẫn giữ định dạng người dùng đang xem.
+            const priceOk = validatePrice();
+            const costOk  = validateCostPrice();
+            if (!priceOk || !costOk) {
                 e.preventDefault();
-                alert('Vui lòng nhập giá hợp lệ (không âm).');
+                _showPricingTab();
+                alert('Vui lòng nhập giá hợp lệ (bắt buộc giá bán, không âm).');
                 return;
             }
-            const skuError = document.getElementById('skuError');
-            if (skuError && skuError.innerText !== '') {
+            if (_skuExists) {
                 e.preventDefault();
                 alert('SKU không hợp lệ hoặc đã tồn tại.');
+                return;
             }
+
+            // Hợp lệ: chuẩn hóa về số thuần ("1234.5") cho server. Ô rỗng giữ rỗng
+            // (giá vốn rỗng = 0 ở server; giá bán đã được chặn ở trên).
+            const cost  = parseMoneyInput(costEl?.value);
+            const price = parseMoneyInput(priceEl?.value);
+            if (costEl)  costEl.value  = cost.empty  ? '' : String(cost.value);
+            if (priceEl) priceEl.value = price.empty ? '' : String(price.value);
         });
     }
 
@@ -531,6 +626,16 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     syncSidebarHeight();
     window.addEventListener('resize', syncSidebarHeight);
+    // Font web / ảnh tải xong hoặc bảng đổi kích thước (đổi số dòng, ẩn/hiện sidebar) → đồng bộ lại.
+    window.addEventListener('load', syncSidebarHeight);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncSidebarHeight);
+    if (window.ResizeObserver) {
+        const ro = new ResizeObserver(syncSidebarHeight);
+        [document.querySelector('.task-table-card'), document.querySelector('.task-top-toolbar')]
+            .forEach(el => { if (el) ro.observe(el); });
+    }
+
+    restoreSearchFocus();
 });
 
 // ── EXPORT GLOBAL FUNCTIONS ──────────────────────────────────────────────────

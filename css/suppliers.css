@@ -1,30 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
-
 /* =======================================================
    DESIGN SYSTEM - THEME TRANH THỦY MẶC / CÁ KOI (ĐỐI TÁC)
    Navy, Kem, Vàng điểm nhấn & Trạng thái Semantic
 ======================================================= */
 :root {
-    --font-family-base: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family-base: var(--font-sans);
 
     /* Base Palette */
-    --navy-darkest: #101A2C;       /* Chữ chính, footer, viền tối */
-    --navy-primary: #11284D;       /* Header table, primary buttons, active bar */
-    --blue-mid:     #264B6F;       /* Hover, links, viền focus, pill stroke */
-    --bg-page:      #F4EFDF;       /* Nền trang (body), xen kẽ bảng */
-    --bg-card:      #FBF8EF;       /* Trắng pha kem cho card, modal, sidebar */
-    --gold-accent:  #D5B370;       /* Điểm nhấn vàng, active indicator */
+    --navy-darkest: var(--navy-900);       /* Chữ chính, footer, viền tối */
+    --navy-primary: var(--primary);       /* Header table, primary buttons, active bar */
+    --blue-mid:     var(--info);       /* Hover, links, viền focus, pill stroke */
+/* Nền trang (body), xen kẽ bảng */
+    --bg-card:      var(--surface);       /* Trắng pha kem cho card, modal, sidebar */
+    --gold-accent:  var(--accent);       /* Điểm nhấn vàng, active indicator */
 
     /* Neutrals & Semantic */
-    --border-color: #E2DAC8;       /* Viền kem trầm đồng bộ */
-    --text-primary: #101A2C;       /* Chữ chính */
-    --text-muted:   #5E6D82;       /* Chữ phụ, SKU, nhãn mờ */
-    --text-inverse: #F4EFDF;       /* Chữ trên nền Navy */
+    --border-color: var(--border);       /* Viền kem trầm đồng bộ */
+    --text-primary: var(--text);       /* Chữ chính */
+/* Chữ phụ, SKU, nhãn mờ */
+    --text-inverse: var(--on-dark);       /* Chữ trên nền Navy */
 
     /* Semantic Status Colors */
-    --status-danger:  #C8553D;     /* Đỏ cam cá koi: Ngừng hợp tác, xóa */
-    --status-success: #3E8E7E;     /* Xanh ngọc trầm: Đang hợp tác */
-    --status-warning: #D5B370;     /* Vàng: Cảnh báo, cần lưu ý */
+    --status-danger:  var(--danger);     /* Đỏ cam cá koi: Ngừng hợp tác, xóa */
+    --status-success: var(--success);     /* Xanh ngọc trầm: Đang hợp tác */
+    --status-warning: var(--accent);     /* Vàng: Cảnh báo, cần lưu ý */
 }
 
 *, *::before, *::after {
@@ -82,7 +80,7 @@ input, button, select, textarea {
     width: 4px;
 }
 .task-filter-sidebar form::-webkit-scrollbar-thumb {
-    background: #D9CEB9;
+    background: var(--border-strong);
     border-radius: 4px;
 }
 
@@ -204,7 +202,7 @@ input, button, select, textarea {
     border: 1px solid var(--border-color);
     border-radius: 6px;
     outline: none;
-    background: #FFFFFF;
+    background: var(--surface);
     color: var(--text-primary);
     box-sizing: border-box;
 }
@@ -216,7 +214,7 @@ input, button, select, textarea {
     width: 100%;
     margin-top: 6px;
     padding: 6px;
-    background: #EDE6D2;
+    background: var(--border);
     border: 1px solid var(--border-color);
     border-radius: 6px;
     font-size: 12px;
@@ -263,7 +261,7 @@ input, button, select, textarea {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: #EDE6D2;
+    background: var(--border);
     border: 1px solid var(--border-color);
     padding: 8px 12px;
     border-radius: 8px;
@@ -273,7 +271,7 @@ input, button, select, textarea {
     cursor: pointer;
     transition: all 0.15s ease;
 }
-.btn-tb-filter:hover { background: #DFD7C0; }
+.btn-tb-filter:hover { background: var(--border-strong); }
 
 .tb-dropdown-badge {
     display: flex;
@@ -285,7 +283,7 @@ input, button, select, textarea {
     font-size: 13px;
     font-weight: 600;
     color: var(--navy-darkest);
-    background: #FFFFFF;
+    background: var(--surface);
 }
 
 .tb-search-box {
@@ -306,7 +304,7 @@ input, button, select, textarea {
     width: 220px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
-    background: #FFFFFF;
+    background: var(--surface);
     color: var(--text-primary);
     padding: 0 14px 0 32px;
     font-size: 13px;
@@ -413,15 +411,15 @@ input, button, select, textarea {
 }
 /* Đang hợp tác: Xanh ngọc trầm */
 .st-success {
-    background: rgba(62, 142, 126, 0.15);
-    color: #276256;
-    border: 1px solid rgba(62, 142, 126, 0.3);
+    background: rgba(47, 127, 111, 0.15);
+    color: var(--success-dark);
+    border: 1px solid rgba(47, 127, 111, 0.3);
 }
 /* Ngừng hợp tác: Đỏ cam cá koi */
 .st-danger {
-    background: rgba(200, 85, 61, 0.15);
-    color: #9C3822;
-    border: 1px solid rgba(200, 85, 61, 0.35);
+    background: rgba(194, 75, 51, 0.15);
+    color: var(--danger-dark);
+    border: 1px solid rgba(194, 75, 51, 0.35);
 }
 
 .actions-cell {
@@ -440,10 +438,10 @@ input, button, select, textarea {
 }
 .btn-action-icon:hover {
     color: var(--navy-darkest);
-    background: #EAE3CF;
+    background: var(--border);
 }
 .btn-action-delete:hover {
-    color: #FFFFFF;
+    color: var(--on-dark);
     background: var(--status-danger);
 }
 
@@ -537,18 +535,18 @@ input, button, select, textarea {
     transition: background 0.15s ease;
 }
 .btn-export:hover {
-    background: #356696;
+    background: var(--info);
 }
 
 .btn-clear {
     background: transparent;
-    color: #D9CEB9;
+    color: var(--text-faint);
     border: none;
     cursor: pointer;
     font-size: 12.5px;
 }
 .btn-clear:hover {
-    color: #FFFFFF;
+    color: var(--on-dark);
 }
 
 .btn-select-all-total {
@@ -636,7 +634,7 @@ input, button, select, textarea {
 }
 .btn-close-modern:hover {
     color: var(--navy-darkest);
-    background: #EAE3CF;
+    background: var(--border);
 }
 
 .modal-tabs-body {
@@ -667,7 +665,7 @@ input, button, select, textarea {
 
 .form-input-modern {
     width: 100%;
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 9px 13px;
@@ -711,7 +709,7 @@ input, button, select, textarea {
 .toggle-slider {
     width: 36px;
     height: 20px;
-    background-color: #D9CEB9;
+    background-color: var(--border-strong);
     border-radius: 999px;
     position: relative;
     transition: background-color 0.2s ease;
@@ -724,7 +722,7 @@ input, button, select, textarea {
     left: 2px;
     width: 16px;
     height: 16px;
-    background: #FFFFFF;
+    background: var(--surface);
     border-radius: 50%;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -760,7 +758,7 @@ input, button, select, textarea {
     transition: all 0.15s ease;
 }
 .btn-modern-outline:hover {
-    background: #EDE6D2;
+    background: var(--border);
 }
 
 .btn-modern-dark {
@@ -790,7 +788,7 @@ input, button, select, textarea {
     user-select: none;
     transition: background 0.12s ease;
 }
-.radio-circle-item:hover { background: #F4EFDF; }
+.radio-circle-item:hover { background: var(--bg-page); }
 .radio-circle-item input[type="radio"] {
     position: absolute;
     opacity: 0;
@@ -803,7 +801,7 @@ input, button, select, textarea {
     min-width: 18px;
     border-radius: 50%;
     border: 2px solid var(--border-color);
-    background: #FFFFFF;
+    background: var(--surface);
     box-sizing: border-box;
     display: flex;
     align-items: center;
@@ -843,7 +841,7 @@ input, button, select, textarea {
 .neo-datepicker-trigger {
     width: 100%;
     height: 38px;
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 0 10px;
@@ -887,7 +885,7 @@ input, button, select, textarea {
     top: calc(100% + 6px);
     left: 0;
     width: 100%;
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     box-shadow: 0 12px 30px rgba(16, 26, 44, 0.15);
@@ -928,7 +926,7 @@ input, button, select, textarea {
     align-items: center;
 }
 .preset-pill-item:hover {
-    background: #F4EFDF;
+    background: var(--bg-page);
     color: var(--navy-darkest);
 }
 .preset-pill-item.custom-btn {
@@ -955,7 +953,7 @@ input, button, select, textarea {
     width: 28px;
     height: 28px;
     border: 1px solid var(--border-color);
-    background: #FFFFFF;
+    background: var(--surface);
     cursor: pointer;
     border-radius: 8px;
     display: flex;
@@ -966,7 +964,7 @@ input, button, select, textarea {
     transition: all 0.12s ease;
 }
 .btn-cal-nav:hover {
-    background: #F4EFDF;
+    background: var(--bg-page);
     color: var(--navy-darkest);
 }
 
@@ -980,7 +978,7 @@ input, button, select, textarea {
     padding: 4px 8px;
     border-radius: 6px;
 }
-.cal-title-btn:hover { background: #F4EFDF; }
+.cal-title-btn:hover { background: var(--bg-page); }
 
 .cal-week-labels {
     display: grid;
@@ -1011,7 +1009,7 @@ input, button, select, textarea {
     user-select: none;
     transition: all 0.12s ease;
 }
-.cal-day-num:hover:not(.empty) { background: #F4EFDF; }
+.cal-day-num:hover:not(.empty) { background: var(--bg-page); }
 .cal-day-num.empty { cursor: default; }
 
 .cal-day-num.selected-start,
@@ -1023,7 +1021,7 @@ input, button, select, textarea {
 }
 
 .cal-day-num.in-range {
-    background: #EDE6D2;
+    background: var(--border);
     color: var(--navy-darkest);
     border-radius: 0;
 }
@@ -1048,7 +1046,7 @@ input, button, select, textarea {
     border: none;
     background: transparent;
 }
-.cal-grid-item:hover { background: #F4EFDF; }
+.cal-grid-item:hover { background: var(--bg-page); }
 .cal-grid-item.selected {
     background: var(--navy-primary) !important;
     color: var(--text-inverse) !important;
@@ -1081,7 +1079,7 @@ input, button, select, textarea {
 .btn-cal-back {
     flex: 1;
     border: 1px solid var(--border-color);
-    background: #FFFFFF;
+    background: var(--surface);
     border-radius: 6px;
     padding: 5px 8px;
     font-size: 11.5px;
@@ -1089,7 +1087,7 @@ input, button, select, textarea {
     color: var(--navy-darkest);
     cursor: pointer;
 }
-.btn-cal-back:hover { background: #EDE6D2; }
+.btn-cal-back:hover { background: var(--border); }
 
 .btn-cal-apply {
     flex: 1;

@@ -1,0 +1,104 @@
+/* =======================================================
+   THEME — SmartWare
+   Bảng màu "Empty" (navy · kem · vàng) + màu trạng thái.
+   Mọi file CSS khác chỉ dùng biến ở đây, không hard-code màu.
+   Load file này TRƯỚC mọi file css khác.
+======================================================= */
+
+:root {
+    /* ---- Palette gốc ---- */
+    --navy-900: #101A2C;
+    --navy-800: #11284D;
+    --navy-600: #264B6F;
+    --cream:    #F4EFDF;
+    --gold:     #D5B370;
+
+    /* ---- Thương hiệu / hành động ---- */
+    --primary:        var(--navy-800);
+    --primary-hover:  var(--navy-600);
+    --accent:         var(--gold);
+    --accent-hover:   #C29E55;
+    --gold-dark:      #7A5A18;   /* chữ vàng trên nền sáng (đủ tương phản) */
+
+    /* ---- Nền & bề mặt ---- */
+    --bg-page:        var(--cream);
+    --surface:        #FFFDF7;   /* card, bảng, input */
+    --surface-subtle: #F8F4E7;   /* hover hàng, header bảng nhạt */
+    /* Sidebar (đang tối; muốn sidebar sáng thì chỉ cần đổi 8 biến này) */
+    --sidebar-bg:           var(--navy-900);
+    --sidebar-border:       rgba(244, 239, 223, 0.08);
+    --sidebar-text:         var(--on-dark-muted);
+    --sidebar-text-hover:   var(--on-dark);
+    --sidebar-hover-bg:     rgba(244, 239, 223, 0.08);
+    --sidebar-active-bg:    var(--gold);
+    --sidebar-active-text:  var(--navy-900);
+    --sidebar-logout:       var(--danger-on-dark);
+
+    /* ---- Chữ ---- */
+    --text:        #101A2C;
+    --text-2:      #3A475C;
+    --text-muted:  #5F6B7D;
+    --text-faint:  #8D96A5;
+    --on-dark:     #F4EFDF;
+    --on-dark-muted: rgba(244, 239, 223, 0.65);
+
+    /* ---- Viền ---- */
+    --border:        #E6DFCB;
+    --border-strong: #D3C9AD;
+
+    /* ---- Trạng thái ---- */
+    --danger:        #C24B33;   /* hết hàng, hết hạn, xoá */
+    --danger-hover:  #A63D28;
+    --danger-dark:   #8E3422;
+    --danger-on-dark:#F0A593;   /* đỏ trên nền navy (nút đăng xuất) */
+    --danger-bg:     #FBEAE5;
+    --danger-border: #F0C4B8;
+
+    --success:        #2F7F6F;  /* hợp lý, hoàn tất */
+    --success-dark:   #1F5A4E;
+    --success-bg:     #E2F0EB;
+    --success-border: #B7D8CE;
+
+    --warning-text:   #7A5A18;  /* cảnh báo nhập hàng, sắp hết hạn */
+    --gold-bg:        #F8F0DA;
+    --gold-border:    #E8D7A8;
+
+    --info:        #264B6F;     /* thông tin, tồn kho dư */
+    --info-dark:   #11284D;
+    --info-bg:     #E4ECF4;
+    --info-border: #BCD0E2;
+
+    /* ---- Chữ & hình khối ---- */
+    --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+
+    /* ---- Alias cho tên biến cũ (tránh vỡ code đang dùng) ---- */
+    --text-primary: var(--text);
+    --border-color: var(--border);
+    --active-dark:  var(--primary);
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-page);
+    color: var(--text);
+}
+
+/* Focus nhìn thấy được khi dùng bàn phím */
+:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+}
+
+::selection {
+    background: var(--gold);
+    color: var(--navy-900);
+}
+
+/* Số trong bảng thẳng hàng */
+table td, table th {
+    font-variant-numeric: tabular-nums;
+}

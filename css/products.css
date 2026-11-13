@@ -3,31 +3,29 @@ DESIGN SYSTEM - THEME TRANH THỦY MẶC / CÁ KOI (KHO HÀNG)
 Font: Be Vietnam Pro
 Colors: Navy, Kem, Vàng điểm nhấn & Màu trạng thái
 ======================================================= */
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
-
 :root {
 /* Font Family Base */
 --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
 /* Base Palette */
---navy-darkest: #101A2C;       /* Sidebar, chữ chính trên nền sáng, footer */
---navy-primary: #11284D;       /* Header/topbar, nút chính (primary), tiêu đề bảng */
---blue-mid:     #264B6F;       /* Hover của nút/menu, link, viền focus, biểu đồ/info */
---bg-page:      #F4EFDF;       /* Nền trang (body), dòng xen kẽ trong bảng */
---bg-card:      #FBF8EF;       /* Trắng pha kem cho card & modal */
---gold-accent:  #D5B370;       /* Điểm nhấn vàng, active, cảnh báo nhập hàng */
+--navy-darkest: var(--navy-900);       /* Sidebar, chữ chính trên nền sáng, footer */
+--navy-primary: var(--primary);       /* Header/topbar, nút chính (primary), tiêu đề bảng */
+--blue-mid:     var(--info);       /* Hover của nút/menu, link, viền focus, biểu đồ/info */
+/* Nền trang (body), dòng xen kẽ trong bảng */
+--bg-card:      var(--surface);       /* Trắng pha kem cho card & modal */
+--gold-accent:  var(--accent);       /* Điểm nhấn vàng, active, cảnh báo nhập hàng */
 
 /* Extended Neutrals & Muted */
---border-color: #E2DAC8;       /* Viền kem trầm đồng bộ */
---text-primary: #101A2C;       /* Chữ chính */
---text-muted:   #5E6D82;       /* Chữ phụ, SKU, sub-label */
---text-inverse: #F4EFDF;       /* Chữ trên nền Navy */
+--border-color: var(--border);       /* Viền kem trầm đồng bộ */
+--text-primary: var(--text);       /* Chữ chính */
+/* Chữ phụ, SKU, sub-label */
+--text-inverse: var(--on-dark);       /* Chữ trên nền Navy */
 
 /* Semantic Status Colors */
---status-danger:  #C8553D;     /* Đỏ cam cá koi: Nguy hiểm, hết hàng, hết hạn */
---status-success: #3E8E7E;     /* Xanh ngọc trầm: Thành công, hợp lý, còn hàng */
---status-warning: #D5B370;     /* Vàng: Cảnh báo, sắp nhập hàng */
---status-info:    #264B6F;     /* Xanh trung: Tồn kho dư, thông tin */
+--status-danger:  var(--danger);     /* Đỏ cam cá koi: Nguy hiểm, hết hàng, hết hạn */
+--status-success: var(--success);     /* Xanh ngọc trầm: Thành công, hợp lý, còn hàng */
+--status-warning: var(--accent);     /* Vàng: Cảnh báo, sắp nhập hàng */
+--status-info:    var(--info);     /* Xanh trung: Tồn kho dư, thông tin */
 
 
 }
@@ -85,11 +83,11 @@ padding-right: 2px;
 width: 4px;
 }
 .task-filter-sidebar form::-webkit-scrollbar-thumb {
-background: #D9CEB9;
+background: var(--border-strong);
 border-radius: 4px;
 }
 .task-filter-sidebar form::-webkit-scrollbar-thumb:hover {
-background: #BFB297;
+background: var(--border-strong);
 }
 
 .product-filter-hidden .task-filter-sidebar,
@@ -212,7 +210,7 @@ gap: 4px;
 width: 100%;
 padding: 6px 8px;
 font-size: 12px;
-background: #FFFFFF;
+background: var(--surface);
 border: 1px solid var(--border-color);
 border-radius: 6px;
 outline: none;
@@ -227,7 +225,7 @@ box-shadow: 0 0 0 2px rgba(38, 75, 111, 0.15);
 width: 100%;
 margin-top: 6px;
 padding: 6px;
-background: #EDE6D2;
+background: var(--border);
 border: 1px solid var(--border-color);
 border-radius: 6px;
 font-size: 12px;
@@ -274,7 +272,7 @@ gap: 8px;
 display: flex;
 align-items: center;
 gap: 6px;
-background: #EDE6D2;
+background: var(--border);
 border: 1px solid var(--border-color);
 padding: 8px 12px;
 border-radius: 8px;
@@ -285,7 +283,7 @@ cursor: pointer;
 transition: all 0.15s ease;
 }
 .btn-tb-filter:hover {
-background: #DFD7C0;
+background: var(--border-strong);
 }
 
 .tb-dropdown-badge {
@@ -298,7 +296,7 @@ border-radius: 8px;
 font-size: 13px;
 font-weight: 600;
 color: var(--navy-darkest);
-background: #FFFFFF;
+background: var(--surface);
 }
 
 .tb-search-box {
@@ -319,7 +317,7 @@ height: 36px;
 width: 220px;
 border-radius: 8px;
 border: 1px solid var(--border-color);
-background: #FFFFFF;
+background: var(--surface);
 color: var(--text-primary);
 padding: 0 14px 0 32px;
 font-size: 13px;
@@ -452,23 +450,23 @@ font-weight: 600;
 
 /* Thành công / Còn hàng / Hợp lý: Xanh ngọc trầm */
 .st-success {
-background: rgba(62, 142, 126, 0.15);
-color: #276256;
-border: 1px solid rgba(62, 142, 126, 0.35);
+background: rgba(47, 127, 111, 0.15);
+color: var(--success-dark);
+border: 1px solid rgba(47, 127, 111, 0.35);
 }
 
 /* Cảnh báo / Sắp nhập: Nền vàng, chữ navy tối */
 .st-warning {
 background: var(--gold-accent);
 color: var(--navy-darkest);
-border: 1px solid #BF9E5A;
+border: 1px solid var(--accent-hover);
 }
 
 /* Nguy hiểm / Ngừng kinh doanh / Hết hàng: Đỏ cam cá koi */
 .st-danger {
-background: rgba(200, 85, 61, 0.15);
-color: #9C3822;
-border: 1px solid rgba(200, 85, 61, 0.35);
+background: rgba(194, 75, 51, 0.15);
+color: var(--danger-dark);
+border: 1px solid rgba(194, 75, 51, 0.35);
 }
 
 /* Tồn kho dư / Thông tin: Xanh trung */
@@ -487,7 +485,7 @@ font-size: 13px;
 }
 
 .stock-pill {
-background: #EAE3CF;
+background: var(--border);
 border: 1px solid var(--border-color);
 padding: 3px 8px;
 border-radius: 4px;
@@ -512,10 +510,10 @@ transition: all 0.15s ease;
 }
 .btn-action-icon:hover {
 color: var(--navy-darkest);
-background: #EAE3CF;
+background: var(--border);
 }
 .btn-action-delete:hover {
-color: #FFFFFF;
+color: var(--on-dark);
 background: var(--status-danger);
 }
 
@@ -611,18 +609,18 @@ font-weight: 600;
 transition: background 0.15s ease;
 }
 .btn-export:hover {
-background: #356696;
+background: var(--info);
 }
 
 .btn-clear {
 background: transparent;
-color: #D9CEB9;
+color: var(--text-faint);
 border: none;
 cursor: pointer;
 font-size: 12.5px;
 }
 .btn-clear:hover {
-color: #FFFFFF;
+color: var(--on-dark);
 }
 
 .btn-select-all-total {
@@ -709,12 +707,12 @@ border-radius: 6px;
 }
 .btn-close-modern:hover {
 color: var(--navy-darkest);
-background: #EAE3CF;
+background: var(--border);
 }
 
 .modal-tabs-nav {
 display: flex;
-background: #EDE6D2;
+background: var(--border);
 margin: 12px 28px 0 28px;
 padding: 4px;
 border-radius: 10px;
@@ -734,7 +732,7 @@ cursor: pointer;
 transition: all 0.15s ease;
 }
 .tab-pill-btn.active {
-background: #FFFFFF;
+background: var(--surface);
 color: var(--navy-darkest);
 font-weight: 700;
 box-shadow: 0 2px 5px rgba(16, 26, 44, 0.08);
@@ -770,7 +768,7 @@ color: var(--navy-darkest);
 
 .form-input-modern {
 width: 100%;
-background: #FFFFFF;
+background: var(--surface);
 border: 1px solid var(--border-color);
 border-radius: 8px;
 padding: 9px 13px;
@@ -818,7 +816,7 @@ user-select: none;
 .toggle-slider {
 width: 36px;
 height: 20px;
-background-color: #D9CEB9;
+background-color: var(--border-strong);
 border-radius: 999px;
 position: relative;
 transition: background-color 0.2s ease;
@@ -831,7 +829,7 @@ top: 2px;
 left: 2px;
 width: 16px;
 height: 16px;
-background: #FFFFFF;
+background: var(--surface);
 border-radius: 50%;
 box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -867,7 +865,7 @@ cursor: pointer;
 transition: all 0.15s ease;
 }
 .btn-modern-outline:hover {
-background: #EDE6D2;
+background: var(--border);
 }
 
 .btn-modern-dark {
@@ -916,7 +914,7 @@ width: 100%;
 .select-trigger-btn {
 width: 100%;
 height: 40px;
-background: #FFFFFF;
+background: var(--surface);
 border: 1px solid var(--border-color);
 border-radius: 8px;
 padding: 0 13px;
@@ -954,7 +952,7 @@ top: calc(100% + 5px);
 left: 0;
 width: 100%;
 max-height: 200px;
-background: #FFFFFF;
+background: var(--surface);
 border: 1px solid var(--border-color);
 border-radius: 8px;
 box-shadow: 0 10px 25px rgba(16, 26, 44, 0.12);
@@ -976,7 +974,7 @@ to { opacity: 1; transform: translateY(0); }
 
 .select-dropdown-menu::-webkit-scrollbar { width: 4px; }
 .select-dropdown-menu::-webkit-scrollbar-thumb {
-background: #D9CEB9;
+background: var(--border-strong);
 border-radius: 4px;
 }
 
@@ -990,7 +988,7 @@ cursor: pointer;
 user-select: none;
 transition: background 0.12s ease;
 }
-.radio-circle-item:hover { background: #F4EFDF; }
+.radio-circle-item:hover { background: var(--bg-page); }
 
 .radio-circle-item input[type="radio"] {
 position: absolute;
@@ -1004,7 +1002,7 @@ height: 18px;
 min-width: 18px;
 border-radius: 50%;
 border: 2px solid var(--border-color);
-background: #FFFFFF;
+background: var(--surface);
 display: flex;
 align-items: center;
 justify-content: center;

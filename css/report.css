@@ -12,7 +12,7 @@
 
     .report-header h1 {
         font-size: 28px;
-        text-shadow: 3px 0px 0 rgb(255, 212, 94);
+        text-shadow: 3px 0px 0 var(--accent);
     }
 
     .report-actions {
@@ -90,8 +90,8 @@
     font-size: 50px;
     font-weight: bolder;
     font-style: italic;
-    color: #000;
-    text-shadow: 5px 0px 0 rgb(255, 212, 94);
+    color: var(--text);
+    text-shadow: 5px 0px 0 var(--accent);
 }
 
 .report-actions {
@@ -103,7 +103,7 @@
 .search-box-reports {
     display: flex;
     align-items: center;
-    background: #ffffff;
+    background: var(--surface);
     border-radius: 20px;
     padding: 6px 12px;
     width: 450px;
@@ -124,14 +124,14 @@
 }
 
 .search-box-reports:focus-within {
-    box-shadow: 0 0 0 3px rgba(255, 200, 0, 0.25);
+    box-shadow: 0 0 0 3px rgba(213, 179, 112, 0.25);
     border-radius: 25px;
 }
 
 .filter-icon, .search-icon {
     cursor: pointer;
     font-size: 18px;
-    color: #d29e00;
+    color: var(--gold-dark);
     transition: 0.2s;
 }
 
@@ -140,7 +140,7 @@
 }
 
 .btn-export {
-    background: #f6f1e7;
+    background: var(--surface-subtle);
     padding: 10px 22px;
     border-radius: 12px;
     display: inline-flex;
@@ -151,22 +151,22 @@
     font-weight: bolder;    
     border: 2px solid transparent;
     background-image: 
-        linear-gradient(#f6f1e7, #f6f1e7), 
-        linear-gradient(90deg, #000, #C89116);
+        linear-gradient(var(--surface-subtle), var(--surface-subtle)), 
+        linear-gradient(90deg, var(--navy-900), var(--accent));
     background-origin: border-box;
     background-clip: padding-box, border-box;
 }
 
 .btn-export i{
-    color: #d29e00;
+    color: var(--gold-dark);
 }
 
 .btn-export:hover {
-    background: #fffae8; 
-    color: #000;
+    background: var(--gold-bg); 
+    color: var(--text);
     background-image: 
-        linear-gradient(#ffecec, #fffae8),
-        linear-gradient(90deg, #000, #C89116);
+        linear-gradient(var(--danger-bg), var(--gold-bg)),
+        linear-gradient(90deg, var(--navy-900), var(--accent));
     transform: translateY(-2px);
 }
 
@@ -177,13 +177,13 @@
 
 .report-filter {
     width: 230px;
-    background: #ffffff;
+    background: var(--surface);
     border-radius: 16px;
     padding: 15px;
     border: 1px solid transparent;
     background-image: 
-        linear-gradient(#ffffff, #ffffff), 
-        linear-gradient(90deg, #000, #C89116);
+        linear-gradient(var(--surface), var(--surface)), 
+        linear-gradient(90deg, var(--navy-900), var(--accent));
     background-origin: border-box;
     background-clip: padding-box, border-box;
 }
@@ -202,8 +202,8 @@
     border-radius: 10px;
     border: 1px solid transparent;
     background-image: 
-        linear-gradient(#fff, #fff), 
-        linear-gradient(90deg, #000, #C89116);
+        linear-gradient(var(--surface), var(--surface)), 
+        linear-gradient(90deg, var(--navy-900), var(--accent));
     background-origin: border-box;
     background-clip: padding-box, border-box;
     outline: none;
@@ -215,8 +215,8 @@
     border-radius: 10px;
     border: 1px solid transparent;
     background-image: 
-        linear-gradient(#ffffff, #ffffff), 
-        linear-gradient(90deg, #000, #C89116);
+        linear-gradient(var(--surface), var(--surface)), 
+        linear-gradient(90deg, var(--navy-900), var(--accent));
     background-origin: border-box;
     background-clip: padding-box, border-box;
     cursor: pointer;
@@ -232,7 +232,7 @@
     flex: 1;
     padding: 8px;
     border-radius: 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
 }
 
 .dropdown { 
@@ -245,8 +245,8 @@
     cursor: pointer;
     border: 1px solid transparent;
     background-image: 
-        linear-gradient(#fff, #fff), 
-        linear-gradient(90deg, #000, #C89116);
+        linear-gradient(var(--surface), var(--surface)), 
+        linear-gradient(90deg, var(--navy-900), var(--accent));
     background-origin: border-box;
     background-clip: padding-box, border-box;
 }
@@ -271,7 +271,7 @@
 }
 
 .group-title:hover {
-    background: #f5f5f5;
+    background: var(--surface-subtle);
 }
 
 .group-items {
@@ -287,12 +287,12 @@
 
 .report-table {
     flex: 1;
-    background: #ffffff;
+    background: var(--surface);
     border-radius: 20px;
     border: 1px solid transparent;
     background-image: 
-        linear-gradient(#ffffff, #ffffff), 
-        linear-gradient(90deg, #000, #C89116);
+        linear-gradient(var(--surface), var(--surface)), 
+        linear-gradient(90deg, var(--navy-900), var(--accent));
 
     background-origin: border-box;
     background-clip: padding-box, border-box;
@@ -313,7 +313,7 @@ table {
 
 th, td {
     padding: 12px;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid var(--border);
     text-align: left;
     vertical-align: middle;
 }
@@ -329,7 +329,7 @@ td {
 }
 
 .report-table thead {
-    background: #fffae8;
+    background: var(--gold-bg);
 }
 
 td:nth-child(3) {

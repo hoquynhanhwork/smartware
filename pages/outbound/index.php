@@ -106,7 +106,7 @@ include __DIR__ . '/../../layout/header.php';
                     </label>
                     <label class="filter-check-item">
                         <input type="checkbox" name="status[]" value="pending" <?= in_array('pending', $status_filters, true) ? 'checked' : '' ?> onchange="this.form.submit()">
-                        <span class="dot-indicator" style="background:#f59e0b"></span>
+                        <span class="dot-indicator" style="background:var(--accent)"></span>
                         <span class="label-text">Tạm thời</span>
                     </label>
                     <label class="filter-check-item">

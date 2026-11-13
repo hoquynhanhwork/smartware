@@ -94,7 +94,7 @@ include __DIR__ . '/../../layout/header.php';
             <?php foreach ($data['items'] as $i => $r):
                 $offset = ($data['page'] - 1) * 20;
                 $daysLeft = $r['estimated_days_left'];
-                $daysColor = $daysLeft === null ? '#94a3b8' : ($daysLeft <= 7 ? '#ef4444' : ($daysLeft <= 30 ? '#f59e0b' : '#22c55e'));
+                $daysColor = $daysLeft === null ? 'var(--text-faint)' : ($daysLeft <= 7 ? 'var(--danger)' : ($daysLeft <= 30 ? 'var(--gold-dark)' : 'var(--success)'));
             ?>
             <tr>
                 <td class="text-center text-muted"><?= $offset + $i + 1 ?></td>

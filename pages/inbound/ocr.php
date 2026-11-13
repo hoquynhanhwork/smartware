@@ -14,14 +14,14 @@ include __DIR__ . '/../../layout/header.php';
 <div class="main-content">
 <div class="ocr-wrap">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-        <a href="index.php" style="color:#6b7280;text-decoration:none">
+        <a href="index.php" style="color:var(--text-muted);text-decoration:none">
             <i class="ri-arrow-left-line"></i> Quay lại
         </a>
         <h1 style="font-size:20px;font-weight:700;margin:0">
-            <i class="ri-file-search-line" style="color:#6366f1"></i>
+            <i class="ri-file-search-line" style="color:var(--info)"></i>
             OCR Hóa đơn nhập hàng
         </h1>
-        <span style="background:#eef2ff;color:#4f46e5;font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px">GPT-4o Vision</span>
+        <span style="background:var(--info-bg);color:var(--info-dark);font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px">GPT-4o Vision</span>
     </div>
 
     <!-- Error banner -->
@@ -38,7 +38,7 @@ include __DIR__ . '/../../layout/header.php';
     <!-- Loading -->
     <div class="ocr-loading" id="ocrLoading">
         <div class="spinner"></div>
-        <p style="color:#6b7280">Đang phân tích hóa đơn bằng AI...<br>
+        <p style="color:var(--text-muted)">Đang phân tích hóa đơn bằng AI...<br>
         <small>Thường mất 10-30 giây tùy độ phức tạp</small></p>
     </div>
 
@@ -90,7 +90,7 @@ include __DIR__ . '/../../layout/header.php';
         <!-- Danh sách sản phẩm -->
         <div class="items-section">
             <h3><i class="ri-list-check"></i> Danh sách sản phẩm 
-                <small style="font-weight:400;color:#6b7280">(có thể chỉnh sửa trực tiếp)</small>
+                <small style="font-weight:400;color:var(--text-muted)">(có thể chỉnh sửa trực tiếp)</small>
             </h3>
             <table class="ocr-items">
                 <thead>

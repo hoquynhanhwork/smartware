@@ -38,7 +38,7 @@ class ForecastAdvancedResponse(BaseModel):
     warning:         Optional[str] = None
     explanation:     str
     months_trained:  int
-    confidence:      float
+    confidence:      Optional[float] = None   # hybrid không tính khoảng tin cậy → None
     # ── MỚI: output riêng cho ROP / Safety Stock theo Z x σ x √LT ──
     rop:                Optional[int]   = None
     safety_stock:       Optional[int]   = None

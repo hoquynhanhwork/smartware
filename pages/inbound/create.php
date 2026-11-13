@@ -24,9 +24,6 @@ $csrfToken = $csrf->getToken();$body_page = 'inbound-create';
 include __DIR__ . '/../../layout/header.php';
 ?>
 <!-- Font Be Vietnam Pro & Style Chuẩn -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/suppliers.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/inbound.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/inbound-create.css">
@@ -46,7 +43,7 @@ include __DIR__ . '/../../layout/header.php';
             <span class="clean-badge st-success">
                 <i class="ri-user-line"></i> <?= htmlspecialchars($_SESSION['user_name'] ?? 'Admin') ?>
             </span>
-            <span class="clean-badge" style="background:#EDE6D2; color:var(--navy-darkest); border:1px solid var(--border-color);">
+            <span class="clean-badge" style="background:var(--border); color:var(--navy-darkest); border:1px solid var(--border-color);">
                 <i class="ri-calendar-line"></i> <?= date('d/m/Y') ?>
             </span>
         </div>
@@ -100,7 +97,7 @@ include __DIR__ . '/../../layout/header.php';
 
                     <div class="form-row-modern">
                         <label class="form-label-modern">Người lập phiếu</label>
-                        <input type="text" class="form-input-modern" value="<?= htmlspecialchars($_SESSION['user_name'] ?? 'Admin') ?>" readonly style="background:#EDE6D2; color:var(--navy-darkest);">
+                        <input type="text" class="form-input-modern" value="<?= htmlspecialchars($_SESSION['user_name'] ?? 'Admin') ?>" readonly style="background:var(--border); color:var(--navy-darkest);">
                     </div>
                 </div>
 

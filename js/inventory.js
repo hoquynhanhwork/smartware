@@ -13,14 +13,14 @@ function viewBatches(productId, productName) {
     if (!modal) return;
 
     if (title) title.textContent = `Lô hàng: ${productName}`;
-    content.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px">Đang tải...</p>';
+    content.innerHTML = '<p style="color:#8D96A5;text-align:center;padding:20px">Đang tải...</p>';
     modal.style.display = 'flex';
 
     fetch(`process.php?action=get_batches_detail&product_id=${productId}`)
         .then(r => r.json())
         .then(data => {
             if (!data.success || !data.batches.length) {
-                content.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px">Không có lô hàng nào</p>';
+                content.innerHTML = '<p style="color:#8D96A5;text-align:center;padding:20px">Không có lô hàng nào</p>';
                 return;
             }
             let html = `<div class="table-responsive">
@@ -139,10 +139,10 @@ function previewAdjustDiff() {
     if (isNaN(curQty) || curQty < 0 || isNaN(newQty)) { el.textContent = ''; return; }
     const diff = newQty - curQty;
     if (diff === 0) {
-        el.style.color = '#64748b';
+        el.style.color = '#5F6B7D';
         el.textContent = 'Không có thay đổi';
     } else {
-        el.style.color = diff > 0 ? '#16a34a' : '#dc2626';
+        el.style.color = diff > 0 ? '#2F7F6F' : '#C24B33';
         el.textContent = `Chênh lệch: ${diff > 0 ? '+' : ''}${diff} đơn vị`;
     }
 }
@@ -211,7 +211,7 @@ function initAdjustProductAutocomplete() {
                     box.className = 'autocomplete-suggestions';
                     products.forEach(p => {
                         const item = document.createElement('div');
-                        item.innerHTML = `<strong>${escapeHtml(p.name)}</strong> <span style="color:#94a3b8">${p.sku || ''}</span>`;
+                        item.innerHTML = `<strong>${escapeHtml(p.name)}</strong> <span style="color:#8D96A5">${p.sku || ''}</span>`;
                         item.addEventListener('mousedown', e => e.preventDefault());
                         item.addEventListener('click', () => {
                             input.value = p.name;
@@ -256,7 +256,7 @@ function initProductFilterAutocomplete() {
                     box.className = 'autocomplete-suggestions';
                     products.forEach(p => {
                         const item = document.createElement('div');
-                        item.innerHTML = `<strong>${escapeHtml(p.name)}</strong> <span style="color:#94a3b8">${p.sku || ''}</span>`;
+                        item.innerHTML = `<strong>${escapeHtml(p.name)}</strong> <span style="color:#8D96A5">${p.sku || ''}</span>`;
                         item.addEventListener('mousedown', e => e.preventDefault());
                         item.addEventListener('click', () => {
                             input.value      = p.name;

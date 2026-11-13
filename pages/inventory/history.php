@@ -116,7 +116,7 @@ include __DIR__ . '/../../layout/header.php';
                     </label>
                     <label class="filter-check-item">
                         <input type="radio" name="type" value="adjustment" <?= $type_filter === 'adjustment' ? 'checked' : '' ?> onchange="this.form.submit()">
-                        <span class="dot-indicator" style="background:#0284c7;"></span>
+                        <span class="dot-indicator" style="background:var(--info);"></span>
                         <span class="label-text">Điều chỉnh tồn</span>
                     </label>
                 </div>
@@ -270,7 +270,7 @@ include __DIR__ . '/../../layout/header.php';
             </div>
             <div class="kpi-mini-item">
                 <span class="kpi-mini-lbl"><i class="ri-scales-line"></i> Tồn thuần:</span>
-                <strong style="color: <?= $net >= 0 ? '#0284c7' : '#d97706' ?>;"><?= ($net >= 0 ? '+' : '') . number_format($net) ?></strong>
+                <strong style="color: <?= $net >= 0 ? 'var(--info)' : 'var(--gold-dark)' ?>;"><?= ($net >= 0 ? '+' : '') . number_format($net) ?></strong>
             </div>
             <div class="kpi-mini-item">
                 <span class="kpi-mini-lbl">Mặt hàng liên quan:</span>
@@ -310,7 +310,7 @@ include __DIR__ . '/../../layout/header.php';
                                 <?php
                                     $isAdj = $h['type'] === 'adjustment' || str_starts_with($h['reference_no'] ?? '', 'ADJ-');
                                     if ($isAdj): ?>
-                                    <span class="clean-badge" style="background:#e0f2fe; color:#0369a1;"><i class="ri-equalizer-line"></i> Điều chỉnh</span>
+                                    <span class="clean-badge" style="background:var(--info-bg); color:var(--info-dark);"><i class="ri-equalizer-line"></i> Điều chỉnh</span>
                                 <?php elseif ($h['type'] === 'in'): ?>
                                     <span class="clean-badge st-completed"><i class="ri-arrow-down-circle-line"></i> Nhập kho</span>
                                 <?php else: ?>

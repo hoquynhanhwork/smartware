@@ -43,7 +43,7 @@ include __DIR__ . '/../../layout/header.php';
             <span class="clean-badge st-completed">
                 <i class="ri-user-line"></i> <?= htmlspecialchars($_SESSION['user_name'] ?? 'Admin') ?>
             </span>
-            <span class="clean-badge" style="background:#f4f4f5; color:#52525b;">
+            <span class="clean-badge" style="background:var(--surface-subtle); color:var(--text-2);">
                 <i class="ri-calendar-line"></i> <?= date('d/m/Y') ?>
             </span>
         </div>
@@ -96,7 +96,7 @@ include __DIR__ . '/../../layout/header.php';
 
                     <div class="form-row-modern">
                         <label class="form-label-modern">Người lập phiếu</label>
-                        <input type="text" class="form-input-modern" value="<?= htmlspecialchars($_SESSION['user_name'] ?? 'Admin') ?>" readonly style="background:#f4f4f5; color:#71717a;">
+                        <input type="text" class="form-input-modern" value="<?= htmlspecialchars($_SESSION['user_name'] ?? 'Admin') ?>" readonly style="background:var(--surface-subtle); color:var(--text-muted);">
                     </div>
                 </div>
 
@@ -217,7 +217,7 @@ include __DIR__ . '/../../layout/header.php';
 
 <template id="outboundRowTemplate">
     <tr class="item-row">
-        <td class="stt-cell text-center" style="color: #a1a1aa; font-weight: 500;"></td>
+        <td class="stt-cell text-center" style="color: var(--text-faint); font-weight: 500;"></td>
         <td style="position:relative;">
             <input type="text"
                    class="product-autocomplete-outbound form-input-modern"

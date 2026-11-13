@@ -430,7 +430,7 @@ include __DIR__ . '/../../layout/header.php';
                     </div>
 
                     <input type="text" name="address" id="supAddress" placeholder="Số nhà, tên đường chi tiết..." class="form-input-modern">
-                    <div id="address_display" style="font-size: 12px; color: #71717a; margin-top: 4px;"></div>
+                    <div id="address_display" style="font-size: 12px; color: var(--text-muted); margin-top: 4px;"></div>
 
                     <input type="hidden" name="province_code"  id="provinceCode">
                     <input type="hidden" name="ward_code"      id="wardCode">

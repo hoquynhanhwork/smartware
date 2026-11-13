@@ -25,9 +25,9 @@ $flash_success = getFlash('success');
 
 // Hệ màu Semantic cho cảnh báo kho hàng
 $typeMap = [
-    'low_stock'   => ['label' => 'Tồn kho thấp',  'icon' => 'ri-error-warning-fill',  'color' => '#D5B370'],
-    'overstock'   => ['label' => 'Tồn kho cao',   'icon' => 'ri-stack-fill',          'color' => '#264B6F'],
-    'near_expiry' => ['label' => 'Sắp hết hạn',   'icon' => 'ri-time-fill',           'color' => '#C8553D'],
+    'low_stock'   => ['label' => 'Tồn kho thấp',  'icon' => 'ri-error-warning-fill',  'color' => 'var(--accent)'],
+    'overstock'   => ['label' => 'Tồn kho cao',   'icon' => 'ri-stack-fill',          'color' => 'var(--info)'],
+    'near_expiry' => ['label' => 'Sắp hết hạn',   'icon' => 'ri-time-fill',           'color' => 'var(--danger)'],
 ];
 $sevMap = [
     'high'   => ['badge' => 'st-overdue',   'label' => 'Cao'],
@@ -39,9 +39,6 @@ $body_page = 'settings-page';
 include __DIR__ . '/../../layout/header.php';
 ?>
 <!-- Font Be Vietnam Pro & Style Chuẩn -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/suppliers.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/inbound.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/settings.css">
@@ -154,7 +151,7 @@ include __DIR__ . '/../../layout/header.php';
             <?php else: ?>
                 <div class="member-list-stack" id="alertListStack">
                     <?php foreach ($alerts as $a):
-                        $type   = $typeMap[$a['type']] ?? ['label' => $a['type'], 'icon' => 'ri-alert-line', 'color' => '#5E6D82'];
+                        $type   = $typeMap[$a['type']] ?? ['label' => $a['type'], 'icon' => 'ri-alert-line', 'color' => 'var(--text-muted)'];
                         $sev    = $sevMap[$a['severity']] ?? $sevMap['low'];
                         $isRead = $a['is_read'] || $a['resolved_at'];
                     ?>

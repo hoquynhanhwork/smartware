@@ -36,6 +36,10 @@ function navActive(string $path, string $segment): string {
     <title>SmartWare — Quản lý kho</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/css/theme.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>/css/layout.css">
 
     <!-- ĐOẠN SCRIPT CHẶN GIẬT SIDEBAR ĐẶT NGAY TẠI ĐÂY -->
@@ -55,8 +59,8 @@ function navActive(string $path, string $segment): string {
         <div class="brand-left">
             <div class="brand-logo">
                 <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M16 4C9.37 4 4 9.37 4 16C4 22.63 9.37 28 16 28V4Z" fill="#18181B"/>
-                    <path d="M22 10C20.9 10 20 10.9 20 12V20C20 21.1 20.9 22 22 22C25.31 22 28 19.31 28 16C28 12.69 25.31 10 22 10Z" fill="#18181B"/>
+                    <path d="M16 4C9.37 4 4 9.37 4 16C4 22.63 9.37 28 16 28V4Z" fill="#D5B370"/>
+                    <path d="M22 10C20.9 10 20 10.9 20 12V20C20 21.1 20.9 22 22 22C25.31 22 28 19.31 28 16C28 12.69 25.31 10 22 10Z" fill="#D5B370"/>
                 </svg>
             </div>
             <span class="brand-name">SmartWare</span>

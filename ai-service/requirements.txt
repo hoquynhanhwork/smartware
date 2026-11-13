@@ -37,3 +37,9 @@ python-multipart
 pgvector
 sentence-transformers
 pdf2image
+
+# ── Hybrid forecast (GBM toàn cục) ─────────────────────────────
+scikit-learn
+joblib
+
+sqlalchemy<2.1

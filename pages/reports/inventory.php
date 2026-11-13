@@ -26,7 +26,7 @@ include __DIR__ . '/../../layout/header.php';
 
     <div class="report-header">
         <div class="period-picker">
-            <span style="font-size:13px;color:#64748b">Lô hàng hết hạn trong:</span>
+            <span style="font-size:13px;color:var(--text-muted)">Lô hàng hết hạn trong:</span>
             <?php foreach ([7,14,30,60,90] as $d): ?>
             <button class="shortcut-btn <?= $days == $d ? 'active' : '' ?>"
                     data-days="<?= $d ?>"
@@ -84,7 +84,7 @@ include __DIR__ . '/../../layout/header.php';
     <div class="tables-row">
         <div class="table-box">
             <div class="table-box-header">
-                <h3><i class="ri-error-warning-fill" style="color:#ef4444"></i> Sản phẩm cần nhập hàng</h3>
+                <h3><i class="ri-error-warning-fill" style="color:var(--danger)"></i> Sản phẩm cần nhập hàng</h3>
             </div>
             <table class="data-table" id="lowStockTable">
                 <thead><tr><th>Sản phẩm</th><th class="text-right">Tồn</th><th class="text-right">Ngưỡng</th><th class="text-right">Còn dùng (ngày)</th></tr></thead>
@@ -95,13 +95,13 @@ include __DIR__ . '/../../layout/header.php';
                         <div class="prod-name"><?= htmlspecialchars($r['product_name']) ?></div>
                         <div class="prod-sku"><?= htmlspecialchars($r['sku'] ?? '') ?> · <?= htmlspecialchars($r['unit'] ?? '') ?></div>
                     </td>
-                    <td class="text-right" style="color:<?= $r['stock_status']==='OUT_OF_STOCK' ? '#ef4444' : '#f59e0b' ?>;font-weight:600">
+                    <td class="text-right" style="color:<?= $r['stock_status']==='OUT_OF_STOCK' ? 'var(--danger)' : 'var(--gold-dark)' ?>;font-weight:600">
                         <?= number_format($r['current_stock']) ?>
                     </td>
                     <td class="text-right text-muted"><?= number_format($r['min_stock']) ?></td>
                     <td class="text-right">
                         <?php if ($r['estimated_days_left'] !== null): ?>
-                            <span style="color:<?= $r['estimated_days_left'] <= 7 ? '#ef4444' : '#f59e0b' ?>;font-weight:500">
+                            <span style="color:<?= $r['estimated_days_left'] <= 7 ? 'var(--danger)' : 'var(--gold-dark)' ?>;font-weight:500">
                                 <?= number_format($r['estimated_days_left'], 1) ?> ngày
                             </span>
                         <?php else: ?>
@@ -119,7 +119,7 @@ include __DIR__ . '/../../layout/header.php';
 
         <div class="table-box">
             <div class="table-box-header">
-                <h3><i class="ri-time-fill" style="color:#f59e0b"></i> Lô hàng sắp hết hạn</h3>
+                <h3><i class="ri-time-fill" style="color:var(--gold-dark)"></i> Lô hàng sắp hết hạn</h3>
             </div>
             <table class="data-table" id="nearExpiryTable">
                 <thead><tr><th>Sản phẩm · Lô</th><th class="text-right">Tồn</th><th class="text-right">HSD</th><th class="text-right">Còn (ngày)</th></tr></thead>

@@ -1,30 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
-
 /* =======================================================
    DASHBOARD - THEME TRANH THỦY MẶC / CÁ KOI (KHO HÀNG)
    Navy, Kem, Vàng điểm nhấn & Font Be Vietnam Pro
 ======================================================= */
 :root {
-    --font-family-base: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family-base: var(--font-sans);
 
     /* Base Palette */
-    --navy-darkest: #101A2C;       /* Sidebar, card đen tối, chữ chính, footer */
-    --navy-primary: #11284D;       /* Header bảng, nút primary, biểu đồ series 1 */
-    --blue-mid:     #264B6F;       /* Hover, links, biểu đồ series 2 */
-    --bg-page:      #F4EFDF;       /* Nền trang (body), dòng xen kẽ zebra */
-    --bg-card:      #FBF8EF;       /* Trắng pha kem cho card, modal, widget */
-    --gold-accent:  #D5B370;       /* Điểm nhấn vàng, active, viền trên KPI card */
+    --navy-darkest: var(--navy-900);       /* Sidebar, card đen tối, chữ chính, footer */
+    --navy-primary: var(--primary);       /* Header bảng, nút primary, biểu đồ series 1 */
+    --blue-mid:     var(--info);       /* Hover, links, biểu đồ series 2 */
+/* Nền trang (body), dòng xen kẽ zebra */
+    --bg-card:      var(--surface);       /* Trắng pha kem cho card, modal, widget */
+    --gold-accent:  var(--accent);       /* Điểm nhấn vàng, active, viền trên KPI card */
 
     /* Extended Neutrals & Muted */
-    --border-color: #E2DAC8;       /* Viền kem trầm đồng bộ */
-    --text-primary: #101A2C;       /* Chữ chính trên nền sáng */
-    --text-muted:   #5E6D82;       /* Chữ phụ, nhãn, subtitle */
-    --text-inverse: #F4EFDF;       /* Chữ trên nền Navy */
+    --border-color: var(--border);       /* Viền kem trầm đồng bộ */
+    --text-primary: var(--text);       /* Chữ chính trên nền sáng */
+/* Chữ phụ, nhãn, subtitle */
+    --text-inverse: var(--on-dark);       /* Chữ trên nền Navy */
 
     /* Semantic Status Colors */
-    --status-danger:  #C8553D;     /* Đỏ cam koi: Hết hàng, cảnh báo nguy hiểm */
-    --status-success: #3E8E7E;     /* Xanh ngọc trầm: Đã thanh toán, hoàn tất */
-    --status-warning: #D5B370;     /* Vàng: Tạm thời, cảnh báo */
+    --status-danger:  var(--danger);     /* Đỏ cam koi: Hết hàng, cảnh báo nguy hiểm */
+    --status-success: var(--success);     /* Xanh ngọc trầm: Đã thanh toán, hoàn tất */
+    --status-warning: var(--accent);     /* Vàng: Tạm thời, cảnh báo */
 }
 
 *, *::before, *::after {
@@ -152,7 +150,7 @@ body {
 }
 
 .trend-up {
-    color: #276256; /* Xanh ngọc đậm dễ đọc */
+    color: var(--success-dark); /* Xanh ngọc đậm dễ đọc */
 }
 
 .trend-down {
@@ -167,7 +165,7 @@ body {
 }
 
 .kpi-card.card-dark .kpi-title {
-    color: #A6B4C9;
+    color: var(--text-faint);
 }
 
 .kpi-card.card-dark .kpi-value {
@@ -175,7 +173,7 @@ body {
 }
 
 .kpi-card.card-dark .trend-up {
-    color: #4ADE80;
+    color: var(--success);
 }
 
 /* ── MIDDLE GRID (CHART + SIDE WIDGETS) ─────────────────────── */
@@ -217,7 +215,7 @@ body {
     height: 32px;
     border-radius: 50%;
     border: 1px solid var(--border-color);
-    background: #FFFFFF;
+    background: var(--surface);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -304,7 +302,7 @@ body {
 }
 
 .cal-nav:hover {
-    background: #EDE6D2;
+    background: var(--border);
 }
 
 .cal-days-strip {
@@ -354,7 +352,7 @@ body {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    border: 5px solid #EDE6D2;
+    border: 5px solid var(--border);
     border-top-color: var(--navy-primary);
     border-right-color: var(--gold-accent);
     display: flex;
@@ -432,7 +430,7 @@ body {
     width: 36px;
     height: 36px;
     border-radius: 8px;
-    background: #EDE6D2;
+    background: var(--border);
     border: 1px solid var(--border-color);
     display: flex;
     align-items: center;
@@ -463,9 +461,9 @@ body {
 }
 
 .status-paid {
-    background: rgba(62, 142, 126, 0.15);
-    color: #276256;
-    border: 1px solid rgba(62, 142, 126, 0.3);
+    background: rgba(47, 127, 111, 0.15);
+    color: var(--success-dark);
+    border: 1px solid rgba(47, 127, 111, 0.3);
 }
 
 /* Responsive */

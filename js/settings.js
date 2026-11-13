@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!cfmPw.value) { hint.textContent = ''; return; }
             const match = newPw.value === cfmPw.value;
             hint.textContent = match ? '✓ Mật khẩu mới trùng khớp' : '✗ Mật khẩu xác nhận không khớp';
-            hint.style.color = match ? '#10b981' : '#ef4444';
+            hint.style.color = match ? '#2F7F6F' : '#C24B33';
         };
         newPw.addEventListener('input', checkMatch);
         cfmPw.addEventListener('input', checkMatch);

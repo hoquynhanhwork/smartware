@@ -66,7 +66,7 @@ include __DIR__ . '/../../layout/header.php';
                 <?php if (!empty($data['chart']['labels'])): ?>
                     <canvas id="supplierChart" height="80"></canvas>
                 <?php else: ?>
-                    <div style="text-align:center;padding:40px;color:#94a3b8">Không có dữ liệu trong kỳ này</div>
+                    <div style="text-align:center;padding:40px;color:var(--text-faint)">Không có dữ liệu trong kỳ này</div>
                 <?php endif; ?>
             </div>
         </div>
@@ -75,7 +75,7 @@ include __DIR__ . '/../../layout/header.php';
     <!-- Bảng hiệu suất NCC -->
     <div class="table-box">
         <div class="table-box-header">
-            <h3><i class="ri-trophy-line" style="color: #fc8800"></i> Hiệu suất nhà cung cấp trong kỳ</h3>
+            <h3><i class="ri-trophy-line" style="color: var(--gold-dark)"></i> Hiệu suất nhà cung cấp trong kỳ</h3>
         </div>
         <div style="overflow-x:auto">
         <table class="data-table">
@@ -105,8 +105,8 @@ include __DIR__ . '/../../layout/header.php';
                         <div class="prod-name"><?= htmlspecialchars($r['supplier_name']) ?></div>
                         <div class="prod-sku"><?= htmlspecialchars($r['phone'] ?? '') ?></div>
                         <!-- Progress bar tỷ trọng -->
-                        <div style="margin-top:4px;height:3px;background:#f1f5f9;border-radius:2px;width:120px">
-                            <div style="height:3px;background:#3b82f6;border-radius:2px;width:<?= $pct ?>%"></div>
+                        <div style="margin-top:4px;height:3px;background:var(--surface-subtle);border-radius:2px;width:120px">
+                            <div style="height:3px;background:var(--info);border-radius:2px;width:<?= $pct ?>%"></div>
                         </div>
                     </td>
                     <td class="text-right"><?= $r['order_count'] ?></td>
@@ -115,8 +115,8 @@ include __DIR__ . '/../../layout/header.php';
                     <td class="text-right"><?= $r['product_count'] ?></td>
                     <td class="text-center">
                         <span style="font-size:11px;padding:2px 8px;border-radius:999px;font-weight:500;
-                            background:<?= $r['status']==='active' ? '#f0fdf4' : '#fef2f2' ?>;
-                            color:<?= $r['status']==='active' ? '#16a34a' : '#dc2626' ?>">
+                            background:<?= $r['status']==='active' ? 'var(--success-bg)' : 'var(--danger-bg)' ?>;
+                            color:<?= $r['status']==='active' ? 'var(--success)' : 'var(--danger)' ?>">
                             <?= $r['status']==='active' ? 'Đang HT' : 'Ngừng HT' ?>
                         </span>
                     </td>

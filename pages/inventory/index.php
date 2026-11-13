@@ -96,12 +96,12 @@ include __DIR__ . '/../../layout/header.php';
                     </label>
                     <label class="filter-check-item">
                         <input type="radio" name="expiry_status" value="critical" <?= $expiry_f === 'critical' ? 'checked' : '' ?> onchange="this.form.submit()">
-                        <span class="dot-indicator" style="background:#ea580c"></span>
+                        <span class="dot-indicator" style="background:var(--accent)"></span>
                         <span class="label-text">Nguy cấp ≤7 ngày <?= ($kpi['cnt_critical'] ?? 0) > 0 ? '('.$kpi['cnt_critical'].')' : '' ?></span>
                     </label>
                     <label class="filter-check-item">
                         <input type="radio" name="expiry_status" value="warning" <?= $expiry_f === 'warning' ? 'checked' : '' ?> onchange="this.form.submit()">
-                        <span class="dot-indicator" style="background:#f59e0b"></span>
+                        <span class="dot-indicator" style="background:var(--accent)"></span>
                         <span class="label-text">Sắp hết ≤30 ngày <?= ($kpi['cnt_warning'] ?? 0) > 0 ? '('.$kpi['cnt_warning'].')' : '' ?></span>
                     </label>
                     <label class="filter-check-item">

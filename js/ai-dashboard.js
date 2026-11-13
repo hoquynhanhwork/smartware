@@ -5,7 +5,7 @@ if (document.getElementById('chartRisk')) {
             labels: ['Rủi ro cao', 'Trung bình', 'Ổn định'],
             datasets: [{
                 data: [riskCounts.high || 0, riskCounts.medium || 0, riskCounts.low || 0],
-                backgroundColor: ['#dc2626', '#d97706', '#16a34a'],
+                backgroundColor: ['#C24B33', '#D5B370', '#2F7F6F'],
                 borderWidth: 2,
                 borderColor: '#fff',
             }]
@@ -32,7 +32,7 @@ if (document.getElementById('chartPriority')) {
             datasets: [{
                 label: 'Số sản phẩm',
                 data: keys.map(k => priorityCounts[k] || 0),
-                backgroundColor: ['#9d174d', '#991b1b', '#92400e', '#374151'],
+                backgroundColor: ['#C24B33', '#8E3422', '#D5B370', '#5F6B7D'],
                 borderRadius: 6,
             }]
         },
@@ -41,8 +41,8 @@ if (document.getElementById('chartPriority')) {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 11 } } },
-                y: { beginAtZero: true, ticks: { stepSize: 1, color: '#9ca3af', font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.04)' } }
+                x: { grid: { display: false }, ticks: { color: '#8D96A5', font: { size: 11 } } },
+                y: { beginAtZero: true, ticks: { stepSize: 1, color: '#8D96A5', font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.04)' } }
             }
         }
     });
@@ -102,7 +102,7 @@ async function sendChat() {
         box.innerHTML += `<div class="chat-msg-ai">${escHtml(data.answer || data.error || 'Lỗi')}</div>`;
     } catch (e) {
         document.getElementById('chatTyping')?.remove();
-        box.innerHTML += `<div class="chat-msg-ai" style="color:#dc2626; border-color:#fca5a5; background:#fee2e2;">Không kết nối được AI Service.</div>`;
+        box.innerHTML += `<div class="chat-msg-ai" style="color:#C24B33; border-color:#F0C4B8; background:#FBEAE5;">Không kết nối được AI Service.</div>`;
     } finally {
         btn.disabled = false;
         box.scrollTop = box.scrollHeight;

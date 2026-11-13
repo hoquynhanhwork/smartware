@@ -137,9 +137,9 @@ $priorityCounts = $summary['priority_counts'] ?? [];
                 <canvas id="chartRisk"></canvas>
             </div>
             <div class="ai-chart-legend">
-                <span><span class="swatch" style="background:#dc2626"></span>Rủi ro cao</span>
-                <span><span class="swatch" style="background:#d97706"></span>Trung bình</span>
-                <span><span class="swatch" style="background:#16a34a"></span>Ổn định</span>
+                <span><span class="swatch" style="background:var(--danger-hover)"></span>Rủi ro cao</span>
+                <span><span class="swatch" style="background:var(--accent)"></span>Trung bình</span>
+                <span><span class="swatch" style="background:var(--success)"></span>Ổn định</span>
             </div>
         </div>
         <div class="ai-chart-card">
@@ -148,16 +148,16 @@ $priorityCounts = $summary['priority_counts'] ?? [];
                 <canvas id="chartPriority"></canvas>
             </div>
             <div class="ai-chart-legend">
-                <span><span class="swatch" style="background:#9d174d"></span>Critical</span>
-                <span><span class="swatch" style="background:#b91c1c"></span>High</span>
-                <span><span class="swatch" style="background:#92400e"></span>Medium</span>
-                <span><span class="swatch" style="background:#6b7280"></span>Low</span>
+                <span><span class="swatch" style="background:var(--danger-dark)"></span>Critical</span>
+                <span><span class="swatch" style="background:var(--danger-dark)"></span>High</span>
+                <span><span class="swatch" style="background:var(--accent-hover)"></span>Medium</span>
+                <span><span class="swatch" style="background:var(--text-muted)"></span>Low</span>
             </div>
         </div>
     </div>
 
     <!-- ── Risk Tables ── -->
-    <?php foreach (['high' => ['Rủi ro cao', '#dc2626'], 'medium' => ['Rủi ro trung bình', '#d97706']] as $level => [$label, $color]): ?>
+    <?php foreach (['high' => ['Rủi ro cao', 'var(--danger)'], 'medium' => ['Rủi ro trung bình', 'var(--gold-dark)']] as $level => [$label, $color]): ?>
     <?php if (!empty($byRisk[$level])): ?>
 
     <div class="ai-section-hd">
@@ -183,14 +183,14 @@ $priorityCounts = $summary['priority_counts'] ?? [];
             <?php foreach ($byRisk[$level] as $p): ?>
             <?php
                 $statusMap = [
-                    'OUT_OF_STOCK' => ['Hết hàng', '#dc2626'],
-                    'LOW_STOCK'    => ['Sắp hết',  '#d97706'],
-                    'NEAR_EXPIRY'  => ['Sắp HSD',  '#7c3aed'],
-                    'OVERSTOCK'    => ['Dư hàng',   '#0284c7'],
-                    'NORMAL'       => ['Bình thường','#16a34a'],
+                    'OUT_OF_STOCK' => ['Hết hàng', 'var(--danger)'],
+                    'LOW_STOCK'    => ['Sắp hết',  'var(--gold-dark)'],
+                    'NEAR_EXPIRY'  => ['Sắp HSD',  'var(--danger-dark)'],
+                    'OVERSTOCK'    => ['Dư hàng',   'var(--info)'],
+                    'NORMAL'       => ['Bình thường','var(--success)'],
                 ];
-                $st       = $statusMap[$p['stock_status'] ?? 'NORMAL'] ?? ['?', '#6b7280'];
-                $barColor = $level === 'high' ? '#dc2626' : '#d97706';
+                $st       = $statusMap[$p['stock_status'] ?? 'NORMAL'] ?? ['?', 'var(--text-muted)'];
+                $barColor = $level === 'high' ? 'var(--danger)' : 'var(--gold-dark)';
                 $prio     = htmlspecialchars($p['priority'] ?? 'low');
             ?>
             <tr>
@@ -215,7 +215,7 @@ $priorityCounts = $summary['priority_counts'] ?? [];
                         ? '<strong>' . $p['suggested_quantity'] . '</strong> đvt'
                         : '—' ?>
                 </td>
-                <td style="color:#6b7280;font-size:12px" class="col-warning"><?= htmlspecialchars($p['warning'] ?? '') ?></td>
+                <td style="color:var(--text-muted);font-size:12px" class="col-warning"><?= htmlspecialchars($p['warning'] ?? '') ?></td>
                 <td class="col-action">
                     <button class="btn-ai-detail"
                         onclick="analyzeProduct(<?= $p['product_id'] ?>, '<?= htmlspecialchars(addslashes($p['product_name'])) ?>')">

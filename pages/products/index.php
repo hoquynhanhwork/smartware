@@ -43,7 +43,6 @@ $filters = [
 
 // ── Lấy dữ liệu qua Service ──────────────────────────────────────────────────
 $result   = $service->list($filters);
-$stats    = $service->stats();
 $formData = $service->getFormData();
 
 $products    = $result['items'];
@@ -67,9 +66,6 @@ $canManage = hasRole('admin', 'manager');
 include __DIR__ . '/../../layout/header.php';
 ?>
 <!-- Font Be Vietnam Pro & Stylesheet -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/products.css">
 
 <!-- Script chống giật layout khi lưu trạng thái sidebar -->
@@ -169,7 +165,7 @@ include __DIR__ . '/../../layout/header.php';
             <div class="tb-left">
                 <button type="button" class="btn-tb-filter" id="btnToggleSidebar">
                     <i class="ri-equalizer-line"></i>
-                    <span id="txtToggleSidebar">Hide Filters</span>
+                    <span id="txtToggleSidebar">Ẩn bộ lọc</span>
                 </button>
                 <div class="tb-dropdown-badge">
                     <span>Tất cả sản phẩm (<?= number_format($totalRows) ?>)</span>
@@ -180,7 +176,7 @@ include __DIR__ . '/../../layout/header.php';
             <div class="tb-right">
                 <div class="tb-search-box">
                     <i class="ri-search-line"></i>
-                    <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm..." value="<?= htmlspecialchars($keyword) ?>" onkeyup="searchProductTable()">
+                    <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm..." value="<?= htmlspecialchars($keyword) ?>" oninput="searchProductTable()" autocomplete="off">
                 </div>
 
                 <button type="button" class="btn-tb-secondary" onclick="openCategoryModal()">
@@ -218,16 +214,24 @@ include __DIR__ . '/../../layout/header.php';
                     <?php else: ?>
                         <?php foreach ($products as $p):
                             $stock = (int) $p['total_stock'];
+                            // Chỉ đưa các trường form cần; INVALID_UTF8_SUBSTITUTE để UTF-8 hỏng không làm json_encode trả false.
+                            $editData = json_encode(
+                                array_intersect_key($p, array_flip([
+                                    'id', 'name', 'sku', 'unit', 'price', 'cost_price', 'description',
+                                    'min_stock', 'max_stock', 'status', 'category_id', 'supplier_id',
+                                ])),
+                                JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
+                            ) ?: '{}';
                             if ($p['status'] === 'inactive') {
-                                // Ngừng kinh doanh: Đỏ cam cá koi #C8553D
+                                // Ngừng kinh doanh: Đỏ cam cá koi var(--danger)
                                 $statusClass = 'st-danger';
                                 $statusText  = 'Ngừng KD';
                             } elseif ($stock <= (int) $p['min_stock']) {
-                                // Cảnh báo nhập hàng: Nền Vàng #D5B370, chữ navy tối
+                                // Cảnh báo nhập hàng: Nền Vàng var(--accent), chữ navy tối
                                 $statusClass = 'st-warning';
                                 $statusText  = 'Cần nhập';
                             } else {
-                                // Hợp lý / Còn hàng: Xanh ngọc trầm #3E8E7E
+                                // Hợp lý / Còn hàng: Xanh ngọc trầm var(--success)
                                 $statusClass = 'st-success';
                                 $statusText  = 'Còn hàng';
                             }
@@ -259,7 +263,7 @@ include __DIR__ . '/../../layout/header.php';
                             </td>
                             <td class="text-right actions-cell">
                                 <?php if ($canManage): ?>
-                                <button type="button" class="btn-action-icon" onclick="openProductModal('edit', <?= htmlspecialchars(json_encode($p), ENT_QUOTES) ?>)" title="Sửa">
+                                <button type="button" class="btn-action-icon btn-edit-product" data-product="<?= htmlspecialchars($editData, ENT_QUOTES) ?>" title="Sửa">
                                     <i class="ri-pencil-line"></i>
                                 </button>
                                 <button type="button" class="btn-action-icon btn-action-delete" onclick="confirmDeleteProduct(<?= (int) $p['id'] ?>, '<?= htmlspecialchars($p['status'], ENT_QUOTES) ?>', <?= $stock ?>)" title="<?= $p['status'] === 'active' ? 'Ngừng kinh doanh' : 'Xóa' ?>">
@@ -446,12 +450,12 @@ include __DIR__ . '/../../layout/header.php';
                     <div class="form-grid-2">
                         <div class="form-row-modern">
                             <label class="form-label-modern">Giá vốn (VNĐ)</label>
-                            <input type="number" name="cost_price" id="prodCostPrice" step="1000" min="0" placeholder="0" onblur="validateCostPrice()" class="form-input-modern">
+                            <input type="text" inputmode="decimal" autocomplete="off" name="cost_price" id="prodCostPrice" placeholder="0" onblur="validateCostPrice()" class="form-input-modern">
                             <span id="costPriceError" class="error-message"></span>
                         </div>
                         <div class="form-row-modern">
                             <label class="form-label-modern">Giá bán (VNĐ)</label>
-                            <input type="number" name="price" id="prodPrice" step="1000" min="0" placeholder="0" onblur="validatePrice()" class="form-input-modern">
+                            <input type="text" inputmode="decimal" autocomplete="off" name="price" id="prodPrice" placeholder="0" onblur="validatePrice()" class="form-input-modern">
                             <span id="priceError" class="error-message"></span>
                         </div>
                     </div>

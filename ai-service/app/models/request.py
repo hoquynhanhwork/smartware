@@ -8,27 +8,27 @@ class InventoryItem(BaseModel):
     current_stock:       int
     min_stock:           int
     max_stock:           int = 0
-    sales_history:       List[int]           # 6 tháng gần nhất, cũ → mới
+    sales_history:       List[int]          
     avg_daily_out:       float = 0.0
     estimated_days_left: Optional[float] = None
     nearest_exp_date:    Optional[str]  = None
-    supplier_id:         Optional[int] = None  # thêm để rõ ràng (có thể không bắt buộc)
+    supplier_id:         Optional[int] = None 
 
 # ── /forecast/advanced — Prophet từ DB ────────────────────────
 class ForecastAdvancedRequest(BaseModel):
     product_id:    int
     product_name:  str
-    supplier_id:   int = 1        # đã đổi từ company_id
+    supplier_id:   int = 1   
     current_stock: int
     min_stock:     int
     max_stock:     int = 0
-    train_end_date: Optional[str] = None  # "YYYY-MM-DD" — cắt train khi backtest (vd "2025-01-01")
+    train_end_date: Optional[str] = None 
 
 # ── /risks — phân tích rủi ro tồn kho ────────────────────────
 class RiskRequest(BaseModel):
     product_id:          int
     product_name:        str
-    supplier_id:         int = 1      # đã đổi
+    supplier_id:         int = 1    
     current_stock:       int
     min_stock:           int
     max_stock:           int = 0
@@ -42,7 +42,7 @@ class RiskRequest(BaseModel):
 class TrendRequest(BaseModel):
     product_id:   int
     product_name: str
-    supplier_id:  int = 1       # đã đổi
+    supplier_id:  int = 1       
 
 # ── /replenishment — đề xuất bổ sung hàng ────────────────────
 class ReplenishmentRequest(BaseModel):

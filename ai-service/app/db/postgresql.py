@@ -5,7 +5,6 @@ from app.config import settings
 engine = create_engine(settings.database_url)
 SessionLocal = sessionmaker(bind=engine)
 
-# Engine chỉ-đọc riêng cho text-to-SQL (role smartware_ai_ro, chỉ thấy schema ai_ro).
 ro_engine = (
     create_engine(settings.database_url_ro, pool_size=3, max_overflow=2, pool_pre_ping=True)
     if settings.database_url_ro

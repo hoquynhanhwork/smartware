@@ -15,6 +15,7 @@ from app.routers import explain
 from app.routers import assessment      # thêm
 from app.routers import alerts          # thêm
 from app.routers import text_to_sql
+from app.routers import forecast_hybrid
 
 app = FastAPI(
     title       = "SmartWare AI Service",
@@ -35,6 +36,7 @@ app.add_middleware(
 app.include_router(analyze.router,           prefix="/api/v1", tags=["Analyze"])
 app.include_router(forecast.router,          prefix="/api/v1", tags=["Forecast"])
 app.include_router(forecast_advanced.router, prefix="/api/v1", tags=["Forecast Advanced"])
+app.include_router(forecast_hybrid.router,   prefix="/api/v1", tags=["Forecast Hybrid"])
 
 # ── Routers (Giai đoạn 2 — mới xây) ──────────────────────────
 app.include_router(risks.router,             prefix="/api/v1", tags=["Risk Analysis"])
@@ -59,6 +61,11 @@ def health_check():
             "POST /api/v1/predict",
             "POST /api/v1/forecast",
             "POST /api/v1/forecast/advanced",
+            "GET  /api/v1/forecast/hybrid/status",
+            "GET  /api/v1/forecast/hybrid/forecasts",
+            "GET  /api/v1/forecast/hybrid/export.csv",
+            "POST /api/v1/forecast/hybrid/retrain",
+            "POST /api/v1/forecast/hybrid/save",
             "POST /api/v1/risks",
             "POST /api/v1/trends",
             "POST /api/v1/replenishment",

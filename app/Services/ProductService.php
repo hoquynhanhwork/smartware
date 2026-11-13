@@ -20,8 +20,7 @@ class ProductService
     {
         $page     = max(1, (int) ($filters['page']  ?? 1));
         $limit    = min(100, max(1, (int) ($filters['limit'] ?? 15)));
-        $stockMin = strlen((string) ($filters['stock_min'] ?? '')) > 0 ? (float) $filters['stock_min'] : 0;
-        $stockMax = strlen((string) ($filters['stock_max'] ?? '')) > 0 ? (float) $filters['stock_max'] : 999999999;
+        [$stockMin, $stockMax] = $this->stockRange($filters);
 
         $total = $this->repo->count(
             keyword:     $filters['keyword']      ?? '',
@@ -31,6 +30,11 @@ class ProductService
             stockMin:    $stockMin,
             stockMax:    $stockMax,
         );
+
+        // Kẹp page vào [1, total_pages]: ?page quá lớn (hoặc dữ liệu vừa bị xóa bớt) không còn
+        // làm bảng rỗng dù vẫn còn dữ liệu.
+        $totalPages = $total > 0 ? (int) ceil($total / $limit) : 1;
+        $page       = min($page, $totalPages);
 
         $items = $this->repo->list(
             keyword:     $filters['keyword']      ?? '',
@@ -46,10 +50,37 @@ class ProductService
         return [
             'items'       => $items,
             'total'       => $total,
-            'total_pages' => $total > 0 ? (int) ceil($total / $limit) : 1,
+            'total_pages' => $totalPages,
             'page'        => $page,
             'limit'       => $limit,
         ];
+    }
+
+    /**
+     * Danh sách đầy đủ (không phân trang) để xuất Excel, cùng bộ lọc/thứ tự với list().
+     * $ids rỗng = xuất theo bộ lọc; có $ids = chỉ xuất các sản phẩm đã chọn.
+     */
+    public function listForExport(array $filters = [], array $ids = []): array
+    {
+        [$stockMin, $stockMax] = $this->stockRange($filters);
+
+        return $this->repo->listAll(
+            keyword:     $filters['keyword']      ?? '',
+            categoryIds: $filters['category_ids'] ?? [],
+            statuses:    $filters['statuses']     ?? [],
+            supplierIds: $filters['supplier_ids'] ?? [],
+            stockMin:    $stockMin,
+            stockMax:    $stockMax,
+            ids:         array_values(array_filter(array_map('intval', $ids), fn($v) => $v > 0)),
+        );
+    }
+
+    /** @return array{0: float, 1: float} [stockMin, stockMax]; ô trống = không giới hạn */
+    private function stockRange(array $filters): array
+    {
+        $min = strlen((string) ($filters['stock_min'] ?? '')) > 0 ? (float) $filters['stock_min'] : 0;
+        $max = strlen((string) ($filters['stock_max'] ?? '')) > 0 ? (float) $filters['stock_max'] : 999999999;
+        return [$min, $max];
     }
 
     public function getFormData(): array

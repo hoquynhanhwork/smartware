@@ -1,31 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
-
 /* ==========================================================================
    SMARTWARE - SETTINGS MODULE (DESIGN SYSTEM TRANH THỦY MẶC / CÁ KOI)
    Navy, Kem, Vàng điểm nhấn & Font Be Vietnam Pro
    ========================================================================== */
 
 :root {
-    --font-family-base: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family-base: var(--font-sans);
 
     /* Base Palette */
-    --navy-darkest: #101A2C;       /* Chữ chính, footer, viền tối */
-    --navy-primary: #11284D;       /* Header table, primary buttons, viền active */
-    --blue-mid:     #264B6F;       /* Hover, links, viền focus */
-    --bg-page:      #F4EFDF;       /* Nền trang (body) */
-    --bg-card:      #FBF8EF;       /* Trắng pha kem cho card, modal, sidebar */
-    --gold-accent:  #D5B370;       /* Điểm nhấn vàng, active indicator */
+    --navy-darkest: var(--navy-900);       /* Chữ chính, footer, viền tối */
+    --navy-primary: var(--primary);       /* Header table, primary buttons, viền active */
+    --blue-mid:     var(--info);       /* Hover, links, viền focus */
+/* Nền trang (body) */
+    --bg-card:      var(--surface);       /* Trắng pha kem cho card, modal, sidebar */
+    --gold-accent:  var(--accent);       /* Điểm nhấn vàng, active indicator */
 
     /* Neutrals & Semantic */
-    --border-color: #E2DAC8;       /* Viền kem trầm đồng bộ */
-    --text-primary: #101A2C;       /* Chữ chính */
-    --text-muted:   #5E6D82;       /* Chữ phụ, SKU, nhãn mờ */
-    --text-inverse: #F4EFDF;       /* Chữ trên nền Navy */
+    --border-color: var(--border);       /* Viền kem trầm đồng bộ */
+    --text-primary: var(--text);       /* Chữ chính */
+/* Chữ phụ, SKU, nhãn mờ */
+    --text-inverse: var(--on-dark);       /* Chữ trên nền Navy */
 
     /* Semantic Status Colors */
-    --status-danger:  #C8553D;     /* Đỏ cam cá koi: Bị khóa, rủi ro cao */
-    --status-success: #3E8E7E;     /* Xanh ngọc trầm: Đang hoạt động, thành công */
-    --status-warning: #D5B370;     /* Vàng: Cảnh báo, cần kiểm duyệt */
+    --status-danger:  var(--danger);     /* Đỏ cam cá koi: Bị khóa, rủi ro cao */
+    --status-success: var(--success);     /* Xanh ngọc trầm: Đang hoạt động, thành công */
+    --status-warning: var(--accent);     /* Vàng: Cảnh báo, cần kiểm duyệt */
 }
 
 *, *::before, *::after {
@@ -121,7 +119,7 @@ input, button, select, textarea {
 
 .tab-badge {
     background: var(--status-danger);
-    color: #ffffff;
+    color: var(--on-dark);
     font-size: 10.5px;
     font-weight: 700;
     padding: 1px 7px;
@@ -163,7 +161,7 @@ input, button, select, textarea {
     width: 210px;
     height: 36px;
     padding: 0 42px 0 34px;
-    background: #ffffff;
+    background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     font-size: 13px;
@@ -184,7 +182,7 @@ input, button, select, textarea {
     font-size: 10px;
     font-weight: 600;
     color: var(--text-muted);
-    background: #EDE6D2;
+    background: var(--border);
     padding: 2px 6px;
     border-radius: 4px;
     border: 1px solid var(--border-color);
@@ -209,7 +207,7 @@ input, button, select, textarea {
 }
 
 .btn-tool-outline:hover {
-    background: #EDE6D2;
+    background: var(--border);
 }
 
 /* Dropdown Menu */
@@ -222,7 +220,7 @@ input, button, select, textarea {
     position: absolute;
     top: calc(100% + 6px);
     right: 0;
-    background: #ffffff;
+    background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: 10px;
     box-shadow: 0 10px 25px rgba(16, 26, 44, 0.12);
@@ -245,7 +243,7 @@ input, button, select, textarea {
 
 .st-dropdown-menu a:hover,
 .st-dropdown-menu a.active {
-    background: #F4EFDF;
+    background: var(--bg-page);
     font-weight: 700;
     color: var(--navy-darkest);
 }
@@ -322,7 +320,7 @@ input, button, select, textarea {
     padding-top: 8px;
 }
 
-.trend-up { color: #276256; }
+.trend-up { color: var(--success-dark); }
 .trend-down { color: var(--text-muted); }
 
 /* ── 5. BẢNG THÀNH VIÊN LIỀN KHỐI (TABLE GRID) ────────────────────── */
@@ -420,7 +418,7 @@ input, button, select, textarea {
     height: 38px;
     min-width: 38px;
     border-radius: 50%;
-    background: #EDE6D2;
+    background: var(--border);
     color: var(--navy-primary);
     border: 1px solid var(--border-color);
     display: flex;
@@ -524,11 +522,11 @@ input, button, select, textarea {
 .btn-action-icon:hover,
 .btn-icon-subtle:hover {
     color: var(--navy-darkest);
-    background: #EDE6D2;
+    background: var(--border);
 }
 
 .btn-icon-subtle.text-danger:hover {
-    color: #ffffff;
+    color: var(--on-dark);
     background: var(--status-danger);
 }
 
@@ -573,7 +571,7 @@ input, button, select, textarea {
 }
 
 .btn-modern-outline:hover {
-    background: #EDE6D2;
+    background: var(--border);
 }
 
 .clean-badge {
@@ -587,26 +585,26 @@ input, button, select, textarea {
 }
 
 .st-completed {
-    background: rgba(62, 142, 126, 0.15);
-    color: #276256;
-    border: 1px solid rgba(62, 142, 126, 0.3);
+    background: rgba(47, 127, 111, 0.15);
+    color: var(--success-dark);
+    border: 1px solid rgba(47, 127, 111, 0.3);
 }
 
 .st-pending {
     background: var(--gold-accent);
     color: var(--navy-darkest);
-    border: 1px solid #BF9E5A;
+    border: 1px solid var(--accent-hover);
 }
 
 .st-overdue {
-    background: rgba(200, 85, 61, 0.15);
-    color: #9C3822;
-    border: 1px solid rgba(200, 85, 61, 0.35);
+    background: rgba(194, 75, 51, 0.15);
+    color: var(--danger-dark);
+    border: 1px solid rgba(194, 75, 51, 0.35);
 }
 
-.text-success { color: #276256 !important; }
+.text-success { color: var(--success-dark) !important; }
 .text-danger  { color: var(--status-danger) !important; }
-.text-warning { color: #8A6D2E !important; }
+.text-warning { color: var(--warning-text) !important; }
 
 /* ── 7. ROLE RADIO CARDS (MODAL USER) ─────────────────────────────── */
 .role-radio-group {
@@ -621,7 +619,7 @@ input, button, select, textarea {
     border: 1px solid var(--border-color);
     border-radius: 10px;
     padding: 12px;
-    background: #ffffff;
+    background: var(--surface);
     cursor: pointer;
     transition: all 0.15s ease;
     user-select: none;
@@ -633,7 +631,7 @@ input, button, select, textarea {
 
 .role-radio-card:hover {
     border-color: var(--blue-mid);
-    background: #F4EFDF;
+    background: var(--bg-page);
 }
 
 .role-radio-card input[type="radio"] {
@@ -648,7 +646,7 @@ input, button, select, textarea {
     min-width: 18px;
     border-radius: 50%;
     border: 2px solid var(--border-color);
-    background: #ffffff;
+    background: var(--surface);
     box-sizing: border-box;
     display: flex;
     align-items: center;
@@ -676,7 +674,7 @@ input, button, select, textarea {
 
 .role-radio-card:has(input[type="radio"]:checked) {
     border-color: var(--navy-primary);
-    background: #F4EFDF;
+    background: var(--bg-page);
 }
 
 .role-radio-text {
@@ -817,7 +815,7 @@ input, button, select, textarea {
 
 .form-input-modern {
     width: 100%;
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 9px 13px;
@@ -834,13 +832,13 @@ input, button, select, textarea {
 }
 
 .input-readonly {
-    background: #EDE6D2 !important;
+    background: var(--border) !important;
     color: var(--text-muted) !important;
     cursor: default;
 }
 
 .toggle-card-row {
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: 10px;
     padding: 14px 18px;
@@ -868,7 +866,7 @@ input, button, select, textarea {
     width: 36px !important;
     height: 20px;
     appearance: none;
-    background-color: #D9CEB9;
+    background-color: var(--border-strong);
     border-radius: 999px;
     position: relative;
     transition: background-color 0.2s ease;
@@ -885,7 +883,7 @@ input, button, select, textarea {
     left: 2px;
     width: 16px;
     height: 16px;
-    background: #ffffff;
+    background: var(--surface);
     border-radius: 50%;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -906,7 +904,7 @@ input, button, select, textarea {
 
 .prefix-preview-label strong {
     color: var(--navy-darkest);
-    background: #EDE6D2;
+    background: var(--border);
     padding: 3px 8px;
     border-radius: 6px;
 }
@@ -916,7 +914,7 @@ input, button, select, textarea {
     align-items: center;
     gap: 8px;
     font-size: 12.5px;
-    color: #634710;
+    color: var(--warning-text);
     background: rgba(213, 179, 112, 0.15);
     border: 1px solid var(--gold-accent);
     padding: 10px 14px;
@@ -924,7 +922,7 @@ input, button, select, textarea {
 }
 
 .session-info-cell {
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--border-color);
     padding: 14px 16px;
     border-radius: 10px;

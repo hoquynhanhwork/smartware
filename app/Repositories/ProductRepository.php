@@ -18,28 +18,75 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
         int    $limit       = 15,
         int    $offset      = 0,
     ): array {
+        return $this->fetchProducts(
+            $keyword, $categoryIds, $statuses, $supplierIds,
+            $stockMin, $stockMax, [], $limit, $offset,
+        );
+    }
+
+    /**
+     * Toàn bộ sản phẩm khớp bộ lọc (không phân trang) — dùng cho xuất Excel.
+     * Dùng chung buildWhere/ORDER BY với list() nên luôn khớp với bảng đang xem.
+     * $ids: nếu có thì chỉ lấy các sản phẩm này (vẫn áp bộ lọc).
+     */
+    public function listAll(
+        string $keyword     = '',
+        array  $categoryIds = [],
+        array  $statuses    = [],
+        array  $supplierIds = [],
+        float  $stockMin    = 0,
+        float  $stockMax    = 999999999,
+        array  $ids         = [],
+    ): array {
+        return $this->fetchProducts(
+            $keyword, $categoryIds, $statuses, $supplierIds,
+            $stockMin, $stockMax, $ids, null, 0,
+        );
+    }
+
+    private function fetchProducts(
+        string $keyword,
+        array  $categoryIds,
+        array  $statuses,
+        array  $supplierIds,
+        float  $stockMin,
+        float  $stockMax,
+        array  $ids,
+        ?int   $limit,
+        int    $offset,
+    ): array {
         [$where, $params] = $this->buildWhere(
             $keyword, $categoryIds, $statuses, $supplierIds,
-            $stockMin, $stockMax,
+            $stockMin, $stockMax, $ids,
         );
+
+        // Chỉ JOIN bảng tồn đã gộp khi thật sự lọc theo tồn; không lọc thì tính tồn
+        // bằng đúng 1 subquery trong SELECT (chỉ chạy cho các dòng được trả về).
+        $useStockJoin = $this->hasStockFilter($stockMin, $stockMax);
+        $stockJoin    = $useStockJoin ? $this->stockJoin() : '';
+        $stockExpr    = $useStockJoin ? 'COALESCE(st.qty, 0)' : $this->stockSubquery();
+        $paging       = $limit !== null ? 'LIMIT :limit OFFSET :offset' : '';
 
         $sql = "
             SELECT p.*, c.name AS category_name, s.name AS supplier_name,
-                   {$this->stockSubquery()} AS total_stock
+                   {$stockExpr} AS total_stock
             FROM   products p
             LEFT JOIN categories c ON c.id = p.category_id
             LEFT JOIN suppliers  s ON s.id = p.supplier_id
+            {$stockJoin}
             WHERE  {$where}
-            ORDER BY p.name ASC
-            LIMIT  :limit OFFSET :offset
+            ORDER BY p.name ASC, p.id ASC
+            {$paging}
         ";
 
         $stmt = $this->pdo->prepare($sql);
         foreach ($params as $k => $v) {
             $stmt->bindValue($k, $v);
         }
-        $stmt->bindValue(':limit',  $limit,  PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        if ($limit !== null) {
+            $stmt->bindValue(':limit',  $limit,  PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        }
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -58,8 +105,10 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
             $stockMin, $stockMax,
         );
 
+        $stockJoin = $this->hasStockFilter($stockMin, $stockMax) ? $this->stockJoin() : '';
+
         return (int) $this->fetchColumn(
-            "SELECT COUNT(*) FROM products p WHERE {$where}",
+            "SELECT COUNT(*) FROM products p {$stockJoin} WHERE {$where}",
             $params,
         );
     }
@@ -205,8 +254,11 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     public function setStatus(int $id, string $status): void
     {
         $this->execute("
-            UPDATE products SET status = :status
+            UPDATE products
+            SET    status  = :status,
+                   updated = CURRENT_TIMESTAMP
             WHERE  id = :id
+              AND  deleted_at IS NULL
         ", [':status' => $status, ':id' => $id]);
     }
 
@@ -215,6 +267,7 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
         $this->execute("
             UPDATE products SET deleted_at = CURRENT_TIMESTAMP
             WHERE  id = :id
+              AND  deleted_at IS NULL
         ", [':id' => $id]);
     }
 
@@ -308,28 +361,33 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
         array  $supplierIds,
         float  $stockMin = 0,
         float  $stockMax = 999999999,
+        array  $ids      = [],
     ): array {
-        $stockSub = $this->stockSubquery();
+        $cond   = ["p.deleted_at IS NULL"];
+        $params = [];
 
-        $cond   = [
-            "p.deleted_at IS NULL",
-            "({$stockSub}) >= :stock_min",
-            "({$stockSub}) <= :stock_max",
-        ];
-        $params = [
-            ':stock_min' => $stockMin,
-            ':stock_max' => $stockMax,
-        ];
+        // Chỉ thêm điều kiện tồn khi người dùng thật sự lọc (cần JOIN st — xem stockJoin()).
+        if ($stockMin > 0) {
+            $cond[]              = "COALESCE(st.qty, 0) >= :stock_min";
+            $params[':stock_min'] = $stockMin;
+        }
+        if ($stockMax < 999999999) {
+            $cond[]              = "COALESCE(st.qty, 0) <= :stock_max";
+            $params[':stock_max'] = $stockMax;
+        }
 
         if ($keyword !== '') {
+            // Escape % _ \ để người dùng gõ ký tự này vẫn được tìm đúng nghĩa đen
+            // (Postgres mặc định dùng \ làm ký tự escape cho LIKE/ILIKE; KHÔNG viết ESCAPE '\' vì PDO phân tích sai chuỗi đó).
             $cond[]             = "(p.name ILIKE :keyword OR p.sku ILIKE :keyword)";
-            $params[':keyword'] = '%' . $keyword . '%';
+            $params[':keyword'] = '%' . addcslashes($keyword, '%_\\') . '%';
         }
 
         foreach ([
             [$categoryIds, 'cat', 'p.category_id'],
             [$statuses,    'st',  'p.status'],
             [$supplierIds, 'sup', 'p.supplier_id'],
+            [$ids,         'sid', 'p.id'],
         ] as [$arr, $prefix, $col]) {
             if (empty($arr)) continue;
             $ph = [];
@@ -342,6 +400,21 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
         }
 
         return [implode(' AND ', $cond), $params];
+    }
+
+    private function hasStockFilter(float $stockMin, float $stockMax): bool
+    {
+        return $stockMin > 0 || $stockMax < 999999999;
+    }
+
+    /** Tồn theo từng sản phẩm, gộp 1 lần (GROUP BY) — dùng khi cần lọc theo tồn. */
+    private function stockJoin(): string
+    {
+        return "LEFT JOIN (
+                    SELECT ib.product_id, SUM(ib.quantity) AS qty
+                    FROM   inventory_batches ib
+                    GROUP BY ib.product_id
+                ) st ON st.product_id = p.id";
     }
 
     private function stockSubquery(): string

@@ -14,6 +14,7 @@ services:
     volumes:
       - ./app:/app/app
       - ./scripts:/app/scripts
+      - ./models:/app/models
     restart: unless-stopped
     depends_on:
       - postgres

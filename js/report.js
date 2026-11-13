@@ -125,14 +125,14 @@ const ReportApp = (() => {
                         {
                             label: 'Nhập kho (₫)',
                             data: chart.inbounds,
-                            borderColor: '#3b82f6',
+                            borderColor: '#264B6F',
                             backgroundColor: 'rgba(59,130,246,0.08)',
                             fill: true, tension: 0.4, pointRadius: 4,
                         },
                         {
                             label: 'Xuất kho (₫)',
                             data: chart.outbounds,
-                            borderColor: '#22c55e',
+                            borderColor: '#2F7F6F',
                             backgroundColor: 'rgba(34,197,94,0.08)',
                             fill: true, tension: 0.4, pointRadius: 4,
                         },
@@ -247,7 +247,7 @@ const ReportApp = (() => {
         let catChart  = null;
         let state = { days: 30 };
 
-        const statusColors = ['#ef4444', '#f59e0b', '#f97316', '#3b82f6', '#22c55e'];
+        const statusColors = ['#C24B33', '#D5B370', '#C29E55', '#264B6F', '#2F7F6F'];
 
         function renderDistChart(distData) {
             distChart = Utils.destroyChart(distChart);
@@ -260,7 +260,7 @@ const ReportApp = (() => {
                     cutout: '65%',
                     plugins: {
                         legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 20, boxWidth: 10, boxHeight: 10, font: { size: 13, weight: '500' } } },
-                        tooltip: { backgroundColor: '#1e293b', padding: 12, callbacks: { label: ctx => `${ctx.label}: ${ctx.raw} SKU` } }
+                        tooltip: { backgroundColor: '#11284D', padding: 12, callbacks: { label: ctx => `${ctx.label}: ${ctx.raw} SKU` } }
                     }
                 }
             });
@@ -270,7 +270,7 @@ const ReportApp = (() => {
             catChart = Utils.destroyChart(catChart);
             catChart = new Chart(document.getElementById('catChart'), {
                 type: 'bar',
-                data: { labels: catData.labels, datasets: [{ data: catData.values, backgroundColor: '#3b82f6', borderRadius: 4 }] },
+                data: { labels: catData.labels, datasets: [{ data: catData.values, backgroundColor: '#264B6F', borderRadius: 4 }] },
                 options: {
                     indexAxis: 'y',
                     responsive: true,
@@ -298,10 +298,10 @@ const ReportApp = (() => {
             const tbody = document.querySelector('#lowStockTable tbody');
             if (!rows.length) { tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted" style="padding:20px">Tồn kho ổn định</td></tr>'; return; }
             tbody.innerHTML = rows.map(r => {
-                const stockColor = r.stock_status === 'OUT_OF_STOCK' ? '#ef4444' : '#f59e0b';
+                const stockColor = r.stock_status === 'OUT_OF_STOCK' ? '#C24B33' : '#7A5A18';
                 let daysHtml = '<span class="text-muted">—</span>';
                 if (r.estimated_days_left !== null) {
-                    const c = r.estimated_days_left <= 7 ? '#ef4444' : '#f59e0b';
+                    const c = r.estimated_days_left <= 7 ? '#C24B33' : '#7A5A18';
                     daysHtml = `<span style="color:${c};font-weight:500">${Number(r.estimated_days_left).toFixed(1)} ngày</span>`;
                 }
                 return `
@@ -370,7 +370,7 @@ const ReportApp = (() => {
     const Products = (() => {
         let catChart = null;
         let state = { from: null, to: null, sort: 'revenue', page: 1 };
-        const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1'];
+        const COLORS = ['#11284D', '#D5B370', '#264B6F', '#C24B33', '#2F7F6F', '#8D96A5', '#7A5A18', '#5F6B7D', '#B7D8CE', '#BCD0E2'];
 
         function renderCatChart(catData) {
             catChart = Utils.destroyChart(catChart);
@@ -402,7 +402,7 @@ const ReportApp = (() => {
             const offset = (page - 1) * 20;
             tbody.innerHTML = items.map((r, i) => {
                 const daysLeft = r.estimated_days_left;
-                const daysColor = daysLeft === null ? '#94a3b8' : (daysLeft <= 7 ? '#ef4444' : (daysLeft <= 30 ? '#f59e0b' : '#22c55e'));
+                const daysColor = daysLeft === null ? '#8D96A5' : (daysLeft <= 7 ? '#C24B33' : (daysLeft <= 30 ? '#7A5A18' : '#2F7F6F'));
                 const daysText = daysLeft !== null ? Number(daysLeft).toFixed(1) + ' ngày' : '—';
                 return `
                 <tr>
@@ -513,7 +513,7 @@ const ReportApp = (() => {
             supplierChart = Utils.destroyChart(supplierChart);
 
             if (!chartData.labels || !chartData.labels.length) {
-                if (wrapper) wrapper.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8">Không có dữ liệu trong kỳ này</div>';
+                if (wrapper) wrapper.innerHTML = '<div style="text-align:center;padding:40px;color:#8D96A5">Không có dữ liệu trong kỳ này</div>';
                 return;
             }
             if (wrapper && !document.getElementById('supplierChart')) {
@@ -549,8 +549,8 @@ const ReportApp = (() => {
             const maxAmount = items[0].total_amount || 0;
             tbody.innerHTML = items.map((r, i) => {
                 const pct = maxAmount > 0 ? Math.round((r.total_amount / maxAmount) * 100) : 0;
-                const statusBg = r.status === 'active' ? '#f0fdf4' : '#fef2f2';
-                const statusColor = r.status === 'active' ? '#16a34a' : '#dc2626';
+                const statusBg = r.status === 'active' ? '#E2F0EB' : '#FBEAE5';
+                const statusColor = r.status === 'active' ? '#2F7F6F' : '#C24B33';
                 const statusText = r.status === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động';
                 return `
                 <tr>
@@ -558,8 +558,8 @@ const ReportApp = (() => {
                     <td>
                         <div class="prod-name">${Utils.escStr(r.supplier_name)}</div>
                         <div class="prod-sku">${Utils.escStr(r.phone || '')}</div>
-                        <div style="margin-top:4px;height:3px;background:#f1f5f9;border-radius:2px;width:120px">
-                            <div style="height:3px;background:#3b82f6;border-radius:2px;width:${pct}%"></div>
+                        <div style="margin-top:4px;height:3px;background:#F8F4E7;border-radius:2px;width:120px">
+                            <div style="height:3px;background:#264B6F;border-radius:2px;width:${pct}%"></div>
                         </div>
                     </td>
                     <td class="text-right">${r.order_count}</td>

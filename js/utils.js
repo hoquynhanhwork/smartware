@@ -371,8 +371,8 @@ function createSelection(namespace) {
             banner = document.createElement('div');
             banner.id = '_selAllBanner';
             banner.style.cssText = `
-                background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;
-                padding:8px 16px;font-size:13px;color:#1d4ed8;
+                background:#E4ECF4;border:1px solid #BCD0E2;border-radius:8px;
+                padding:8px 16px;font-size:13px;color:#11284D;
                 display:flex;align-items:center;gap:12px;margin-top:8px;
             `;
             bulkBar.after(banner);
@@ -380,11 +380,11 @@ function createSelection(namespace) {
         banner.innerHTML = `
             <span>Đã chọn <strong>${onPage}</strong> mục trên trang này.</span>
             <button onclick="window._sel_selectAllRecords()"
-                    style="background:none;border:none;color:#1d4ed8;font-weight:600;cursor:pointer;font-size:13px;text-decoration:underline">
+                    style="background:none;border:none;color:#11284D;font-weight:600;cursor:pointer;font-size:13px;text-decoration:underline">
                 Chọn tất cả ${_totalRows.toLocaleString('vi-VN')} bản ghi
             </button>
             <button onclick="window._sel_clearBanner()"
-                    style="background:none;border:none;color:#64748b;cursor:pointer;font-size:13px;margin-left:auto">
+                    style="background:none;border:none;color:#5F6B7D;cursor:pointer;font-size:13px;margin-left:auto">
                 ✕
             </button>
         `;
@@ -401,7 +401,7 @@ function createSelection(namespace) {
         sessionStorage.setItem(`${KEY}_all`, '1');
         const banner = document.getElementById('_selAllBanner');
         if (banner) {
-            banner.innerHTML = `<span>✓ Đã chọn tất cả <strong>${_totalRows.toLocaleString('vi-VN')}</strong> bản ghi. <a href="#" onclick="window._sel_clearAll();return false" style="color:#dc2626">Bỏ chọn</a></span>`;
+            banner.innerHTML = `<span>✓ Đã chọn tất cả <strong>${_totalRows.toLocaleString('vi-VN')}</strong> bản ghi. <a href="#" onclick="window._sel_clearAll();return false" style="color:#C24B33">Bỏ chọn</a></span>`;
         }
         const bulkCount = document.querySelector('[id*="bulkCount"], .bulk-count');
         if (bulkCount) bulkCount.textContent = `${_totalRows.toLocaleString('vi-VN')} mục đã chọn`;

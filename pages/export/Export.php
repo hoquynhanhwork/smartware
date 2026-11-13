@@ -96,37 +96,21 @@ if ($type === 'products') {
         $selected_ids = [];
     }
 
-    $where  = "p.deleted_at IS NULL";
-    $params = [];
-
-    if ($keyword !== '') {
-        $where .= " AND (p.name ILIKE :kw OR p.sku ILIKE :kw)";
-        $params[':kw'] = "%$keyword%";
-    }
-    if (!empty($categoryIds)) $where .= " AND p.category_id IN " . buildIn($categoryIds, 'cat', $params);
-    if (!empty($supplierIds)) $where .= " AND p.supplier_id IN " . buildIn($supplierIds, 'sup', $params);
-    if (!empty($statuses))    $where .= " AND p.status IN "       . buildIn($statuses,    'st',  $params);
-    if (!empty($selected_ids)) $where .= " AND p.id IN "          . buildIn($selected_ids,'sid', $params);
-
-    $stockSub = "(SELECT COALESCE(SUM(ib.quantity),0) FROM inventory_batches ib WHERE ib.product_id = p.id)";
-
-    $havingCond = '';
-    if ($stock_min !== '') { $havingCond .= " AND ($stockSub) >= :smin"; $params[':smin'] = (float)$stock_min; }
-    if ($stock_max !== '') { $havingCond .= " AND ($stockSub) <= :smax"; $params[':smax'] = (float)$stock_max; }
-
-    $stmt = $pdo->prepare("
-        SELECT p.sku, p.name, c.name AS category_name, s.name AS supplier_name,
-               p.unit, p.price, p.cost_price, p.status, p.min_stock,
-               $stockSub AS total_stock
-        FROM products p
-        LEFT JOIN categories c ON c.id = p.category_id
-        LEFT JOIN suppliers  s ON s.id = p.supplier_id
-        WHERE $where $havingCond
-        ORDER BY p.name ASC
-    ");
-    foreach ($params as $k => $v) $stmt->bindValue($k, $v);
-    $stmt->execute();
-    $data = $stmt->fetchAll();
+    // Dùng chung logic lọc/sắp xếp với trang Sản phẩm (ProductService → ProductRepository)
+    // để file xuất luôn khớp với bảng đang xem.
+    $productService = new \App\Services\ProductService(
+        repo:         new \App\Repositories\ProductRepository($pdo),
+        categoryRepo: new \App\Repositories\CategoryRepository($pdo),
+        supplierRepo: new \App\Repositories\SupplierRepository($pdo),
+    );
+    $data = $productService->listForExport([
+        'keyword'      => $keyword,
+        'category_ids' => $categoryIds,
+        'supplier_ids' => $supplierIds,
+        'statuses'     => $statuses,
+        'stock_min'    => $stock_min,
+        'stock_max'    => $stock_max,
+    ], $selected_ids);
 
     $headers = ['STT', 'SKU', 'Tên sản phẩm', 'Danh mục', 'Nhà cung cấp', 'Đơn vị',
                 'Giá bán (₫)', 'Giá vốn (₫)', 'Tồn kho', 'Tồn tối thiểu', 'Trạng thái'];

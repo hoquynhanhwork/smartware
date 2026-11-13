@@ -17,6 +17,17 @@ interface ProductRepositoryInterface
         int    $offset       = 0,
     ): array;
 
+    /** Toàn bộ sản phẩm khớp bộ lọc (không phân trang), tùy chọn giới hạn theo $ids — cho xuất Excel. */
+    public function listAll(
+        string $keyword      = '',
+        array  $categoryIds  = [],
+        array  $statuses     = [],
+        array  $supplierIds  = [],
+        float  $stockMin     = 0,
+        float  $stockMax     = 999999999,
+        array  $ids          = [],
+    ): array;
+
     public function count(
         string $keyword      = '',
         array  $categoryIds  = [],

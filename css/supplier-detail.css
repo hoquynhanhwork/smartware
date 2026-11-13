@@ -1,27 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
-
 /* =======================================================
    SUPPLIER DETAIL DASHBOARD (DESIGN SYSTEM KHO HÀNG)
    Trắng kem, Navy, Vàng điểm nhấn & Font Be Vietnam Pro
 ======================================================= */
 :root {
-    --font-family-base: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family-base: var(--font-sans);
 
-    --navy-darkest: #101A2C;
-    --navy-primary: #11284D;
-    --blue-mid:     #264B6F;
-    --bg-page:      #F4EFDF;
-    --bg-card:      #FBF8EF;
-    --gold-accent:  #D5B370;
+    --navy-darkest: var(--navy-900);
+    --navy-primary: var(--primary);
+    --blue-mid:     var(--info);
+    --bg-card:      var(--surface);
+    --gold-accent:  var(--accent);
 
-    --border-color: #E2DAC8;
-    --text-primary: #101A2C;
-    --text-muted:   #5E6D82;
-    --text-inverse: #F4EFDF;
+    --border-color: var(--border);
+    --text-primary: var(--text);
+    --text-inverse: var(--on-dark);
 
-    --status-danger:  #C8553D;
-    --status-success: #3E8E7E;
-    --status-warning: #D5B370;
+    --status-danger:  var(--danger);
+    --status-success: var(--success);
+    --status-warning: var(--accent);
 }
 
 body {
@@ -83,7 +79,7 @@ body {
     cursor: pointer;
     transition: all 0.15s ease;
 }
-.btn-icon-square:hover { background: #EDE6D2; }
+.btn-icon-square:hover { background: var(--border); }
 
 .btn-pill-edit {
     height: 36px;
@@ -136,7 +132,7 @@ body {
     font-size: 12px;
     color: var(--navy-darkest);
     font-weight: 600;
-    background: #EDE6D2;
+    background: var(--border);
     padding: 3px 8px;
     border-radius: 6px;
 }
@@ -163,7 +159,7 @@ body {
     width: 68px;
     height: 68px;
     border-radius: 50%;
-    background: #EDE6D2;
+    background: var(--border);
     color: var(--navy-primary);
     border: 2px solid var(--border-color);
     display: flex;
@@ -204,7 +200,7 @@ body {
     padding: 8px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
-    background: #FFFFFF;
+    background: var(--surface);
     font-size: 12.5px;
     font-weight: 600;
     color: var(--navy-darkest);
@@ -216,7 +212,7 @@ body {
     gap: 6px;
     transition: background 0.15s ease;
 }
-.btn-send-message:hover { background: #EDE6D2; }
+.btn-send-message:hover { background: var(--border); }
 
 .profile-right-grid {
     flex: 1;
@@ -241,14 +237,14 @@ body {
     width: fit-content;
 }
 .status-pill.active {
-    background: rgba(62, 142, 126, 0.15);
-    color: #276256;
-    border: 1px solid rgba(62, 142, 126, 0.3);
+    background: rgba(47, 127, 111, 0.15);
+    color: var(--success-dark);
+    border: 1px solid rgba(47, 127, 111, 0.3);
 }
 .status-pill.inactive {
-    background: rgba(200, 85, 61, 0.15);
-    color: #9C3822;
-    border: 1px solid rgba(200, 85, 61, 0.35);
+    background: rgba(194, 75, 51, 0.15);
+    color: var(--danger-dark);
+    border: 1px solid rgba(194, 75, 51, 0.35);
 }
 
 /* ── 2. Compact Products Card ─────────────────────────── */
@@ -261,7 +257,7 @@ body {
     overflow-y: auto;
     border: 1px solid var(--border-color);
     border-radius: 10px;
-    background: #FFFFFF;
+    background: var(--surface);
 }
 .compact-table th {
     padding: 10px 12px;
@@ -321,7 +317,7 @@ body {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: #FFFFFF;
+    background: var(--surface);
     flex-shrink: 0;
 }
 .node-green { border: 3px solid var(--status-success); }
@@ -329,7 +325,7 @@ body {
 
 .timeline-box {
     flex: 1;
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: 10px;
     padding: 12px 18px;
@@ -351,9 +347,9 @@ body {
 .badge-status-completed {
     display: inline-block;
     padding: 3px 12px;
-    background: rgba(62, 142, 126, 0.15);
-    color: #276256;
-    border: 1px solid rgba(62, 142, 126, 0.3);
+    background: rgba(47, 127, 111, 0.15);
+    color: var(--success-dark);
+    border: 1px solid rgba(47, 127, 111, 0.3);
     border-radius: 999px;
     font-size: 12px;
     font-weight: 600;
@@ -391,7 +387,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 4px 10px;
@@ -402,7 +398,7 @@ body {
     transition: all 0.15s ease;
 }
 .btn-chart-date-trigger:hover {
-    background: #EDE6D2;
+    background: var(--border);
 }
 .btn-chart-date-trigger .trigger-arrow {
     font-size: 14px;
@@ -415,7 +411,7 @@ body {
     top: calc(100% + 6px);
     left: 0;
     width: 220px;
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     box-shadow: 0 12px 28px rgba(16, 26, 44, 0.15);
@@ -438,7 +434,7 @@ body {
     width: 26px;
     height: 26px;
     border: 1px solid var(--border-color);
-    background: #FFFFFF;
+    background: var(--surface);
     border-radius: 6px;
     display: flex;
     align-items: center;
@@ -448,13 +444,13 @@ body {
     color: var(--blue-mid);
 }
 .cdp-btn-nav:hover {
-    background: #F4EFDF;
+    background: var(--bg-page);
     color: var(--navy-darkest);
 }
 
 .cdp-btn-title {
     border: none;
-    background: #EDE6D2;
+    background: var(--border);
     font-size: 13.5px;
     font-weight: 700;
     color: var(--navy-darkest);
@@ -462,7 +458,7 @@ body {
     padding: 3px 12px;
     border-radius: 6px;
 }
-.cdp-btn-title:hover { background: #DFD7C0; }
+.cdp-btn-title:hover { background: var(--border-strong); }
 
 .cdp-grid-3x4 {
     display: grid;
@@ -483,7 +479,7 @@ body {
     user-select: none;
     transition: all 0.12s ease;
 }
-.cdp-item:hover { background: #F4EFDF; }
+.cdp-item:hover { background: var(--bg-page); }
 .cdp-item.active {
     background: var(--navy-primary) !important;
     color: var(--text-inverse) !important;
@@ -492,7 +488,7 @@ body {
 
 .chart-filter-pills {
     display: flex;
-    background: #EDE6D2;
+    background: var(--border);
     padding: 3px;
     border-radius: 8px;
     gap: 3px;
@@ -509,7 +505,7 @@ body {
     transition: all 0.15s ease;
 }
 .btn-chart-tab.active {
-    background: #FFFFFF;
+    background: var(--surface);
     color: var(--navy-darkest);
     font-weight: 700;
     box-shadow: 0 1px 3px rgba(16, 26, 44, 0.08);
@@ -558,7 +554,7 @@ body {
 .chart-track-pill {
     width: 14px;
     height: calc(100% - 24px);
-    background-color: #EDE6D2;
+    background-color: var(--border);
     border-radius: 999px;
     position: relative;
     overflow: hidden;
@@ -589,7 +585,7 @@ body {
     border-collapse: collapse;
 }
 .stock-pill {
-    background: #EDE6D2;
+    background: var(--border);
     border: 1px solid var(--border-color);
     padding: 2px 8px;
     border-radius: 4px;

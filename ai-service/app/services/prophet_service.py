@@ -7,6 +7,7 @@ from sqlalchemy import text
 from datetime import datetime, date
 from app.services.gpt_service import explain_forecast
 from app.services.app_time import app_today
+from app.config import settings
 
 # ================================================================
 #  BƯỚC 1 — Query lịch sử xuất kho từ DB
@@ -274,6 +275,17 @@ def check_sufficient_data(df: pd.DataFrame, min_months: int = 12) -> bool:
 #  BƯỚC 3 — Chạy Prophet
 # ================================================================
 
+def compute_trend(df: pd.DataFrame) -> str:
+    """Nhãn xu hướng (tăng/giảm/ổn định) — cùng quy tắc đã dùng trong run_prophet()."""
+    recent_avg = df['y'].tail(3).mean()
+    older_avg  = df['y'].head(3).mean()
+    if recent_avg > older_avg * 1.1:
+        return "tăng"
+    if recent_avg < older_avg * 0.9:
+        return "giảm"
+    return "ổn định"
+
+
 def run_prophet(
     df: pd.DataFrame,
     periods: int = 3,
@@ -496,8 +508,9 @@ def save_forecast(
             "period_start": period_start.date(),
             "period_end": period_end,
             "predicted_quantity": prophet_result[key],
-            "confidence": prophet_result["confidence"] * 100,
-            "model_version": "prophet-1.0",
+            "confidence": (prophet_result["confidence"] * 100
+                           if prophet_result.get("confidence") is not None else None),
+            "model_version": prophet_result.get("model_version", "prophet-1.0"),
         })
 
     db.commit()
@@ -635,7 +648,17 @@ def compute_ai_forecast(
     growth_pct = calculate_growth_pct(df)
 
     df_clean = preprocess(df)
-    prophet_result = run_prophet(df_clean)
+    if settings.forecast_engine == "hybrid":
+        # Hybrid: Prophet (chuỗi tổng/category) + GBM toàn cục — xem hybrid_forecast.py.
+        # ValueError (không đủ dữ liệu) được nơi gọi xử lý như nhánh Prophet cũ.
+        from app.services.hybrid_service import predict_for_product
+        prophet_result = predict_for_product(db, product_id, train_end_date)
+        prophet_result["trend"] = compute_trend(df_clean)
+        prophet_result["confidence"] = None   # hybrid không tính khoảng tin cậy
+        prophet_result["months_trained"] = len(df_clean)
+    else:
+        prophet_result = run_prophet(df_clean)
+        prophet_result["model_version"] = "prophet-1.0"
 
     # ── Feature Engineering từ data theo NGÀY (độ lệch chuẩn σ + tần suất) ──
     daily_df = get_daily_sales(db, product_id, supplier_id, train_end_date=train_end_date)

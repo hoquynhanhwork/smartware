@@ -1,30 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
-
 /* =======================================================
    DESIGN SYSTEM - THEME TRANH THỦY MẶC / CÁ KOI (NHẬP KHO)
    Navy, Kem, Vàng điểm nhấn & Font Be Vietnam Pro
 ======================================================= */
 :root {
-    --font-family-base: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family-base: var(--font-sans);
 
     /* Base Palette */
-    --navy-darkest: #101A2C;       /* Chữ chính, footer, viền tối */
-    --navy-primary: #11284D;       /* Header table, primary buttons, viền active */
-    --blue-mid:     #264B6F;       /* Hover, links, viền focus, text link */
-    --bg-page:      #F4EFDF;       /* Nền trang (body), xen kẽ bảng */
-    --bg-card:      #FBF8EF;       /* Trắng pha kem cho card, modal, sidebar */
-    --gold-accent:  #D5B370;       /* Điểm nhấn vàng, active indicator */
+    --navy-darkest: var(--navy-900);       /* Chữ chính, footer, viền tối */
+    --navy-primary: var(--primary);       /* Header table, primary buttons, viền active */
+    --blue-mid:     var(--info);       /* Hover, links, viền focus, text link */
+/* Nền trang (body), xen kẽ bảng */
+    --bg-card:      var(--surface);       /* Trắng pha kem cho card, modal, sidebar */
+    --gold-accent:  var(--accent);       /* Điểm nhấn vàng, active indicator */
 
     /* Neutrals & Semantic */
-    --border-color: #E2DAC8;       /* Viền kem trầm đồng bộ */
-    --text-primary: #101A2C;       /* Chữ chính */
-    --text-muted:   #5E6D82;       /* Chữ phụ, SKU, nhãn mờ */
-    --text-inverse: #F4EFDF;       /* Chữ trên nền Navy */
+    --border-color: var(--border);       /* Viền kem trầm đồng bộ */
+    --text-primary: var(--text);       /* Chữ chính */
+/* Chữ phụ, SKU, nhãn mờ */
+    --text-inverse: var(--on-dark);       /* Chữ trên nền Navy */
 
     /* Semantic Status Colors */
-    --status-danger:  #C8553D;     /* Đỏ cam cá koi: Đã hủy, xóa */
-    --status-success: #3E8E7E;     /* Xanh ngọc trầm: Hoàn thành */
-    --status-warning: #D5B370;     /* Vàng: Tạm thời, cảnh báo */
+    --status-danger:  var(--danger);     /* Đỏ cam cá koi: Đã hủy, xóa */
+    --status-success: var(--success);     /* Xanh ngọc trầm: Hoàn thành */
+    --status-warning: var(--accent);     /* Vàng: Tạm thời, cảnh báo */
 }
 
 *, *::before, *::after {
@@ -71,7 +69,7 @@ input, button, select, textarea {
     width: 4px;
 }
 .filter-scroll-box::-webkit-scrollbar-thumb {
-    background: #D9CEB9;
+    background: var(--border-strong);
     border-radius: 4px;
 }
 
@@ -87,14 +85,14 @@ input, button, select, textarea {
     gap: 10px;
 }
 .alert-success {
-    background: rgba(62, 142, 126, 0.15);
-    color: #276256;
-    border: 1px solid rgba(62, 142, 126, 0.3);
+    background: rgba(47, 127, 111, 0.15);
+    color: var(--success-dark);
+    border: 1px solid rgba(47, 127, 111, 0.3);
 }
 .alert-danger {
-    background: rgba(200, 85, 61, 0.15);
-    color: #9C3822;
-    border: 1px solid rgba(200, 85, 61, 0.35);
+    background: rgba(194, 75, 51, 0.15);
+    color: var(--danger-dark);
+    border: 1px solid rgba(194, 75, 51, 0.35);
 }
 
 /* ── Badges trạng thái phiếu nhập ────────────────────────────── */
@@ -108,23 +106,23 @@ input, button, select, textarea {
 /* Hoàn thành: Xanh ngọc trầm */
 .st-success,
 .st-completed {
-    background: rgba(62, 142, 126, 0.15);
-    color: #276256;
-    border: 1px solid rgba(62, 142, 126, 0.3);
+    background: rgba(47, 127, 111, 0.15);
+    color: var(--success-dark);
+    border: 1px solid rgba(47, 127, 111, 0.3);
 }
 /* Tạm thời: Nền vàng, chữ Navy tối */
 .st-warning,
 .st-pending {
     background: var(--gold-accent);
     color: var(--navy-darkest);
-    border: 1px solid #BF9E5A;
+    border: 1px solid var(--accent-hover);
 }
 /* Đã hủy: Đỏ cam cá koi */
 .st-danger,
 .st-overdue {
-    background: rgba(200, 85, 61, 0.15);
-    color: #9C3822;
-    border: 1px solid rgba(200, 85, 61, 0.35);
+    background: rgba(194, 75, 51, 0.15);
+    color: var(--danger-dark);
+    border: 1px solid rgba(194, 75, 51, 0.35);
 }
 
 /* ── Bảng nhập hàng (create & edit) ──────────────────────────── */
@@ -148,13 +146,13 @@ input, button, select, textarea {
 #itemsTable tr:hover input.form-input-modern,
 #editInboundItemsTable tr:hover input.form-input-modern {
     border-color: var(--border-color);
-    background: #FFFFFF;
+    background: var(--surface);
 }
 
 #itemsTable input.form-input-modern:focus,
 #editInboundItemsTable input.form-input-modern:focus {
     border-color: var(--blue-mid);
-    background: #FFFFFF;
+    background: var(--surface);
     box-shadow: 0 0 0 2px rgba(38, 75, 111, 0.12);
 }
 
@@ -171,7 +169,7 @@ input, button, select, textarea {
     top: 100%;
     left: 0;
     right: 0;
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: 10px;
     box-shadow: 0 10px 25px rgba(16, 26, 44, 0.12);
@@ -194,7 +192,7 @@ input, button, select, textarea {
 }
 
 .autocomplete-suggestions div:hover {
-    background: #F4EFDF;
+    background: var(--bg-page);
 }
 
 .autocomplete-suggestions div strong {
@@ -217,7 +215,7 @@ input, button, select, textarea {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px 24px;
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 16px 20px;
@@ -262,7 +260,7 @@ input, button, select, textarea {
 .upload-zone:hover,
 .upload-zone.dragover {
     border-color: var(--blue-mid);
-    background: #EDE6D2;
+    background: var(--border);
 }
 
 .upload-zone i {
@@ -307,8 +305,8 @@ input, button, select, textarea {
 }
 
 .preview-header {
-    background: rgba(62, 142, 126, 0.12);
-    border: 1px solid rgba(62, 142, 126, 0.3);
+    background: rgba(47, 127, 111, 0.12);
+    border: 1px solid rgba(47, 127, 111, 0.3);
     border-radius: 12px;
     padding: 14px 18px;
     margin-bottom: 18px;
@@ -321,9 +319,9 @@ input, button, select, textarea {
     font-size: 12px;
     font-weight: 600;
 }
-.conf-high   { background: rgba(62, 142, 126, 0.2); color: #276256; }
+.conf-high   { background: rgba(47, 127, 111, 0.2); color: var(--success-dark); }
 .conf-medium { background: var(--gold-accent); color: var(--navy-darkest); }
-.conf-low    { background: rgba(200, 85, 61, 0.2); color: #9C3822; }
+.conf-low    { background: rgba(194, 75, 51, 0.2); color: var(--danger-dark); }
 
 .ocr-warnings {
     background: rgba(213, 179, 112, 0.15);
@@ -332,7 +330,7 @@ input, button, select, textarea {
     padding: 12px 16px;
     margin-bottom: 16px;
     font-size: 13px;
-    color: #634710;
+    color: var(--warning-text);
 }
 .ocr-warnings ul {
     margin: 4px 0 0 16px;
@@ -375,7 +373,7 @@ input, button, select, textarea {
 .ocr-items input:focus {
     outline: none;
     border-color: var(--blue-mid);
-    background: #FFFFFF;
+    background: var(--surface);
 }
 
 .ocr-items tr:hover td {
@@ -393,11 +391,11 @@ input, button, select, textarea {
 }
 
 .error-banner {
-    background: rgba(200, 85, 61, 0.15);
-    border: 1px solid rgba(200, 85, 61, 0.35);
+    background: rgba(194, 75, 51, 0.15);
+    border: 1px solid rgba(194, 75, 51, 0.35);
     border-radius: 10px;
     padding: 12px 16px;
-    color: #9C3822;
+    color: var(--danger-dark);
     font-size: 13.5px;
     margin-bottom: 16px;
     display: none;
@@ -405,7 +403,7 @@ input, button, select, textarea {
 
 /* ── Hạn dùng không theo dõi ─────────────────────────────────── */
 input.exp-not-tracked {
-    background: #EDE6D2 !important;
+    background: var(--border) !important;
     color: transparent !important;
     border-style: dashed !important;
     cursor: not-allowed;

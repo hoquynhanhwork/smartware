@@ -27,6 +27,17 @@ class Settings(BaseSettings):
     # CORS: danh sách origin cho phép, cách nhau bằng dấu phẩy. Để trống = không cho trình duyệt gọi chéo origin.
     cors_origins: str = ""
 
+    # ── Dự báo: engine + cấu hình hybrid (Prophet tổng hợp + GBM) ──
+    # 'hybrid' (mặc định) hoặc 'prophet' (Prophet từng SP — cấu hình cũ, giữ làm đối chứng).
+    forecast_engine: str = "hybrid"
+    # Thư mục lưu model/cache hybrid (nên mount volume để không mất khi rebuild container).
+    forecast_model_dir: str = "models"
+    # Tháng bỏ khỏi dữ liệu huấn luyện (vd tháng đầu data bị ramp-up/thiếu ngày), cách nhau bằng dấu phẩy.
+    forecast_exclude_months: str = "2023-01"
+    # Tháng dương lịch có mùng 1 Tết. CẦN KIỂM TRA LẠI; thêm năm mới khi cần.
+    forecast_tet_months: str = "2023-01,2024-02,2025-01,2026-02,2027-02,2028-01"
+    forecast_use_tet: bool = True
+
     # App config
     debug:      bool = False
     cache_ttl:  int  = 3600

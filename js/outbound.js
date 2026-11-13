@@ -84,7 +84,7 @@ function loadBatchesForOutboundRow(row, productId, selectedBatchNo = '') {
                 if (batchInfo)   batchInfo.innerHTML   = '';
             } else {
                 if (batchSelect) batchSelect.innerHTML = '<option value="">-- Không có lô tồn --</option>';
-                if (batchInfo)   batchInfo.innerHTML   = '<span style="color:#ef4444;font-size:11px;">Hết lô hàng khả dụng</span>';
+                if (batchInfo)   batchInfo.innerHTML   = '<span style="color:#C24B33;font-size:11px;">Hết lô hàng khả dụng</span>';
             }
             if (typeof syncOutboundInvoicePreview === 'function') syncOutboundInvoicePreview();
         })
@@ -233,9 +233,9 @@ function validateOutboundFormBeforeSubmit() {
         const pid     = row.querySelector('.product-id').value;
         const batchNo = row.querySelector('.batch-select-outbound').value;
         const qty     = unformatNumber(row.querySelector('.qty-outbound').value);
-        row.querySelector('.product-autocomplete-outbound').style.border = (pid && pid != '0') ? '' : '2px solid #ef4444';
-        row.querySelector('.batch-select-outbound').style.border = batchNo ? '' : '2px solid #ef4444';
-        row.querySelector('.qty-outbound').style.border          = qty > 0 ? '' : '2px solid #ef4444';
+        row.querySelector('.product-autocomplete-outbound').style.border = (pid && pid != '0') ? '' : '2px solid #C24B33';
+        row.querySelector('.batch-select-outbound').style.border = batchNo ? '' : '2px solid #C24B33';
+        row.querySelector('.qty-outbound').style.border          = qty > 0 ? '' : '2px solid #C24B33';
         if (pid && pid != '0' && batchNo && qty > 0) hasValidRow = true;
     });
     if (!hasValidRow) {
@@ -352,7 +352,7 @@ function renderOutboundDetailModal(data) {
     });
     html += `</tbody></table></div>
         <div style="display:flex; justify-content:flex-end; font-size:15px; font-weight:700; margin-top:14px;">
-            Tổng số lượng xuất: <span style="color:#2563eb; margin-left:8px;">${formatNumberInput(totalQuantity)}</span>
+            Tổng số lượng xuất: <span style="color:#264B6F; margin-left:8px;">${formatNumberInput(totalQuantity)}</span>
         </div>`;
     document.getElementById('detailOutboundContent').innerHTML = html;
 }
@@ -385,7 +385,7 @@ function printOutboundDetail() {
         <p><strong>Ghi chú:</strong> ${escapeHtml(currentOutboundDetailData.note || '')}</p>
     </div>
     <table border="1" cellpadding="6" cellspacing="0" style="width:100%;border-collapse:collapse">
-        <thead><tr style="background:#f4f4f5"><th>STT</th><th>Sản phẩm</th><th>Số lô</th><th>SL</th></tr></thead>
+        <thead><tr style="background:#F8F4E7"><th>STT</th><th>Sản phẩm</th><th>Số lô</th><th>SL</th></tr></thead>
         <tbody>${itemsHtml}</tbody>
     </table>
     <div style="margin-top:20px;border-top:1px solid #ddd;padding-top:10px;text-align:right">

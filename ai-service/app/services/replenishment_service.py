@@ -18,7 +18,7 @@ def get_latest_forecast(db: Session, product_id: int, supplier_id: int) -> dict 
     dòng của các lượt chạy khác nhau.
     """
     rows = db.execute(text("""
-        SELECT predicted_quantity, period_start, confidence
+        SELECT predicted_quantity, period_start, confidence, model_version
         FROM public.forecasts
         WHERE product_id = :pid AND supplier_id = :sid
           AND created = (
@@ -36,8 +36,8 @@ def get_latest_forecast(db: Session, product_id: int, supplier_id: int) -> dict 
         "next_month":     int(rows[0][0]) if len(rows) > 0 else 0,
         "next_2_months":  int(rows[1][0]) if len(rows) > 1 else 0,
         "next_3_months":  int(rows[2][0]) if len(rows) > 2 else 0,
-        "confidence":     float(rows[0][2]) if rows[0][2] else 80.0,
-        "source":         "prophet",
+        "confidence":     float(rows[0][2]) if rows[0][2] is not None else None,
+        "source":         (rows[0][3] or "prophet").split("-")[0],   # 'hybrid' / 'prophet'
     }
 
 def calculate_replenishment(

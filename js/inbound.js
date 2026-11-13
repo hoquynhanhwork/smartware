@@ -99,7 +99,7 @@ function getEmptyInboundRow() {
         <td style="min-width:200px;">
             <input type="text" class="product-autocomplete" name="product_name[]" placeholder="Nhập tên hoặc SKU" autocomplete="off" style="width:100%">
             <input type="hidden" name="product_id[]" class="product-id">
-            <div class="product-info" style="font-size:11px;color:#475569;margin-top:4px"></div>
+            <div class="product-info" style="font-size:11px;color:#3A475C;margin-top:4px"></div>
         </td>
         <td><input type="text" name="batch_no[]" required placeholder="Lô" style="width:100%"></td>
         <td><input type="date" name="mfg_date[]" style="width:100%"></td>
@@ -244,7 +244,7 @@ function validateInboundFormBeforeSubmit() {
         });
         if (!result.valid) {
             isValid = false;
-            row.style.outline = '2px solid #ef4444';
+            row.style.outline = '2px solid #C24B33';
             row.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     });
@@ -532,7 +532,7 @@ function getEmptyEditInboundRow() {
         <td style="min-width:200px;">
             <input type="text" class="product-autocomplete" name="product_name[]" placeholder="Nhập tên hoặc SKU" autocomplete="off" style="width:100%">
             <input type="hidden" name="product_id[]" class="product-id">
-            <div class="product-info" style="font-size:11px;color:#475569;margin-top:4px"></div>
+            <div class="product-info" style="font-size:11px;color:#3A475C;margin-top:4px"></div>
         </td>
         <td><input type="text" name="batch_no[]" required placeholder="Lô" style="width:100%"></td>
         <td><input type="date" name="mfg_date[]" style="width:100%"></td>
@@ -718,7 +718,7 @@ function validateEditInboundFormBeforeSubmit() {
         });
         if (!result.valid) {
             isValid = false;
-            row.style.outline = '2px solid #ef4444';
+            row.style.outline = '2px solid #C24B33';
             row.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     });
@@ -1129,7 +1129,7 @@ function viewInboundDetail(id) {
                     </table>
                 </div>
                 <div style="display:flex; justify-content:flex-end; font-size:16px; font-weight:700; margin-top:14px;">
-                    Tổng tiền: <span style="color:#2563eb; margin-left:8px;">${formatNumberInput(data.total_amount)} ₫</span>
+                    Tổng tiền: <span style="color:#264B6F; margin-left:8px;">${formatNumberInput(data.total_amount)} ₫</span>
                 </div>
             `;
             document.getElementById('detailModal').style.display = 'flex';
