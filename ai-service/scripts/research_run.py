@@ -1,21 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-research_run.py — chạy THẬT mô hình hybrid của dự án (app/services/hybrid_forecast.py, KHÔNG sửa)
-trên 4 file CSV của bạn, rồi mô phỏng chính sách tồn kho No-AI vs AI và xuất toàn bộ kết quả.
-
-Chạy từ thư mục ai-service (cần prophet, scikit-learn, pandas, numpy đã cài như khi chạy hybrid):
-    python scripts/research_run.py --folder C:\\path\\to\\csv --out C:\\path\\to\\research_out
-
-Đầu vào (trong --folder): products.csv, suppliers.csv, stock_inbound_items_export.csv, stock_outbound_items_export.csv
-Đầu ra  (trong --out):
-    01_backtest_forecasts.csv    dự báo walk-forward của hybrid + baseline, từng (mốc, horizon, sản phẩm)
-    02_accuracy_summary.csv      WAPE/bias theo horizon và theo mô hình
-    03_thresholds_monthly.csv    ngưỡng ROP/Max từng sản phẩm-tháng của từng kịch bản (Z chính, chu kỳ nhập thật)
-    04_replay_by_product.csv     kết quả mô phỏng từng sản phẩm x kịch bản x Z x chu kỳ nhập
-    05_replay_summary.csv        tổng hợp từ 04 (cùng công thức với file Excel)
-    06_run_manifest.json         bằng chứng chạy thật: hash code + dữ liệu, phiên bản thư viện, tham số, thời gian
-"""
 import argparse, hashlib, json, os, platform, subprocess, sys, time, warnings
 import numpy as np, pandas as pd
 warnings.filterwarnings("ignore")

@@ -1,23 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-BƯỚC 3 — TÍNH các trường dẫn xuất từ dữ liệu thô (không chạy mô hình, không mô phỏng).
-Đọc (trong --folder): noai_raw.csv, stock_inbound_items_export.csv, stock_outbound_items_export.csv, ai_raw.csv
-Ghi (trong --out):
-  derived_inputs_monthly.csv      1 dòng / sản phẩm / tháng (đầu vào của bước 4)
-  derived_forecast_accuracy.csv   sai số dự báo theo sản phẩm và tổng, cho 3 phương pháp: noai / mean / ai
-
-Định nghĩa từng trường dẫn xuất (tất cả tính trong file này):
-  actual_units           tổng xuất kho thực tế trong tháng (cộng quantity của stock_outbound_items)
-  days_in_month          số ngày của tháng
-  noai_demand_per_day    TB tháng (chỉ tháng có phát sinh xuất, TRƯỚC năm đánh giá) / 30      — đúng assessment_notAI.py
-  noai_safety_stock      int(min_stock x 20%)                                                  — đúng assessment_notAI.py
-  mean_forecast_units    TB các tháng hợp lệ TRƯỚC tháng đó (ước lượng đơn giản, nhánh đối chứng)
-  ai_forecast_units      predicted_quantity (horizon 1) của ai_raw; nếu mô hình không dự báo được thì dùng mean_forecast_units (ai_fallback=1)
-  sigma_err_mean/_ai     RMSE sai số dự báo (đơn vị/tháng) của các tháng TRƯỚC tháng đó; cần >= 3 tháng, nếu không để trống
-  sigma_daily, freq_ratio  độ lệch chuẩn xuất kho theo ngày, tỉ lệ ngày có xuất (từ ngày xuất đầu tiên đến hết tháng trước)
-  cycle_days_natural     trung vị khoảng cách giữa các ngày nhập (chỉ dữ liệu nhập TRƯỚC tháng đó); <2 lần nhập → = lead_time_days
-"""
 import argparse, os, sys
 import numpy as np, pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, os.path.dirname(HERE))

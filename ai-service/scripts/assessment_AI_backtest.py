@@ -1,25 +1,4 @@
-"""
-assessment_AI_backtest.py
-──────────────────────────
-Nhánh AI — song song với assessment_notAI.py, cùng đọc 4 file CSV
-(products, inbound, outbound, suppliers) để đảm bảo 2 nhánh so sánh
-trên đúng 1 tập dữ liệu.
 
-Train: Prophet train trên data TRƯỚC eval_year (mặc định 2025-01-01,
-tức 2023-2024). Test/đánh giá: CHỈ năm eval_year (2025) — để so trực
-tiếp với assessment_notAI_2025.xlsx (đã sửa cùng nguyên tắc train/test
-này).
-
-Tái dùng các hàm THUẦN TÚY (không phụ thuộc DB) đã có sẵn trong
-app/services/prophet_service.py của ai-service — KHÔNG viết lại công
-thức, tránh 2 nơi có 2 công thức lệch nhau:
-    - check_sufficient_data, preprocess, run_prophet, calculate_order
-    - calculate_growth_pct, calculate_frequency_pct, calculate_ai_thresholds
-
-ĐẶT FILE NÀY TRONG ai-service/scripts/ (cùng cấp với ingest_inventory.py)
-để dòng sys.path bên dưới trỏ đúng vào thư mục gốc ai-service/ (nơi có
-package `app`). Nếu đặt ở chỗ khác, cần tự chỉnh lại sys.path.
-"""
 
 import sys
 import os

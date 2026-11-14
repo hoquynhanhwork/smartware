@@ -1,34 +1,4 @@
-"""
-assessment_AI_hybrid.py
-───────────────────────
-Nhánh AI dùng HYBRID (Prophet tổng hợp + GBM toàn cục), xuất file CÙNG CẤU TRÚC
-với assessment_AI_2025.xlsx (21 cột, mỗi dòng = 1 sản phẩm x 1 ngày của eval_year):
 
-    year, date, product_id, sku, product_name, current_stock, min_stock, max_stock,
-    avg_daily_demand, demand_std_dev, lead_time_days, growth_pct, frequency_pct,
-    safety_stock, reorder_point, max_ai, times_below_rop, times_above_max_ai,
-    reorder_cycle_days_used, forecast_source, assessment
-
-Mọi thứ KHÔNG liên quan tới dự báo nhu cầu được giữ y hệt assessment_AI_backtest.py
-(cách dựng tồn kho theo ngày, σ, tần suất, lead time, chu kỳ nhập, công thức
-ROP/Safety Stock/Max, nhãn đánh giá) — hàm được import lại từ chính file đó và từ
-prophet_service.py, không viết lại công thức. Chỉ thay nguồn dự báo:
-Prophet từng SP  →  hybrid.
-
-Hai chế độ (--mode):
-  static  : hybrid huấn luyện 1 lần bằng data TRƯỚC eval_year; ngưỡng cố định cả năm.
-            Giống hệt cách file cũ đang làm → so được trực tiếp với file cũ.
-  rolling : đầu mỗi tháng huấn luyện lại chỉ bằng data TRƯỚC tháng đó và cập nhật
-            ngưỡng (ROP/Max) hàng tháng. Gần cách hệ thống chạy thật hơn; các cột
-            ngưỡng khi đó đổi theo tháng chứ không cố định cả năm.
-            (times_below_rop/times_above_max_ai vẫn là TỔNG CẢ NĂM của SP, mỗi ngày
-            được đếm theo ngưỡng của chính tháng đó.)
-
-Chạy (từ thư mục ai-service, cần file .env như khi chạy assessment_AI_backtest.py):
-    python scripts/assessment_AI_hybrid.py --mode static
-    python scripts/assessment_AI_hybrid.py --mode rolling
-Kết quả: <folder>/output/assessment_AI_<năm>_hybrid_<mode>.xlsx
-"""
 import argparse
 import os
 import sys

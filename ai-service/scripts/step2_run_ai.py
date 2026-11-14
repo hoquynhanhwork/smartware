@@ -1,17 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-BƯỚC 2 — chạy mô hình AI THẬT của dự án (app/services/hybrid_forecast.py, không sửa) và ghi ĐẦU RA CỦA MÔ HÌNH
-vào ai_raw.csv, đúng tên cột của bảng `forecasts`. Không tính chỉ số đánh giá nào ở đây.
-
-Chạy từ thư mục ai-service:
-    python scripts/step2_run_ai.py --folder C:\\xampp\\htdocs\\smartware\\raw --out C:\\xampp\\htdocs\\smartware\\raw
-
-ai_raw.csv (1 dòng = 1 dự báo của 1 sản phẩm cho 1 tháng, từ 1 mốc dữ liệu):
-    product_id, supplier_id, period_start, period_end, predicted_quantity, lower_bound, upper_bound, model_version, created
-    created = ngày cắt dữ liệu (chỉ dùng giao dịch TRƯỚC ngày này); lower/upper_bound để trống (hybrid chỉ cho dự báo điểm)
-ai_run_manifest.json: bằng chứng chạy thật (hash code + dữ liệu, phiên bản thư viện, tham số).
-"""
 import argparse, hashlib, json, os, platform, subprocess, sys, time, warnings
 import pandas as pd
 warnings.filterwarnings("ignore")

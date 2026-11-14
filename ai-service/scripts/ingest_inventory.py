@@ -1,16 +1,4 @@
-"""
-ingest_inventory.py
-───────────────────
-Sync dữ liệu tồn kho từ vw_stock_summary_for_ai → inventory_chunks.
 
-Chạy thủ công hoặc đặt cron job mỗi giờ/ngày:
-  python scripts/ingest_inventory.py
-  python scripts/ingest_inventory.py --supplier_id 1
-
-Mỗi sản phẩm tạo ra:
-  chunk_text  (child, ~200 token): tên + SKU + số liệu key → dùng để search
-  parent_text (parent, ~500 token): đầy đủ thông tin → đưa vào context LLM
-"""
 
 import sys
 import asyncio

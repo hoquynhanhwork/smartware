@@ -1,21 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-BƯỚC 4 (v2) — mô phỏng chính sách tồn kho No-AI / mean / AI bằng nhu cầu thật.
-Khác bản cũ:
-  1. KHÔNG dùng giá (price): mọi chỉ số tính theo đơn vị, ngày tồn kho, tỉ lệ ngày thiếu hàng, số đơn đặt.
-  2. FEFO thật cho sản phẩm có hạn dùng (lô sinh ra khi hàng về, hết hạn thì bị loại và tính là hao hụt, xuất lô hạn sớm nhất trước).
-  3. Lead time THỰC có thể trễ hơn lead time kế hoạch (chính sách vẫn dùng lead time kế hoạch).
-  4. Thiếu hàng: 'lost' (mất doanh số, như bản cũ) hoặc 'backorder' (giao bù khi hàng về).
-  5. Chi phí đặt hàng: không có dữ liệu -> xuất số đơn và điểm hoà vốn K/h (đơn vị: đơn vị-ngày tồn kho trên mỗi đơn),
-     không bịa số tiền. Nếu truyền --order-cost K --hold-per-unit-day h thì tính thêm tổng chi phí.
-Đọc : noai_raw.csv, stock_outbound_items_export.csv (--folder), derived_inputs_monthly.csv (--derived),
-      file nhập kho CÓ cột mfg_date, exp_date (--inbound)
-Ghi : eval_by_product.csv, eval_summary.csv, eval_ci.csv, eval_breakeven.csv (--out)
-Giả định (tham số, KHÔNG ước lượng từ dữ liệu vì thiếu dữ liệu):
-  lt_mild   : 20% đơn trễ thêm 1..50% lead time;  lt_severe: 40% đơn trễ thêm 1..100% lead time.
-  Ngày sản xuất = ngày nhập - OFF ngày (OFF lấy trung vị từ dữ liệu), hạn dùng theo từng sản phẩm lấy từ dữ liệu.
-"""
 import argparse, bisect, os
 import numpy as np, pandas as pd
 ap = argparse.ArgumentParser()

@@ -1,27 +1,3 @@
-"""
-score_reorder_need.py
-─────────────────────
-Chấm điểm cảnh báo "Cảnh báo nhập hàng" của AI và No-AI bằng đáp án
-khách quan, KHÔNG cần tồn kho từng chạm 0 (data hiện tại không có đợt
-hết hàng thật nào — xem lý do đã bàn).
-
-Đáp án tại mỗi ngày t của mỗi sản phẩm:
-    cần_đặt_hàng(t) = 1  nếu current_stock(t) < nhu_cầu_THẬT(t+1 .. t+lead_time)
-                     = 0  ngược lại
-Nhu cầu thật lấy từ chính stock_outbound_items/stock_outbounds — vì 2025
-đã xảy ra rồi nên biết chính xác, không phải ước lượng.
-
-Ngày mà cửa sổ (t+1..t+lead_time) vượt quá 30/12/2025 (hết dữ liệu) sẽ
-bị loại, không đoán mò.
-
-Input:
-  - assessment_AI_2025.xlsx, assessment_notAI_2025.xlsx (đã có current_stock,
-    lead_time_days, assessment theo từng ngày/SP)
-  - stock_outbounds_export.csv, stock_outbound_items_export.csv (nhu cầu thật)
-
-Output: in ra Recall/Precision/lead-time trung bình cho cả 2 hệ thống,
-và lưu chi tiết theo từng SP ra CSV.
-"""
 import pandas as pd
 import numpy as np
 

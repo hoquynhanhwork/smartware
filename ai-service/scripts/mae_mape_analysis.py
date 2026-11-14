@@ -1,20 +1,4 @@
-"""
-mae_mape_analysis.py
-─────────────────────
-Cross-validation kiểu rolling-origin CHỈ trong 2023-2024 (không đụng 2025):
-  1. Tính MAE / MAPE / WAPE độ chính xác forecast của Prophet (mục còn
-     thiếu trong sơ đồ gốc).
-  2. So sánh cấu hình Prophet CŨ (multiplicative, Fourier mặc định) với
-     MỚI (additive, Fourier=4) bằng số liệu — không mặc định cấu hình
-     mới là tốt hơn.
-  3. Rút ngưỡng "SP quá thưa" từ chính kết quả CV, đồng thời KIỂM TRA
-     giả thuyết "thưa hơn → sai số cao hơn" (nếu data không ủng hộ thì
-     báo rõ, không ép ra ngưỡng).
 
-ĐẶT FILE NÀY TRONG ai-service/scripts/ (như assessment_AI_backtest.py),
-chạy từ thư mục ai-service:  python scripts\\mae_mape_analysis.py
-Chạy lâu (Prophet fit nhiều lần/SP: 4 fold x 2 cấu hình).
-"""
 
 import sys
 import os

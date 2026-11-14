@@ -1,20 +1,3 @@
-"""
-run_hybrid_csv.py
-─────────────────
-Chạy hybrid (Prophet tổng hợp + GBM toàn cục) TRỰC TIẾP từ file CSV, không cần
-DB/FastAPI — để xuất dữ liệu dự báo và kiểm tra độ chính xác.
-
-Cần: products.csv, stock_outbound_items_export.csv (cùng thư mục --folder).
-
-Ví dụ (chạy từ thư mục ai-service):
-    python scripts/run_hybrid_csv.py --folder "C:\\xampp\\htdocs\\smartware"
-    python scripts/run_hybrid_csv.py --folder ... --backtest-from 2025-01-01
-
-Kết quả ghi vào <folder>/output/:
-    hybrid_forecast_next3m.csv   dự báo 3 tháng kế tiếp cho từng SP
-    hybrid_backtest.csv          (nếu --backtest-from) dự báo vs thực tế theo mốc/horizon
-    hybrid_backtest_summary.csv  (nếu --backtest-from) WAPE/bias theo horizon vs baseline trung bình
-"""
 import argparse
 import os
 import sys

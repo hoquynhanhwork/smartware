@@ -1,8 +1,3 @@
-"""
-ingest_policy.py
-────────────────
-Ingest policy files (PDF, DOCX, TXT) vào bảng policy_chunks.
-"""
 
 import sys
 import os
