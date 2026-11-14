@@ -1,16 +1,3 @@
-"""
-ocr_service.py
-──────────────
-OCR hóa đơn nhập hàng từ PDF:
-  1. Convert PDF → list ảnh (pdf2image + poppler)
-  2. Gửi từng trang lên GPT-4o Vision
-  3. Parse JSON → chuẩn hóa thành InvoiceResult
-  4. Merge kết quả nhiều trang
-
-Dùng GPT-4o vì hóa đơn mỗi NCC khác format,
-cần model hiểu ngữ cảnh linh hoạt.
-"""
-
 from __future__ import annotations
 import base64
 import json

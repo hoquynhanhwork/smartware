@@ -1,10 +1,3 @@
-"""
-routers/ocr.py
-──────────────
-Endpoint OCR hóa đơn nhập hàng.
-Nhận file PDF (multipart/form-data), trả về JSON chuẩn hóa.
-"""
-
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from app.services.ocr_service import ocr_invoice
 from app.security import verify_api_key

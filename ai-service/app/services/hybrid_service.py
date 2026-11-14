@@ -1,16 +1,5 @@
 # app/services/hybrid_service.py
-"""
-Lớp DB/FastAPI cho hybrid (Prophet tổng hợp + GBM). Phần tính toán nằm ở
-hybrid_forecast.py (thuần, không DB).
 
-Việc file này làm:
-  1. Đọc lịch sử xuất kho theo tháng từ PostgreSQL (1 query cho TẤT CẢ SP).
-  2. Huấn luyện bundle (lần đầu ~1-2 phút vì phải fit Prophet cho 9 chuỗi x
-     mọi tháng mốc; các lần sau chỉ fit thêm tháng mới nhờ cache).
-  3. Cache: RAM (theo TTL settings.cache_ttl) + đĩa (settings.forecast_model_dir),
-     tự huấn luyện lại khi dữ liệu thay đổi (so chữ ký dữ liệu).
-  4. Tra dự báo 1 SP / xuất CSV / lưu vào bảng forecasts.
-"""
 from __future__ import annotations
 
 import logging

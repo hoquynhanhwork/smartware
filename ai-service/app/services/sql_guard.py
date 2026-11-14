@@ -1,10 +1,3 @@
-"""
-Kiểm tra SQL do LLM sinh ra trước khi chạy (lớp phòng thủ thứ nhất).
-
-Lớp phòng thủ chính nằm ở DB: role smartware_ai_ro chỉ-đọc, chỉ thấy schema ai_ro
-(view đã lọc theo nhà cung cấp), kèm statement_timeout. Hàm này chỉ chặn sớm
-những câu rõ ràng không phải một lệnh SELECT.
-"""
 import re
 
 

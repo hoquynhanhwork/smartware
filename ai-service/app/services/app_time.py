@@ -1,21 +1,4 @@
 # app/services/app_time.py
-"""
-"Đồng hồ ảo" dùng chung cho phần Python của ai-service.
-
-Data hiện chỉ có tới hết 2025, nhưng máy chủ chạy theo giờ thật (đã sang
-2026) — nếu dùng date.today()/datetime.now() trực tiếp, mọi so sánh dựa
-vào "hôm nay" (hạn dùng, lâu không xuất, kỳ dự báo...) sẽ bị lệch, coi
-data 2025 như đã cũ/hết hạn từ lâu.
-
-Giải pháp: đọc mốc "hôm nay" từ bảng public.app_settings (key='frozen_date')
-thay vì dùng giờ thật. Đổi mốc đóng băng chỉ cần 1 câu UPDATE trong DB,
-không cần sửa code/deploy lại. Xóa dòng frozen_date (hoặc để value rỗng)
-thì tự động quay về dùng giờ thật.
-
-Song song có 2 hàm SQL cùng tên (public.app_today() / public.app_now())
-dùng trong các câu raw SQL — 2 bên đọc chung 1 bảng app_settings, luôn
-đồng bộ với nhau. Xem migration_app_settings.sql.
-"""
 from datetime import date, datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import text

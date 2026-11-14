@@ -1,25 +1,4 @@
 # app/services/hybrid_forecast.py
-"""
-Hybrid forecaster: Prophet (chuỗi TỔNG + từng CATEGORY) + GBM toàn cục (từng SP).
-
-Phân công vai trò:
-  - Prophet fit trên 9 chuỗi tổng hợp (1 tổng + mỗi category 1 chuỗi): chuỗi
-    mượt, ít nhiễu, có regressor Tết. Đầu ra = TỶ LỆ
-        dự_báo_tháng_đích / trung_bình_12_tháng_gần_nhất
-    ("tháng đó nên cao/thấp hơn bình thường bao nhiêu").
-  - GBM (HistGradientBoostingRegressor) huấn luyện CHUNG cho mọi SP, mỗi
-    horizon h=1,2,3 một model (direct multi-horizon). Nhận tỷ lệ của Prophet
-    làm đặc trưng cùng lag, mùa vụ toàn kho, category, mức nhu cầu.
-    Dự báo = mức_12_tháng × tỷ_lệ_model_dự_đoán.
-
-File này KHÔNG phụ thuộc DB hay settings — dùng được từ script CSV
-(scripts/run_hybrid_csv.py) lẫn từ FastAPI (hybrid_service.py).
-
-Đã đo trên data thật (309 SP, walk-forward 2025, h=1): WAPE ~19.6% so với
-~27.2% (trung bình train / No-AI) và ~30.0% (Prophet từng SP). Chưa tinh
-chỉnh siêu tham số; mới kiểm tra 1 năm; mùa vụ trong data có phần do người
-dùng fill — xem README đi kèm.
-"""
 from __future__ import annotations
 
 import hashlib
