@@ -392,3 +392,174 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 <?php include __DIR__ . '/../../layout/footer.php'; ?>
+
+<!-- ═══ Nhập dữ liệu từ OCR hóa đơn (ocr.php → sessionStorage['ocr_inbound'] → trang này) ═══ -->
+<script>
+(function () {
+    'use strict';
+
+    if (new URLSearchParams(location.search).get('from') !== 'ocr') return;
+
+    let data = null;
+    try {
+        const raw = sessionStorage.getItem('ocr_inbound');
+        if (!raw) return;
+        data = JSON.parse(raw);
+        sessionStorage.removeItem('ocr_inbound');      // chỉ nhập 1 lần, tránh nhân đôi khi F5
+    } catch (e) { return; }
+    if (!data || data._from_ocr !== true || !Array.isArray(data.items) || !data.items.length) return;
+
+    const WARN_BORDER = '2px solid #E0A030';
+
+    // ── Chuẩn hóa chuỗi để so khớp: bỏ dấu, hoa/thường, ký tự lạ ──
+    const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/gi, 'd').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+    const COMPANY_WORDS = /\b(cong ty|cty|tnhh|trach nhiem huu han|co phan|cp|mtv|dntn|doanh nghiep tu nhan|chi nhanh|ho kinh doanh|hkd)\b/g;
+    const normCompany = s => norm(s).replace(COMPANY_WORDS, ' ').replace(/\s+/g, ' ').trim();
+
+    // Nhà cung cấp: chỉ tự chọn khi khớp DUY NHẤT (tên giống hệt, hoặc chứa nhau với tên đủ dài)
+    function matchSupplier(name) {
+        const sel    = document.getElementById('supplierSelect');
+        const target = normCompany(name);
+        if (!sel || !target) return null;
+        const opts = Array.from(sel.options).filter(o => o.value)
+            .map(o => ({ o, n: normCompany(o.text) }));
+        let hit = opts.filter(x => x.n === target);
+        if (hit.length === 1) return hit[0].o;
+        if (hit.length === 0 && target.length >= 6) {
+            hit = opts.filter(x => x.n.length >= 6 && (x.n.includes(target) || target.includes(x.n)));
+            if (hit.length === 1) return hit[0].o;
+        }
+        return null;
+    }
+
+    async function searchProducts(term) {
+        try {
+            const r = await fetch('process.php?action=search_products&term=' + encodeURIComponent(term),
+                                  { credentials: 'same-origin' });
+            if (!r.ok) return [];
+            const j = await r.json();
+            return Array.isArray(j) ? j : [];
+        } catch (e) { return []; }
+    }
+
+    // Sản phẩm: chỉ tự gán khi chắc chắn (trùng SKU, hoặc tên giống hệt). Còn lại để người dùng chọn.
+    async function matchProduct(item) {
+        const sku = String(item.sku || '').trim();
+        if (sku.length >= 2) {
+            const hit = (await searchProducts(sku)).filter(p => String(p.sku || '').toLowerCase() === sku.toLowerCase());
+            if (hit.length === 1) return hit[0];
+        }
+        const name = String(item.name || '').trim();
+        if (name.length >= 2) {
+            const n   = norm(name);
+            const hit = (await searchProducts(name)).filter(p => norm(p.name) === n);
+            if (hit.length === 1) return hit[0];
+        }
+        return null;
+    }
+
+    function showBanner(lines) {
+        const form = document.getElementById('inboundForm');
+        if (!form) return;
+        const box = document.createElement('div');
+        box.style.cssText = 'margin:0 0 16px;padding:12px 16px;border:1px solid #E0A030;background:#FFF8E6;'
+                          + 'border-radius:8px;font-size:13.5px;line-height:1.6;color:#5A4300';
+        const h = document.createElement('strong');
+        h.textContent = 'Dữ liệu được điền từ OCR hóa đơn — vui lòng kiểm tra kỹ trước khi lưu:';
+        box.appendChild(h);
+        const ul = document.createElement('ul');
+        ul.style.cssText = 'margin:6px 0 0 18px;padding:0';
+        lines.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+        box.appendChild(ul);
+        form.insertAdjacentElement('beforebegin', box);
+    }
+
+    let started = false;
+    async function run() {
+        if (started) return;                 // chống chạy lặp (không nhân đôi dòng/banner)
+        started = true;
+        const tbody = document.getElementById('itemsBody');
+        if (!tbody || typeof addInboundRow !== 'function') return;
+
+        const notes = [];
+
+        // 1) Nhà cung cấp
+        const supOpt = matchSupplier(data.supplier_name);
+        if (supOpt) {
+            document.getElementById('supplierSelect').value = supOpt.value;
+        } else if (data.supplier_name) {
+            notes.push(`Chưa khớp nhà cung cấp "${data.supplier_name}" với danh sách hiện có — hãy chọn thủ công hoặc thêm mới.`);
+        } else {
+            notes.push('Hóa đơn không đọc được tên nhà cung cấp — hãy chọn thủ công.');
+        }
+
+        // 2) Ghi chú: số hóa đơn NCC / ngày (KHÔNG gán vào "Số tham chiếu" vì mã đó phải duy nhất trong hệ thống)
+        const noteParts = ['Nhập từ OCR hóa đơn NCC'];
+        if (data.invoice_no)   noteParts.push('số ' + data.invoice_no);
+        if (data.invoice_date) noteParts.push('ngày ' + data.invoice_date);
+        const noteEl = document.getElementById('noteInput');
+        if (noteEl) noteEl.value = noteParts.join(' · ');
+
+        // 3) Các dòng hàng
+        tbody.innerHTML = '';
+        let unmatched = 0, fractional = 0, noPrice = 0;
+
+        for (const item of data.items) {
+            const p = await matchProduct(item);
+
+            addInboundRow();
+            const row = tbody.lastElementChild;
+            if (!row) continue;
+
+            const nameEl  = row.querySelector('.product-autocomplete');
+            const idEl    = row.querySelector('.product-id');
+            const qtyEl   = row.querySelector('.qty');
+            const priceEl = row.querySelector('.price');
+
+            nameEl.value = p ? p.name : (item.name || '');
+            idEl.value   = p ? p.id   : '';
+
+            if (p) {
+                if (typeof applyExpiryRequirement === 'function') applyExpiryRequirement(row, p.need_expiry);
+            } else {
+                unmatched++;
+                nameEl.style.border = WARN_BORDER;
+                nameEl.title = 'Chưa khớp sản phẩm trong kho — xóa và gõ lại tên/SKU để chọn từ gợi ý';
+            }
+
+            // Server lưu số lượng kiểu số nguyên → làm tròn và đánh dấu nếu hóa đơn có số lẻ
+            const rawQty = Number(item.quantity) || 0;
+            const qty    = Math.max(1, Math.round(rawQty));
+            qtyEl.value  = String(qty);
+            if (rawQty > 0 && !Number.isInteger(rawQty)) {
+                fractional++;
+                qtyEl.style.border = WARN_BORDER;
+                qtyEl.title = `Hóa đơn ghi ${rawQty} — hệ thống chỉ nhận số nguyên`;
+            }
+
+            const price = Number(item.unit_price) || (p ? Number(p.cost_price) || 0 : 0);
+            if (!(Number(item.unit_price) > 0)) noPrice++;
+            priceEl.value = price > 0 ? formatNumberInput(String(price)) : '';
+
+            if (typeof calculateInboundRow === 'function') calculateInboundRow(row);
+        }
+
+        if (typeof updateStt === 'function') updateStt();
+        if (typeof calculateInboundTotal === 'function') calculateInboundTotal();
+        if (typeof syncInvoicePreview === 'function') syncInvoicePreview();
+
+        if (unmatched)  notes.push(`${unmatched}/${data.items.length} dòng chưa khớp sản phẩm trong kho (viền cam) — chọn lại từ gợi ý, nếu chưa có hãy thêm sản phẩm mới.`);
+        if (fractional) notes.push(`${fractional} dòng có số lượng lẻ đã được làm tròn (viền cam) — kiểm tra lại.`);
+        if (noPrice)    notes.push(`${noPrice} dòng không có đơn giá trên hóa đơn — đã lấy giá vốn trong kho nếu có, hãy kiểm tra.`);
+        notes.push('Số lô và hạn dùng KHÔNG có trong dữ liệu OCR — bạn cần nhập tay cho từng dòng.');
+        if (Number(data.total_amount) > 0) {
+            notes.push('Tổng tiền trên hóa đơn: ' + formatNumberInput(String(data.total_amount)) + ' ₫ — đối chiếu với tổng ở cột phải.');
+        }
+        showBanner(notes);
+    }
+
+    // inbound.js đã đăng ký handler DOMContentLoaded (tạo dòng đầu tiên) trước đoạn script này
+    document.addEventListener('DOMContentLoaded', () => setTimeout(run, 0));
+})();
+</script>

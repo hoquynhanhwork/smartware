@@ -302,7 +302,7 @@ class InboundRepository extends BaseRepository implements InboundRepositoryInter
     public function searchProducts(string $term): array
     {
         return $this->fetchAll("
-            SELECT p.id, p.name, p.unit, p.price, p.cost_price,
+            SELECT p.id, p.name, p.sku, p.unit, p.price, p.cost_price,
                    COALESCE(SUM(ib.quantity), 0) AS current_stock,
                    p.min_stock, p.max_stock,
                    COALESCE(c.need_expiry_tracking, TRUE) AS need_expiry
@@ -313,7 +313,7 @@ class InboundRepository extends BaseRepository implements InboundRepositoryInter
                 ON ib.product_id = p.id
             WHERE p.deleted_at IS NULL AND p.status = 'active'
               AND (p.name ILIKE :term OR p.sku ILIKE :term)
-            GROUP BY p.id, p.name, p.unit, p.price, p.cost_price, p.min_stock, p.max_stock,
+            GROUP BY p.id, p.name, p.sku, p.unit, p.price, p.cost_price, p.min_stock, p.max_stock,
                      c.need_expiry_tracking
             LIMIT 10
         ", [':term' => '%' . $term . '%']);

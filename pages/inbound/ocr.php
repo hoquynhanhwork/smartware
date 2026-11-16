@@ -39,7 +39,7 @@ include __DIR__ . '/../../layout/header.php';
     <div class="ocr-loading" id="ocrLoading">
         <div class="spinner"></div>
         <p style="color:var(--text-muted)">Đang phân tích hóa đơn bằng AI...<br>
-        <small>Thường mất 10-30 giây tùy độ phức tạp</small></p>
+        <small>Thường mất vài chục giây, hóa đơn nhiều trang có thể lâu hơn (tối đa khoảng 2 phút)</small></p>
     </div>
 
     <!-- Preview -->
@@ -48,7 +48,7 @@ include __DIR__ . '/../../layout/header.php';
         <!-- Header info -->
         <div class="preview-header">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-                <strong style="font-size:15px">✅ Đã trích xuất thông tin hóa đơn</strong>
+                <strong style="font-size:15px" id="previewTitle">✅ Đã trích xuất thông tin hóa đơn</strong>
                 <span class="conf-badge" id="confBadge"></span>
             </div>
         </div>
@@ -169,7 +169,10 @@ async function handleFile(file) {
 
     try {
         const res  = await fetch(PROCESS_URL, { method: 'POST', body: formData });
-        const data = await res.json();
+        const data = await res.json().catch(() => null);
+        if (!data) {
+            throw new Error('Máy chủ trả dữ liệu không hợp lệ (HTTP ' + res.status + ')');
+        }
 
         document.getElementById('ocrLoading').style.display = 'none';
 
@@ -183,7 +186,7 @@ async function handleFile(file) {
     } catch (e) {
         document.getElementById('ocrLoading').style.display   = 'none';
         document.getElementById('uploadZone').style.display   = 'block';
-        showError('Lỗi kết nối AI Service');
+        showError(e && e.message && e.message.startsWith('Máy chủ') ? e.message : 'Lỗi kết nối AI Service');
     }
 }
 
@@ -192,7 +195,8 @@ function renderPreview(data) {
     // Confidence badge
     const conf  = data.confidence || 0;
     const badge = document.getElementById('confBadge');
-    badge.textContent = `Độ chính xác: ${Math.round(conf * 100)}%`;
+    badge.textContent = `Độ tin cậy (AI tự chấm): ${Math.round(conf * 100)}%`;
+    badge.title = 'Do AI tự đánh giá, KHÔNG phải độ chính xác đo được. Luôn đối chiếu với hóa đơn gốc.';
     badge.className = 'conf-badge ' + (conf >= 0.8 ? 'conf-high' : conf >= 0.6 ? 'conf-medium' : 'conf-low');
 
     // Fields
@@ -203,11 +207,27 @@ function renderPreview(data) {
     document.getElementById('f_date').value        = data.invoice_date   || '';
     document.getElementById('f_total').value       = data.total_amount   || 0;
 
-    // Warnings
+    // Tiêu đề theo kết quả thực tế (không luôn báo ✅)
+    const title  = document.getElementById('previewTitle');
+    const nItems = (data.items || []).length;
+    const failed = data.pages_failed || 0;
+    if (nItems === 0) {
+        title.textContent = '⚠ Không nhận dạng được dòng hàng nào — hãy kiểm tra file hoặc nhập tay';
+    } else if (failed > 0) {
+        title.textContent = `⚠ Chỉ đọc được một phần (${failed}/${data.pages_total || '?'} trang lỗi) — kiểm tra kỹ trước khi tạo phiếu`;
+    } else {
+        title.textContent = '✅ Đã trích xuất thông tin hóa đơn — vui lòng đối chiếu với bản gốc';
+    }
+
+    // Warnings (luôn cập nhật, kể cả khi rỗng — tránh dính cảnh báo của file trước)
+    const warnBox = document.getElementById('ocrWarnings');
+    const ul      = document.getElementById('warningList');
     if (data.warnings && data.warnings.length > 0) {
-        document.getElementById('ocrWarnings').style.display = 'block';
-        const ul = document.getElementById('warningList');
         ul.innerHTML = data.warnings.map(w => `<li>${escHtml(w)}</li>`).join('');
+        warnBox.style.display = 'block';
+    } else {
+        ul.innerHTML = '';
+        warnBox.style.display = 'none';
     }
 
     // Items
@@ -281,6 +301,9 @@ function createInbound() {
 function resetOCR() {
     document.getElementById('uploadZone').style.display = 'block';
     document.getElementById('ocrPreview').style.display = 'none';
+    document.getElementById('ocrLoading').style.display = 'none';
+    document.getElementById('ocrWarnings').style.display = 'none';
+    document.getElementById('warningList').innerHTML = '';
     document.getElementById('fileInput').value = '';
     hideError();
 }
