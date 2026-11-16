@@ -21,6 +21,14 @@ class Settings(BaseSettings):
     gpt_base_url: str = "https://api.openai.com/v1"
     gpt_model:    str = "gpt-4o"
 
+    # ── OCR hóa đơn ──────────────────────────────────────────────
+    # JSON của hóa đơn nhiều dòng dài hơn nhiều so với max_tokens chung (1000) → dễ bị cắt cụt.
+    ocr_max_tokens: int   = 4096
+    ocr_timeout:    float = 60.0   # giây / lần gọi GPT-4o Vision. Xấu nhất: 2 lần x 60s + backoff ≈ 122s < PHP chờ 150s
+    ocr_max_pages:  int   = 5
+    ocr_dpi:        int   = 200
+    ocr_retries:    int   = 1      # số lần thử lại khi lỗi tạm thời (timeout / 5xx / JSON lỗi)
+
     # Security
     api_secret_key: str
 

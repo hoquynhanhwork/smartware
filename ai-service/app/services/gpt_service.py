@@ -282,8 +282,14 @@ async def call_gpt(
     system: str = SYSTEM_PROMPT,
     json_mode: bool = False,
     images: list[str] = None,
+    max_tokens: int = None,
+    timeout: float = 30.0,
 ) -> tuple[str, int]:
-    """Gọi GPT-4o — OCR và tác vụ nặng cần Vision."""
+    """Gọi GPT-4o — OCR và tác vụ nặng cần Vision.
+
+    max_tokens: mặc định settings.max_tokens (1000) — OCR phải truyền giá trị lớn hơn.
+    timeout   : giây, mặc định 30.
+    """
     if images:
         messages_content: list = [{"type": "text", "text": prompt}]
         for img_b64 in images:
@@ -304,10 +310,10 @@ async def call_gpt(
                 {"role": "system", "content": system},
                 user_message,
             ],
-            max_tokens  = settings.max_tokens,
+            max_tokens  = max_tokens or settings.max_tokens,
             temperature = 0.2,
             json_mode   = json_mode,
-            timeout     = 30.0,
+            timeout     = timeout,
         )
     except Exception as e:
         raise RuntimeError(f"Lỗi gọi GPT-4o: {e}")
