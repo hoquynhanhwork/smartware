@@ -465,3 +465,15 @@ body.ready .page-wrapper {
         width: 170px;
     }
 }
+
+/* ── Tiện ích dùng chung (nhiều trang đã dùng class này nhưng chưa được định nghĩa) ── */
+.text-left   { text-align: left; }
+.text-right  { text-align: right; }
+.text-center { text-align: center; }
+.text-danger  { color: var(--danger); }
+.text-success { color: var(--success-dark); }
+.text-primary { color: var(--primary); }
+.text-muted   { color: var(--text-muted); }
+.font-medium  { font-weight: 500; }
+.table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.bulk-count { font-size: 14px; font-weight: 500; }

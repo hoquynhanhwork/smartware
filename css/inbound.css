@@ -401,6 +401,114 @@ input, button, select, textarea {
     display: none;
 }
 
+/* ── OCR: header trang ───────────────────────────────────────── */
+.ocr-head { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px; }
+.ocr-back { color:var(--text-muted); text-decoration:none; font-size:14px; }
+.ocr-back:hover { color:var(--text); }
+.ocr-title { font-size:20px; font-weight:700; margin:0; display:flex; align-items:center; gap:8px; }
+.ocr-title i { color:var(--info); }
+.ocr-model-tag { background:var(--info-bg); color:var(--info-dark); font-size:11px; font-weight:600; padding:2px 10px; border-radius:999px; }
+.upload-hint { font-size:12px !important; margin-top:8px !important; }
+.ocr-loading-text { color:var(--text-muted); line-height:1.6; }
+.ocr-warnings[hidden] { display:none; }
+.preview-header-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.preview-header-row strong { font-size:15px; }
+
+/* ── OCR: thông tin NCC & hóa đơn ───────────────────────────── */
+.info-grid {
+    display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px 16px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius-md); padding:18px; margin-bottom:22px;
+}
+.info-field { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.info-field label { font-size:12px; font-weight:600; color:var(--text-muted); letter-spacing:.02em; }
+.info-field input {
+    width:100%; padding:9px 12px; font:inherit; font-size:14px; color:var(--text);
+    background:var(--bg-page); border:1px solid var(--border-strong); border-radius:var(--radius-sm);
+    transition:border-color .15s, box-shadow .15s;
+}
+.info-field input:focus { outline:none; border-color:var(--info); box-shadow:0 0 0 3px var(--info-bg); background:var(--surface); }
+.info-field input.num, .ocr-items input.num { text-align:right; font-variant-numeric:tabular-nums; }
+
+/* ── OCR: bảng sản phẩm ─────────────────────────────────────── */
+.items-section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:18px; margin-bottom:20px; }
+.items-section h3 { margin:0 0 6px; font-size:16px; display:flex; align-items:center; gap:8px; }
+.items-section h3 small { font-weight:400; color:var(--text-muted); font-size:13px; }
+.items-section .ocr-items { margin-top:10px; }
+.items-section { overflow-x:auto; }
+.ocr-items { min-width:640px; }
+.ocr-items th:first-child { border-top-left-radius:var(--radius-sm); }
+.ocr-items th:last-child  { border-top-right-radius:var(--radius-sm); }
+.ocr-items input:hover { border-color:var(--border-strong); }
+.btn-del-row { border-radius:6px; }
+.btn-del-row:hover { background:var(--danger-bg); }
+.btn-add-row {
+    margin-top:12px; padding:8px 14px; font:inherit; font-size:13px; font-weight:600; cursor:pointer;
+    color:var(--info); background:transparent; border:1px dashed var(--info-border); border-radius:var(--radius-sm);
+    display:inline-flex; align-items:center; gap:6px; transition:background .15s;
+}
+.btn-add-row:hover { background:var(--info-bg); }
+
+/* ── OCR: nút hành động ─────────────────────────────────────── */
+.action-row { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
+.ocr-wrap .btn-primary, .ocr-wrap .btn-secondary {
+    padding:10px 20px; border-radius:var(--radius-sm); font:inherit; font-size:13px; font-weight:600;
+    cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:all .15s;
+}
+.ocr-wrap .btn-primary { background:var(--primary); color:var(--on-dark); border:1px solid var(--primary); }
+.ocr-wrap .btn-primary:hover { background:var(--primary-hover); border-color:var(--primary-hover); }
+.ocr-wrap .btn-secondary { background:var(--surface); color:var(--text-2); border:1px solid var(--border-strong); }
+.ocr-wrap .btn-secondary:hover { background:var(--surface-subtle); color:var(--text); }
+
+@media (max-width: 760px) {
+    .info-grid { grid-template-columns:1fr 1fr; }
+    .action-row { justify-content:stretch; }
+    .action-row button { flex:1; justify-content:center; }
+}
+@media (max-width: 480px) { .info-grid { grid-template-columns:1fr; } }
+
+/* ── Nút "Nhập từ hóa đơn" (OCR) trên toolbar phiếu nhập ───────── */
+.task-top-toolbar a.btn-tb-secondary,
+.task-top-toolbar a.btn-tb-primary {
+    text-decoration: none;
+    white-space: nowrap;
+}
+.task-top-toolbar .btn-tb-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 8px;
+    border: 1px solid var(--info);
+    background: var(--surface);
+    color: var(--info);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.task-top-toolbar .btn-tb-secondary i { font-size: 16px; }
+.task-top-toolbar .btn-tb-secondary:hover {
+    background: var(--info);
+    color: var(--on-dark);
+}
+.task-top-toolbar .btn-tb-secondary:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+}
+
+/* ── Thanh breadcrumb + header trang tạo phiếu nhập/xuất ───────── */
+.sup-header-breadcrumb-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding: 6px 0; }
+.breadcrumb-links { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.bc-prev { color: var(--info); text-decoration: none; font-weight: 600; }
+.bc-prev:hover { text-decoration: underline; }
+.bc-sep { color: var(--border-strong); font-size: 16px; }
+.bc-cur { color: var(--navy-900); font-weight: 600; }
+.header-action-group { display: flex; align-items: center; gap: 10px; }
+.cal-month-label { font-size: 14px; font-weight: 600; color: var(--text); }
+
 /* ── Hạn dùng không theo dõi ─────────────────────────────────── */
 input.exp-not-tracked {
     background: var(--border) !important;

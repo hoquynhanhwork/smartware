@@ -1011,3 +1011,7 @@ input, button, select, textarea {
     .form-grid-2 { grid-template-columns: 1fr; }
     .role-radio-group { grid-template-columns: 1fr; }
 }
+
+/* ── Danh sách thành viên: chữ cái avatar + trạng thái hoạt động ── */
+.avatar-initial { line-height: 1; letter-spacing: 0.02em; }
+.activity-text  { font-size: 13px; font-weight: 500; }

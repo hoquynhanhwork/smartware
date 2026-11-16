@@ -597,6 +597,8 @@
     gap: 6px;
 }
 
+.kpi-mini-lbl { color: var(--text-muted); font-weight: 400; }
+
 .kpi-mini-item strong {
     color: var(--text-main);
     font-size: 14px;

@@ -44,17 +44,28 @@ function proxyAI(string $endpoint, array $payload, string $base, string $key): a
         CURLOPT_TIMEOUT        => 120,
     ]);
     $resp = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err  = curl_error($ch);
     curl_close($ch);
 
-    if (!$resp || $code >= 500) {
-        return ['error' => "AI Service lỗi HTTP $code"];
+    if ($resp === false) {
+        error_log('[AI] cURL error: ' . $err);
+        return ['error' => 'Không kết nối được AI Service'];
     }
-    if ($code === 400) {
-        $detail = json_decode($resp, true);
-        return ['error' => $detail['detail'] ?? 'Bad Request'];
+
+    $decoded = json_decode($resp, true);
+
+    if ($code >= 200 && $code < 300) {
+        return is_array($decoded) ? $decoded : ['error' => 'AI Service trả dữ liệu không hợp lệ'];
     }
-    return json_decode($resp, true) ?? ['error' => 'Invalid JSON from AI'];
+
+    // Mọi mã không phải 2xx đều là LỖI (trước đây 403/422 bị trả nguyên JSON {detail} và UI hiểu nhầm là "kho trống")
+    error_log("[AI] $endpoint -> HTTP $code: " . substr((string) $resp, 0, 300));
+    if ($code === 401 || $code === 403) {
+        return ['error' => 'Không xác thực được với AI Service (kiểm tra AI_API_KEY khớp API_SECRET_KEY)'];
+    }
+    $detail = is_array($decoded) ? ($decoded['detail'] ?? null) : null;   // 422: detail là mảng → không dùng làm thông báo
+    return ['error' => (is_string($detail) && $detail !== '') ? $detail : "AI Service lỗi HTTP $code"];
 }
 
 switch ($action) {

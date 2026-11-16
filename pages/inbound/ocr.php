@@ -13,15 +13,15 @@ include __DIR__ . '/../../layout/header.php';
 <link rel="stylesheet" href="../../css/inbound.css">
 <div class="main-content">
 <div class="ocr-wrap">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-        <a href="index.php" style="color:var(--text-muted);text-decoration:none">
+    <div class="ocr-head">
+        <a href="index.php" class="ocr-back">
             <i class="ri-arrow-left-line"></i> Quay lại
         </a>
-        <h1 style="font-size:20px;font-weight:700;margin:0">
-            <i class="ri-file-search-line" style="color:var(--info)"></i>
+        <h1 class="ocr-title">
+            <i class="ri-file-search-line"></i>
             OCR Hóa đơn nhập hàng
         </h1>
-        <span style="background:var(--info-bg);color:var(--info-dark);font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px">GPT-4o Vision</span>
+        <span class="ocr-model-tag">GPT-4o Vision</span>
     </div>
 
     <!-- Error banner -->
@@ -31,14 +31,14 @@ include __DIR__ . '/../../layout/header.php';
     <div class="upload-zone" id="uploadZone">
         <i class="ri-file-pdf-line"></i>
         <p>Kéo thả file PDF vào đây hoặc <strong>click để chọn</strong></p>
-        <p style="font-size:12px;margin-top:8px">Hỗ trợ: PDF hóa đơn nhập hàng (tối đa 20MB)</p>
-        <input type="file" id="fileInput" accept=".pdf" style="display:none">
+        <p class="upload-hint">Hỗ trợ: PDF hóa đơn nhập hàng (tối đa 20MB)</p>
+        <input type="file" id="fileInput" accept=".pdf" hidden>
     </div>
 
     <!-- Loading -->
     <div class="ocr-loading" id="ocrLoading">
         <div class="spinner"></div>
-        <p style="color:var(--text-muted)">Đang phân tích hóa đơn bằng AI...<br>
+        <p class="ocr-loading-text">Đang phân tích hóa đơn bằng AI...<br>
         <small>Thường mất vài chục giây, hóa đơn nhiều trang có thể lâu hơn (tối đa khoảng 2 phút)</small></p>
     </div>
 
@@ -47,14 +47,14 @@ include __DIR__ . '/../../layout/header.php';
 
         <!-- Header info -->
         <div class="preview-header">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-                <strong style="font-size:15px" id="previewTitle">✅ Đã trích xuất thông tin hóa đơn</strong>
+            <div class="preview-header-row">
+                <strong id="previewTitle">✅ Đã trích xuất thông tin hóa đơn</strong>
                 <span class="conf-badge" id="confBadge"></span>
             </div>
         </div>
 
         <!-- Warnings -->
-        <div class="ocr-warnings" id="ocrWarnings" style="display:none">
+        <div class="ocr-warnings" id="ocrWarnings" hidden>
             <strong>⚠ Lưu ý:</strong>
             <ul id="warningList"></ul>
         </div>
@@ -83,14 +83,14 @@ include __DIR__ . '/../../layout/header.php';
             </div>
             <div class="info-field">
                 <label>Tổng tiền</label>
-                <input type="text" id="f_total" placeholder="0">
+                <input type="text" id="f_total" class="num" inputmode="numeric" placeholder="0">
             </div>
         </div>
 
         <!-- Danh sách sản phẩm -->
         <div class="items-section">
             <h3><i class="ri-list-check"></i> Danh sách sản phẩm 
-                <small style="font-weight:400;color:var(--text-muted)">(có thể chỉnh sửa trực tiếp)</small>
+                <small>(có thể chỉnh sửa trực tiếp)</small>
             </h3>
             <table class="ocr-items">
                 <thead>
@@ -106,17 +106,17 @@ include __DIR__ . '/../../layout/header.php';
                 </thead>
                 <tbody id="itemsBody"></tbody>
             </table>
-            <button class="btn-add-row" onclick="addItemRow()">
+            <button type="button" class="btn-add-row" onclick="addItemRow()">
                 <i class="ri-add-line"></i> Thêm dòng
             </button>
         </div>
 
         <!-- Actions -->
         <div class="action-row">
-            <button class="btn-secondary" onclick="resetOCR()">
+            <button type="button" class="btn-secondary" onclick="resetOCR()">
                 <i class="ri-refresh-line"></i> Upload lại
             </button>
-            <button class="btn-primary" onclick="createInbound()">
+            <button type="button" class="btn-primary" onclick="createInbound()">
                 <i class="ri-file-add-line"></i> Tạo phiếu nhập từ hóa đơn này
             </button>
         </div>
@@ -224,10 +224,10 @@ function renderPreview(data) {
     const ul      = document.getElementById('warningList');
     if (data.warnings && data.warnings.length > 0) {
         ul.innerHTML = data.warnings.map(w => `<li>${escHtml(w)}</li>`).join('');
-        warnBox.style.display = 'block';
+        warnBox.hidden = false;
     } else {
         ul.innerHTML = '';
-        warnBox.style.display = 'none';
+        warnBox.hidden = true;
     }
 
     // Items
@@ -244,10 +244,10 @@ function addItemRow(item = {}) {
     tr.innerHTML = `
         <td><input type="text" value="${escAttr(item.name || '')}" placeholder="Tên sản phẩm"></td>
         <td><input type="text" value="${escAttr(item.sku  || '')}" placeholder="Mã SP"></td>
-        <td><input type="number" value="${item.quantity  || ''}" placeholder="0" min="0" step="0.01" onchange="recalcTotal(this)"></td>
+        <td><input type="number" class="num" value="${item.quantity  || ''}" placeholder="0" min="0" step="0.01" onchange="recalcTotal(this)"></td>
         <td><input type="text"   value="${escAttr(item.unit || '')}" placeholder="Cái"></td>
-        <td><input type="number" value="${item.unit_price || ''}" placeholder="0" min="0" onchange="recalcTotal(this)"></td>
-        <td><input type="number" value="${item.total      || ''}" placeholder="0" min="0"></td>
+        <td><input type="number" class="num" value="${item.unit_price || ''}" placeholder="0" min="0" onchange="recalcTotal(this)"></td>
+        <td><input type="number" class="num" value="${item.total      || ''}" placeholder="0" min="0"></td>
         <td><button class="btn-del-row" onclick="this.closest('tr').remove()" title="Xóa dòng">×</button></td>
     `;
     document.getElementById('itemsBody').appendChild(tr);
@@ -302,7 +302,7 @@ function resetOCR() {
     document.getElementById('uploadZone').style.display = 'block';
     document.getElementById('ocrPreview').style.display = 'none';
     document.getElementById('ocrLoading').style.display = 'none';
-    document.getElementById('ocrWarnings').style.display = 'none';
+    document.getElementById('ocrWarnings').hidden = true;
     document.getElementById('warningList').innerHTML = '';
     document.getElementById('fileInput').value = '';
     hideError();
