@@ -20,6 +20,9 @@ $csrf    = new CsrfService();
 // ── Đọc filter từ GET ─────────────────────────────────────────────────────────
 $fromDate  = trim($_GET['from']     ?? '');
 $toDate    = trim($_GET['to']       ?? '');
+// Ngày sai định dạng (vd ?from=abc) làm PostgreSQL báo lỗi → bỏ qua thay vì crash trang
+$fromDate  = preg_match('/^\d{4}-\d{2}-\d{2}$/', $fromDate) ? $fromDate : '';
+$toDate    = preg_match('/^\d{4}-\d{2}-\d{2}$/', $toDate) ? $toDate : '';
 $province  = trim($_GET['province'] ?? '');
 $ward      = trim($_GET['ward']     ?? '');
 $keyword   = trim($_GET['keyword']  ?? '');

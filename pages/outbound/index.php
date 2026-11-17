@@ -23,6 +23,9 @@ $flash_error   = getFlash('error');
 // ── Tham số lọc & phân trang ──────────────────────────────────────────────
 $from_date = trim($_GET['from'] ?? '');
 $to_date   = trim($_GET['to']   ?? '');
+// Ngày sai định dạng làm PostgreSQL báo lỗi → bỏ qua thay vì crash trang
+$from_date = preg_match('/^\d{4}-\d{2}-\d{2}$/', $from_date) ? $from_date : '';
+$to_date   = preg_match('/^\d{4}-\d{2}-\d{2}$/', $to_date) ? $to_date : '';
 $keyword   = trim($_GET['keyword'] ?? '');
 $page      = max(1, (int) ($_GET['page']  ?? 1));
 $limit     = min(100, max(1, (int) ($_GET['limit'] ?? 15)));
@@ -171,8 +174,8 @@ include __DIR__ . '/../../layout/header.php';
             <table class="task-data-table" id="outboundTable">
                 <thead>
                     <tr>
-                        <th width="42"><input type="checkbox" id="selectAll"></th>
-                        <th width="150">Mã phiếu</th>
+                        <th width="46"><input type="checkbox" id="selectAll"></th>
+                        <th width="210">Mã phiếu</th>
                         <th width="260">Nhà cung cấp / Đối tác</th>
                         <th width="180">Người tạo</th>
                         <th width="160">Ngày tạo</th>
@@ -203,8 +206,8 @@ include __DIR__ . '/../../layout/header.php';
                         <tr>
                             <td><input type="checkbox" class="row-checkbox" data-id="<?= (int)$ob['id'] ?>"></td>
                             <td>
-                                <a href="javascript:void(0)" onclick="viewOutboundDetail(<?= (int)$ob['id'] ?>)" class="item-name" style="text-decoration:none; cursor:pointer;">
-                                    <strong><?= htmlspecialchars($ob['ref_no'] ?? '—') ?></strong>
+                                <a href="javascript:void(0)" onclick="viewOutboundDetail(<?= (int)$ob['id'] ?>)" class="item-code-link" title="<?= htmlspecialchars($ob['ref_no'] ?? '') ?>">
+                                    <?= htmlspecialchars($ob['ref_no'] ?? '—') ?>
                                 </a>
                             </td>
                             <td><?= htmlspecialchars($ob['supplier_name'] ?? '—') ?></td>

@@ -24,10 +24,15 @@ class OutboundService
         $limit = min(100, max(1, (int) ($filters['limit'] ?? 15)));
 
         $filterParams = [
-            'keyword'  => trim($filters['keyword'] ?? ''),
-            'statuses' => array_filter((array) ($filters['status'] ?? [])),
-            'from'     => $filters['from'] ?? '',
-            'to'       => $filters['to']   ?? '',
+            'keyword'      => trim($filters['keyword'] ?? ''),
+            'supplier_ids' => array_values(array_filter(array_map('intval', (array) ($filters['supplier_ids'] ?? [])))),
+            // Trang truyền khoá 'statuses' (trước đây service chỉ đọc 'status' nên bộ lọc trạng thái bị bỏ qua)
+            'statuses'     => array_values(array_filter(
+                (array) ($filters['statuses'] ?? $filters['status'] ?? []),
+                fn($v) => in_array($v, ['pending', 'completed', 'cancelled'], true)
+            )),
+            'from'         => $filters['from'] ?? '',
+            'to'           => $filters['to']   ?? '',
         ];
 
         $total = $this->repo->count($filterParams);

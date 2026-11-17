@@ -49,9 +49,37 @@
                 root.classList.toggle('filter-hidden', willHide);
                 write(HIDE_KEY, willHide ? 'true' : 'false');
                 render();
+                syncHeight();
             });
         } else if (btn && !sidebar) {
             btn.hidden = true;          // trang không có bộ lọc thì không hiện nút
+        }
+
+        // ── 1b. Chiều cao thanh lọc = từ thanh công cụ đến hết bảng ──
+        var form    = sidebar ? sidebar.querySelector('form') : null;
+        var toolbar = document.querySelector('.task-top-toolbar');
+        var card    = document.querySelector('.task-table-card');
+        var narrow  = window.matchMedia('(max-width: 900px)');
+
+        function syncHeight() {
+            if (!sidebar) return;
+            sidebar.style.height = '';                       // đo chiều cao tự nhiên của nội dung
+            if (narrow.matches || root.classList.contains('filter-hidden') || !toolbar || !card) return;
+            var natural = sidebar.offsetHeight;
+            var target  = card.getBoundingClientRect().bottom - toolbar.getBoundingClientRect().top;
+            sidebar.style.height = Math.ceil(Math.max(natural, target)) + 'px';
+        }
+        // Vừa đủ cao theo nội dung nếu nhóm lọc dài hơn bảng; luôn >= chiều cao bảng
+        if (sidebar) {
+            syncHeight();
+            window.addEventListener('resize', syncHeight);
+            window.addEventListener('load', syncHeight);
+            if (narrow.addEventListener) narrow.addEventListener('change', syncHeight);
+            if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncHeight);
+            if (window.ResizeObserver) {
+                var ro = new ResizeObserver(syncHeight);
+                [toolbar, card, form].forEach(function (el) { if (el) ro.observe(el); });
+            }
         }
 
         // ── 2. Thu gọn từng nhóm ──
@@ -79,6 +107,7 @@
             collapsed = collapsed.filter(function (k) { return k !== key; });
             if (isCollapsed) collapsed.push(key);
             write(COLLAPSE_KEY, JSON.stringify(collapsed));
+            syncHeight();
         }
 
         document.addEventListener('click', function (e) {

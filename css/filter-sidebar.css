@@ -5,8 +5,8 @@
    Quy ước:
    - Danh sách (danh mục, nhà cung cấp, nhân sự…) luôn dàn đều,
      KHÔNG có thanh cuộn riêng từng nhóm.
-   - Cả thanh lọc dính (sticky) theo màn hình; chỉ khi nội dung
-     dài hơn chiều cao màn hình mới xuất hiện 1 thanh cuộn duy nhất.
+   - Chiều cao thanh lọc = từ thanh công cụ đến hết bảng, cố định
+     (không co giãn), không có thanh cuộn.
    - Ẩn/hiện bằng class `filter-hidden` trên <html> (1 cách duy nhất).
 ======================================================= */
 
@@ -20,17 +20,13 @@
 }
 
 .task-filter-sidebar {
-    --filter-top: 12px;
     width: 250px;
     min-width: 250px;
     flex-shrink: 0;
-    position: sticky;
-    top: var(--filter-top);
-    height: auto !important;                       /* chặn height inline cũ (syncSidebarHeight) */
-    max-height: calc(100vh - var(--filter-top) * 2);
-    overflow-x: hidden;
-    overflow-y: auto;                              /* chỉ cuộn khi dài hơn màn hình */
-    overscroll-behavior: contain;
+    /* Chiều cao CỨNG = từ thanh công cụ đến hết bảng (js/filter-sidebar.js gán).
+       Không sticky, không thanh cuộn: nếu nhóm lọc dài hơn bảng thì tự cao thêm. */
+    position: relative;
+    overflow: visible;
     display: block;
     padding: 14px;
     box-sizing: border-box;
@@ -38,11 +34,7 @@
     border: 1px solid var(--border);
     border-radius: 12px;
     box-shadow: 0 2px 6px rgba(16, 26, 44, 0.04);
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-strong) transparent;
 }
-.task-filter-sidebar::-webkit-scrollbar { width: 4px; }
-.task-filter-sidebar::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
 
 /* form không tự cuộn nữa — tránh 2 thanh cuộn lồng nhau */
 .task-filter-sidebar form {
@@ -91,8 +83,33 @@ html.filter-hidden .task-filter-sidebar { display: none !important; }
     .task-filter-sidebar {
         width: 100%;
         min-width: 0;
-        position: static;
-        max-height: none;
-        overflow: visible;
+        height: auto !important;
     }
+}
+
+
+/* ══ BẢNG DANH SÁCH DÙNG CHUNG ══ */
+
+/* Cột checkbox: không để `text-overflow: ellipsis` của bảng cố định cột (table-layout: fixed)
+   biến ô checkbox hẹp thành dấu "…" (lỗi hiện ".." cạnh ô tick ở Nhập kho). */
+.task-data-table th:first-child,
+.task-data-table td:first-child {
+    text-align: center;
+    padding-left: 0;
+    padding-right: 0;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+/* Mã phiếu: 1 kiểu duy nhất (navy, đậm, không xuống dòng), thay cho link xanh mặc định ở Xuất kho */
+.task-data-table .item-code-link {
+    color: var(--navy-900);
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.task-data-table .item-code-link:hover {
+    color: var(--info);
+    text-decoration: underline;
 }

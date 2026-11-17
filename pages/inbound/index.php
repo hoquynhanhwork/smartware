@@ -22,6 +22,9 @@ $flash_error   = getFlash('error');
 // ── Tham số lọc & phân trang ──────────────────────────────────────────────
 $from_date = trim($_GET['from'] ?? '');
 $to_date   = trim($_GET['to']   ?? '');
+// Ngày sai định dạng làm PostgreSQL báo lỗi → bỏ qua thay vì crash trang
+$from_date = preg_match('/^\d{4}-\d{2}-\d{2}$/', $from_date) ? $from_date : '';
+$to_date   = preg_match('/^\d{4}-\d{2}-\d{2}$/', $to_date) ? $to_date : '';
 $keyword   = trim($_GET['keyword'] ?? '');
 $page      = max(1, (int) ($_GET['page']  ?? 1));
 $limit     = min(100, max(1, (int) ($_GET['limit'] ?? 15)));

@@ -366,6 +366,11 @@ class InboundRepository extends BaseRepository implements InboundRepositoryInter
         $cond   = ["si.deleted_at IS NULL"];
         $params = [];
 
+        if (!empty($filters['keyword'])) {
+            $cond[]             = "si.ref_no ILIKE :keyword";
+            $params[':keyword'] = '%' . $filters['keyword'] . '%';
+        }
+
         if (!empty($filters['supplier_ids'])) {
             $ph = [];
             foreach ($filters['supplier_ids'] as $i => $id) {

@@ -48,7 +48,7 @@ class InventoryService
     public function getHistoryPage(array $filters): array
     {
         $page   = max(1, (int) ($filters['page']  ?? 1));
-        $limit  = 20;
+        $limit  = min(100, max(1, (int) ($filters['limit'] ?? 20)));   // trước đây cứng 20, bỏ qua tham số limit của trang
         $offset = ($page - 1) * $limit;
 
         $kpi   = $this->repo->getHistoryKpi($filters);

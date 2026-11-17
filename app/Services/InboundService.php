@@ -26,8 +26,12 @@ class InboundService
         $limit = min(100, max(1, (int) ($filters['limit'] ?? 15)));
 
         $filterParams = [
-            'supplier_ids' => array_filter(array_map('intval', (array) ($filters['supplier_ids'] ?? []))),
-            'statuses'     => array_filter((array) ($filters['statuses'] ?? [])),
+            'keyword'      => trim((string) ($filters['keyword'] ?? '')),   // trước đây bị bỏ → ô tìm kiếm không có tác dụng
+            'supplier_ids' => array_values(array_filter(array_map('intval', (array) ($filters['supplier_ids'] ?? [])))),
+            'statuses'     => array_values(array_filter(
+                (array) ($filters['statuses'] ?? []),
+                fn($v) => in_array($v, ['pending', 'completed', 'cancelled'], true)
+            )),
             'from_date'    => $filters['from_date'] ?? '',
             'to_date'      => $filters['to_date']   ?? '',
         ];

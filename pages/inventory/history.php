@@ -24,7 +24,10 @@ $batch_filter   = trim($_GET['batch_no']     ?? '');
 $product_filter = (int) ($_GET['product_id'] ?? 0);
 $user_filter    = (int) ($_GET['user_id']    ?? 0);
 $page           = max(1, (int) ($_GET['page'] ?? 1));
-$limit          = min(100, max(1, (int) ($_GET['limit'] ?? 15)));
+$limit          = min(100, max(1, (int) ($_GET['limit'] ?? 20)));
+// Ngày sai định dạng → về mặc định (đầu tháng → hôm nay) thay vì làm lỗi truy vấn
+if (!preg_match('/^(\d{4}-\d{2}-\d{2})?$/', $from_date)) $from_date = AppTime::calc($pdo, 'Y-m-01');
+if (!preg_match('/^(\d{4}-\d{2}-\d{2})?$/', $to_date))   $to_date   = AppTime::today($pdo);
 
 $filters = [
     'type'       => $type_filter,

@@ -322,6 +322,14 @@ class OutboundRepository extends BaseRepository implements OutboundRepositoryInt
             $params[':keyword'] = '%' . $filters['keyword'] . '%';
         }
 
+        if (!empty($filters['supplier_ids'])) {
+            $ph = [];
+            foreach ($filters['supplier_ids'] as $i => $id) {
+                $key = ":sup_$i"; $ph[] = $key; $params[$key] = (int) $id;
+            }
+            $cond[] = "so.supplier_id IN (" . implode(',', $ph) . ")";
+        }
+
         if (!empty($filters['statuses'])) {
             $ph = [];
             foreach ($filters['statuses'] as $i => $st) {
