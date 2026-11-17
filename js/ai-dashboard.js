@@ -245,64 +245,171 @@ async function analyzeProduct(productId, productName) {
     alert(`Đang phân tích chi tiết: ${productName}\n(Tích hợp modal /forecast/advanced và /risks ở đây)`);
 }
 
-// ── Lịch sử chat (tách theo người dùng, key do PHP cấp) ──────
+// ══ CHAT AI ═══════════════════════════════════════════════════
+const CHAT_HIDE_KEY = 'sw_ai_chat_hidden';
+const CHAT_MAX_SAVED = 60;                  // chỉ lưu 60 tin gần nhất
+const CHAT_GREETING  = 'Xin chào! Tôi có thể giúp bạn phân tích tồn kho, dự báo nhu cầu, hoặc trả lời bất kỳ câu hỏi nào về kho hàng.';
+let chatLog     = [];                       // [{role:'user'|'ai', text, error?}]
+let chatSending = false;
+
+function lsGet(k)    { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* bỏ qua */ } }
+function lsDel(k)    { try { localStorage.removeItem(k); } catch (e) { /* bỏ qua */ } }
+
+// Lưu dạng JSON thuần (không còn lưu/nạp innerHTML từ localStorage)
 function saveChatHistory() {
-    const box = $ai('chatMessages');
-    if (box) localStorage.setItem(CHAT_KEY, box.innerHTML);
+    lsSet(CHAT_KEY, JSON.stringify(chatLog.slice(-CHAT_MAX_SAVED)));
+}
+function loadChatHistory() {
+    try {
+        const arr = JSON.parse(lsGet(CHAT_KEY) || '[]');
+        chatLog = Array.isArray(arr)
+            ? arr.filter(m => m && (m.role === 'user' || m.role === 'ai') && typeof m.text === 'string')
+            : [];
+    } catch (e) { chatLog = []; }
 }
 
-function loadChatHistory() {
-    const saved = localStorage.getItem(CHAT_KEY);
-    if (saved) {
-        const box = $ai('chatMessages');
-        box.innerHTML = saved;
-        box.scrollTop = box.scrollHeight;
-    }
+function chatBubble(m) {
+    const div = document.createElement('div');
+    div.className = (m.role === 'user' ? 'chat-msg-user' : 'chat-msg-ai') + (m.error ? ' is-error' : '');
+    div.textContent = m.text;               // textContent: không cần escape, không XSS
+    return div;
+}
+function chatScrollEnd() {
+    const box = $ai('chatMessages');
+    box.scrollTop = box.scrollHeight;
+}
+function chatRenderAll() {
+    const box = $ai('chatMessages');
+    box.replaceChildren(chatBubble({ role: 'ai', text: CHAT_GREETING }), ...chatLog.map(chatBubble));
+    $ai('chatSuggest').hidden = chatLog.length > 0;
+    chatScrollEnd();
+}
+function chatAppend(m) {
+    chatLog.push(m);
+    $ai('chatMessages').appendChild(chatBubble(m));
+    $ai('chatSuggest').hidden = true;
+    chatScrollEnd();
 }
 
 function clearChatHistory() {
-    localStorage.removeItem(CHAT_KEY);
-    $ai('chatMessages').innerHTML =
-        '<div class="chat-msg-ai">Xin chào! Tôi có thể giúp bạn phân tích tồn kho, dự báo nhu cầu, hoặc trả lời bất kỳ câu hỏi nào về kho hàng.</div>';
+    chatLog = [];
+    lsDel(CHAT_KEY);
+    chatRenderAll();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadChatHistory();
-    aiLoad();
-});
-
-// ── Chat AI ──────────────────────────────────────────────────
-async function sendChat() {
+async function sendChat(preset) {
+    if (chatSending) return;                         // chặn gửi trùng khi đang chờ trả lời
     const input = $ai('chatInput');
-    const msg   = input.value.trim();
+    const msg   = (typeof preset === 'string' ? preset : input.value).trim();
     if (!msg) return;
 
-    const box = $ai('chatMessages');
+    chatSending = true;
     const btn = $ai('chatBtn');
-
-    box.innerHTML += `<div class="chat-msg-user">${escHtml(msg)}</div>`;
-    input.value = '';
     btn.disabled = true;
-    box.innerHTML += `<div id="chatTyping"><span class="ai-spinner"></span>Đang suy nghĩ...</div>`;
-    box.scrollTop = box.scrollHeight;
+    input.value = '';
+    chatAutoGrow();
+    chatAppend({ role: 'user', text: msg });
 
+    const box = $ai('chatMessages');
+    const typing = document.createElement('div');
+    typing.className = 'ai-chat-typing';
+    typing.innerHTML = '<span class="ai-spinner"></span>Đang suy nghĩ…';
+    box.appendChild(typing);
+    chatScrollEnd();
+
+    const ctrl  = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), AI_TIMEOUT_MS);
     try {
         const res  = await fetch(AI_URL, {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'chat', message: msg }),
+            signal: ctrl.signal,
         });
         const data = await res.json().catch(() => null);
-        $ai('chatTyping')?.remove();
-        const text = data && (data.answer || (typeof data.error === 'string' ? data.error : '')) || 'Lỗi';
-        box.innerHTML += `<div class="chat-msg-ai">${escHtml(text)}</div>`;
+        if (res.ok && data && typeof data.answer === 'string' && data.answer) {
+            chatAppend({ role: 'ai', text: data.answer });
+        } else {
+            const why = data && typeof data.error === 'string' ? data.error : 'AI Service lỗi (HTTP ' + res.status + ')';
+            chatAppend({ role: 'ai', text: why, error: true });
+        }
     } catch (e) {
-        $ai('chatTyping')?.remove();
-        box.innerHTML += `<div class="chat-msg-ai" style="color:#C24B33; border-color:#F0C4B8; background:#FBEAE5;">Không kết nối được AI Service.</div>`;
+        chatAppend({
+            role: 'ai', error: true,
+            text: e && e.name === 'AbortError' ? 'Quá thời gian chờ AI Service.' : 'Không kết nối được AI Service.',
+        });
     } finally {
+        clearTimeout(timer);
+        typing.remove();
+        chatSending = false;
         btn.disabled = false;
-        box.scrollTop = box.scrollHeight;
         saveChatHistory();
+        input.focus();
     }
 }
+
+function chatAutoGrow() {
+    const t = $ai('chatInput');
+    t.style.height = 'auto';
+    t.style.height = Math.min(t.scrollHeight, 120) + 'px';
+}
+
+// ── Ẩn/hiện khung chat (desktop) & ngăn kéo (màn hình nhỏ) ──
+const narrowMQ = window.matchMedia('(max-width: 1100px)');
+
+function chatRenderToggle() {
+    const hidden = document.documentElement.classList.contains('ai-chat-hidden');
+    $ai('txtToggleChat').textContent = hidden ? 'Hiện trợ lý' : 'Ẩn trợ lý';
+    $ai('btnToggleChat').setAttribute('aria-expanded', hidden ? 'false' : 'true');
+}
+function chatSetDrawer(open) {
+    $ai('aiChatPanel').classList.toggle('is-open', open);
+    document.body.style.overflow = open && narrowMQ.matches ? 'hidden' : '';
+    if (open) $ai('chatInput').focus();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadChatHistory();
+    chatRenderAll();
+
+    const root = document.documentElement;
+    root.classList.toggle('ai-chat-hidden', lsGet(CHAT_HIDE_KEY) === 'true');
+    chatRenderToggle();
+    $ai('btnToggleChat').addEventListener('click', () => {
+        const willHide = !root.classList.contains('ai-chat-hidden');
+        root.classList.toggle('ai-chat-hidden', willHide);
+        lsSet(CHAT_HIDE_KEY, willHide ? 'true' : 'false');
+        chatRenderToggle();
+    });
+    $ai('aiChatFab').addEventListener('click', () => chatSetDrawer(true));
+    $ai('btnChatClose').addEventListener('click', () => chatSetDrawer(false));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') chatSetDrawer(false); });
+    narrowMQ.addEventListener('change', () => chatSetDrawer(false));
+
+    $ai('btnChatClear').addEventListener('click', () => {
+        if (!chatLog.length || confirm('Xóa toàn bộ lịch sử chat?')) clearChatHistory();
+    });
+    $ai('chatBtn').addEventListener('click', () => sendChat());
+    $ai('chatSuggest').addEventListener('click', e => {
+        const chip = e.target.closest('.ai-suggest-chip');
+        if (chip) sendChat(chip.textContent);
+    });
+    const input = $ai('chatInput');
+    input.addEventListener('input', chatAutoGrow);
+    input.addEventListener('keydown', e => {
+        // Enter gửi; Shift+Enter xuống dòng; bỏ qua Enter khi đang gõ dấu bằng bộ gõ (IME)
+        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+            e.preventDefault();
+            sendChat();
+        }
+    });
+
+    const refresh = $ai('btnAiRefresh');
+    refresh.addEventListener('click', async () => {
+        refresh.disabled = true;
+        try { await aiLoad(); } finally { refresh.disabled = false; }
+    });
+    aiLoad();
+});

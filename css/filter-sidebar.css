@@ -1,0 +1,98 @@
+/* =======================================================
+   FILTER SIDEBAR DÙNG CHUNG — chuẩn theo trang Sản phẩm
+   Nạp SAU css riêng của từng trang để thống nhất giao diện.
+
+   Quy ước:
+   - Danh sách (danh mục, nhà cung cấp, nhân sự…) luôn dàn đều,
+     KHÔNG có thanh cuộn riêng từng nhóm.
+   - Cả thanh lọc dính (sticky) theo màn hình; chỉ khi nội dung
+     dài hơn chiều cao màn hình mới xuất hiện 1 thanh cuộn duy nhất.
+   - Ẩn/hiện bằng class `filter-hidden` trên <html> (1 cách duy nhất).
+======================================================= */
+
+.task-app-wrapper {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    align-items: flex-start;
+    padding: 0 20px 40px 20px;
+    box-sizing: border-box;
+}
+
+.task-filter-sidebar {
+    --filter-top: 12px;
+    width: 250px;
+    min-width: 250px;
+    flex-shrink: 0;
+    position: sticky;
+    top: var(--filter-top);
+    height: auto !important;                       /* chặn height inline cũ (syncSidebarHeight) */
+    max-height: calc(100vh - var(--filter-top) * 2);
+    overflow-x: hidden;
+    overflow-y: auto;                              /* chỉ cuộn khi dài hơn màn hình */
+    overscroll-behavior: contain;
+    display: block;
+    padding: 14px;
+    box-sizing: border-box;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(16, 26, 44, 0.04);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+}
+.task-filter-sidebar::-webkit-scrollbar { width: 4px; }
+.task-filter-sidebar::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+
+/* form không tự cuộn nữa — tránh 2 thanh cuộn lồng nhau */
+.task-filter-sidebar form {
+    display: block;
+    overflow: visible;
+    padding: 0;
+}
+
+/* Dàn đều mọi danh sách lọc, bỏ cuộn con */
+.task-filter-sidebar .filter-scroll-box,
+.task-filter-sidebar .filter-scrollable,
+.task-filter-sidebar .filter-checkbox-list {
+    max-height: none !important;
+    overflow: visible !important;
+    padding-right: 0;
+}
+
+/* Tên dài: xuống dòng thay vì bị cắt/tràn */
+.task-filter-sidebar .filter-check-item .label-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* Date picker mở ra ngay trong dòng chảy, không bị khung cuộn cắt */
+.task-filter-sidebar .neo-datepicker-popover {
+    position: static;
+    margin-top: 6px;
+    box-shadow: none;
+}
+
+/* ── Ẩn / hiện (1 cơ chế duy nhất) ── */
+html.filter-hidden .task-filter-sidebar { display: none !important; }
+
+/* Tiêu đề nhóm có thể thu gọn */
+.filter-sec-title:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
+.filter-section.is-collapsed .filter-sec-title i.ri-arrow-down-s-line { transform: rotate(-90deg); }
+.filter-section.is-collapsed .filter-checkbox-list,
+.filter-section.is-collapsed .filter-range-inputs,
+.filter-section.is-collapsed .neo-datepicker-container,
+.filter-section.is-collapsed .filter-body,
+.filter-section.is-collapsed .btn-apply-stock { display: none !important; }
+
+/* Màn hình nhỏ: xếp dọc, không sticky */
+@media (max-width: 900px) {
+    .task-app-wrapper { flex-direction: column; padding: 0 16px 30px 16px; gap: 16px; }
+    .task-filter-sidebar {
+        width: 100%;
+        min-width: 0;
+        position: static;
+        max-height: none;
+        overflow: visible;
+    }
+}

@@ -407,8 +407,10 @@ body.ready .page-wrapper {
 .main-content {
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
+    /* `clip` (không phải `hidden/auto`) để KHÔNG biến .main-content thành khung cuộn:
+       nếu không, position:sticky của thanh bộ lọc sẽ không bám theo cuộn trang. */
+    overflow-x: clip;
+    overflow-y: visible;
     background: transparent;
 }
 

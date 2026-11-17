@@ -638,120 +638,7 @@ function exportSelectedOutboundExcel() {
     window.location.href = '../../pages/export/Export.php?type=outbound_list&' + params.toString();
 }
 
-// ── BỘ CHỌN LỊCH NEO-DATEPICKER ──────────────────────────────────────────
-let _calCurrentYear = 2026;
-let _calCurrentMonth = 9; // 0-based: Tháng 10
-let _calRangeStart = null;
-let _calRangeEnd = null;
-
-function toggleDatePickerPopover(e) {
-    if (e) e.stopPropagation();
-    const pop = document.getElementById('neoDatePickerPopover');
-    if (!pop) return;
-    pop.style.display = pop.style.display === 'block' ? 'none' : 'block';
-}
-
-function selectQuickDate(type) {
-    const fromInput = document.getElementById('neoDateFrom');
-    const toInput = document.getElementById('neoDateTo');
-    const today = new Date();
-    let fromDate = new Date();
-    let toDate = new Date();
-
-    if (type === 'today') {
-        // Hôm nay
-    } else if (type === 'yesterday') {
-        fromDate.setDate(today.getDate() - 1);
-        toDate.setDate(today.getDate() - 1);
-    } else if (type === 'last7') {
-        fromDate.setDate(today.getDate() - 7);
-    } else if (type === 'last14') {
-        fromDate.setDate(today.getDate() - 14);
-    } else if (type === 'last30') {
-        fromDate.setDate(today.getDate() - 30);
-    }
-
-    const fmt = d => d.toISOString().split('T')[0];
-    if (fromInput) fromInput.value = fmt(fromDate);
-    if (toInput) toInput.value = fmt(toDate);
-
-    document.getElementById('filterForm')?.submit();
-}
-
-function openCalendarPicker() {
-    const presets = document.getElementById('datepickerPresetList');
-    const panel = document.getElementById('datepickerCalendarPanel');
-    if (presets) presets.style.display = 'none';
-    if (panel) panel.style.display = 'block';
-    renderCalendarGrid();
-}
-
-function backToPresets() {
-    const presets = document.getElementById('datepickerPresetList');
-    const panel = document.getElementById('datepickerCalendarPanel');
-    if (presets) presets.style.display = 'block';
-    if (panel) panel.style.display = 'none';
-}
-
-function changeMonth(delta) {
-    _calCurrentMonth += delta;
-    if (_calCurrentMonth > 11) { _calCurrentMonth = 0; _calCurrentYear++; }
-    if (_calCurrentMonth < 0) { _calCurrentMonth = 11; _calCurrentYear--; }
-    renderCalendarGrid();
-}
-
-function renderCalendarGrid() {
-    const lbl = document.getElementById('calMonthLabel');
-    if (lbl) lbl.textContent = `Tháng ${_calCurrentMonth + 1} ${_calCurrentYear}`;
-
-    const grid = document.getElementById('calDaysGrid');
-    if (!grid) return;
-    grid.innerHTML = '';
-
-    const firstDay = new Date(_calCurrentYear, _calCurrentMonth, 1).getDay();
-    const daysInMonth = new Date(_calCurrentYear, _calCurrentMonth + 1, 0).getDate();
-
-    for (let i = 0; i < firstDay; i++) {
-        const emptyCell = document.createElement('span');
-        grid.appendChild(emptyCell);
-    }
-
-    for (let d = 1; d <= daysInMonth; d++) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.textContent = d;
-        btn.className = 'cal-day-btn';
-        btn.onclick = () => onSelectCalDay(new Date(_calCurrentYear, _calCurrentMonth, d));
-        grid.appendChild(btn);
-    }
-}
-
-function onSelectCalDay(date) {
-    const hint = document.getElementById('calRangeHint');
-    if (!_calRangeStart || (_calRangeStart && _calRangeEnd)) {
-        _calRangeStart = date;
-        _calRangeEnd = null;
-        if (hint) hint.textContent = `Bắt đầu: ${date.toLocaleDateString('vi-VN')}`;
-    } else {
-        if (date < _calRangeStart) {
-            _calRangeEnd = _calRangeStart;
-            _calRangeStart = date;
-        } else {
-            _calRangeEnd = date;
-        }
-        if (hint) hint.textContent = `${_calRangeStart.toLocaleDateString('vi-VN')} - ${_calRangeEnd.toLocaleDateString('vi-VN')}`;
-    }
-}
-
-function applyCustomRange() {
-    if (!_calRangeStart) return;
-    const fmt = d => d.toISOString().split('T')[0];
-    const fromInput = document.getElementById('neoDateFrom');
-    const toInput = document.getElementById('neoDateTo');
-    if (fromInput) fromInput.value = fmt(_calRangeStart);
-    if (toInput) toInput.value = fmt(_calRangeEnd || _calRangeStart);
-    document.getElementById('filterForm')?.submit();
-}
+// Bộ chọn ngày: xem js/date-picker.js (dùng chung)
 
 // ── DOM INITIALIZATION ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
@@ -759,30 +646,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const isCreatePage = pageType === 'outbound-create';
     const isIndexPage  = pageType === 'outbound-index';
 
-    // 1. Sidebar Lọc ẩn/hiện
-    const toggleBtn     = document.getElementById('btnToggleSidebar');
-    const filterSidebar = document.getElementById('taskFilterSidebar');
-    const toggleTxt     = document.getElementById('txtToggleSidebar');
-
-    const isFilterHidden = localStorage.getItem('outbound_filter_hidden') === 'true';
-    if (toggleTxt) toggleTxt.textContent = isFilterHidden ? 'Show Filters' : 'Hide Filters';
-    if (isFilterHidden && filterSidebar) filterSidebar.classList.add('hidden');
-
-    if (toggleBtn && filterSidebar) {
-        toggleBtn.addEventListener('click', function () {
-            const willHide = !filterSidebar.classList.contains('hidden');
-            if (willHide) {
-                filterSidebar.classList.add('hidden');
-                document.documentElement.classList.add('inbound-filter-hidden');
-                if (toggleTxt) toggleTxt.textContent = 'Show Filters';
-            } else {
-                filterSidebar.classList.remove('hidden');
-                document.documentElement.classList.remove('inbound-filter-hidden');
-                if (toggleTxt) toggleTxt.textContent = 'Hide Filters';
-            }
-            localStorage.setItem('outbound_filter_hidden', willHide);
-        });
-    }
+    // 1. Ẩn/hiện bộ lọc: xem js/filter-sidebar.js (dùng chung)
 
     // 2. Xử lý checkbox bulk action
     const table = document.getElementById('outboundTable');
@@ -834,12 +698,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 4. Đóng popover / modal khi click ra ngoài
     window.addEventListener('click', function (e) {
-        const pop = document.getElementById('neoDatePickerPopover');
-        const trigger = document.querySelector('.neo-datepicker-trigger');
-        if (pop && pop.style.display === 'block' && !pop.contains(e.target) && !trigger?.contains(e.target)) {
-            pop.style.display = 'none';
-        }
-
         if (e.target === document.getElementById('detailOutboundModal')) closeDetailOutboundModal();
         if (e.target === document.getElementById('editOutboundModal'))   closeEditOutboundModal();
     });
@@ -869,9 +727,3 @@ window.validateEditOutboundFormBeforeSubmit = validateEditOutboundFormBeforeSubm
 window.updateOutboundBulkBar            = updateOutboundBulkBar;
 window.clearOutboundSelection           = clearOutboundSelection;
 window.exportSelectedOutboundExcel       = exportSelectedOutboundExcel;
-window.toggleDatePickerPopover          = toggleDatePickerPopover;
-window.selectQuickDate                  = selectQuickDate;
-window.openCalendarPicker               = openCalendarPicker;
-window.backToPresets                    = backToPresets;
-window.changeMonth                      = changeMonth;
-window.applyCustomRange                 = applyCustomRange;

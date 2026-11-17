@@ -63,7 +63,7 @@ $stmt->execute();
 $suppliers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $filterCount = count($supplier_filters) + count($status_filters)
-             + (!empty($from_date) ? 1 : 0) + (!empty($to_date) ? 1 : 0)
+             + ((!empty($from_date) || !empty($to_date)) ? 1 : 0)
              + (!empty($keyword) ? 1 : 0);
 
 include __DIR__ . '/../../layout/header.php';
@@ -71,15 +71,8 @@ include __DIR__ . '/../../layout/header.php';
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/suppliers.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/inbound.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/outbound.css">
+<link rel="stylesheet" href="<?= BASE_URL ?>/css/filter-sidebar.css">
 
-<!-- Chống giật sidebar filter -->
-<script>
-    (function () {
-        if (localStorage.getItem('outbound_filter_hidden') === 'true') {
-            document.documentElement.classList.add('inbound-filter-hidden');
-        }
-    })();
-</script>
 
 <div class="task-app-wrapper">
     <!-- CỘT BỘ LỌC TRÁI (FILTER SIDEBAR) -->
@@ -133,63 +126,12 @@ include __DIR__ . '/../../layout/header.php';
                 </div>
             </div>
 
-            <!-- 3. BỘ CHỌN NGÀY TẠO -->
-            <div class="filter-section" data-filter-key="date">
-                <div class="filter-sec-title">
-                    <span><i class="ri-calendar-line"></i> Ngày tạo</span>
-                    <i class="ri-arrow-down-s-line"></i>
-                </div>
-
-                <div class="neo-datepicker-container" id="neoDatePicker">
-                    <input type="hidden" name="from" id="neoDateFrom" value="<?= htmlspecialchars($from_date) ?>">
-                    <input type="hidden" name="to" id="neoDateTo" value="<?= htmlspecialchars($to_date) ?>">
-
-                    <button type="button" class="neo-datepicker-trigger" onclick="toggleDatePickerPopover(event)">
-                        <span class="trigger-left">
-                            <i class="ri-calendar-line"></i>
-                            <span id="neoDatePickerText">Hôm nay</span>
-                        </span>
-                        <i class="ri-arrow-down-s-line arrow-icon"></i>
-                    </button>
-
-                    <div class="neo-datepicker-popover" id="neoDatePickerPopover" onclick="event.stopPropagation()">
-                        <div class="datepicker-preset-list" id="datepickerPresetList">
-                            <button type="button" class="preset-pill-item" onclick="selectQuickDate('today')">Hôm nay</button>
-                            <button type="button" class="preset-pill-item" onclick="selectQuickDate('yesterday')">Hôm qua</button>
-                            <button type="button" class="preset-pill-item" onclick="selectQuickDate('last7')">7 ngày trước</button>
-                            <button type="button" class="preset-pill-item" onclick="selectQuickDate('last14')">14 ngày trước</button>
-                            <button type="button" class="preset-pill-item" onclick="selectQuickDate('last30')">30 ngày trước</button>
-                            <button type="button" class="preset-pill-item custom-btn" onclick="openCalendarPicker()">
-                                <span>Tùy chỉnh (Start - End)</span>
-                                <i class="ri-arrow-right-s-line"></i>
-                            </button>
-                        </div>
-
-                        <div class="datepicker-calendar-panel" id="datepickerCalendarPanel" style="display: none;">
-                            <div class="cal-header-bar">
-                                <button type="button" class="btn-cal-nav" onclick="changeMonth(-1)">
-                                    <i class="ri-arrow-left-s-line"></i>
-                                </button>
-                                <span class="cal-month-label" id="calMonthLabel">Tháng 10 2026</span>
-                                <button type="button" class="btn-cal-nav" onclick="changeMonth(1)">
-                                    <i class="ri-arrow-right-s-line"></i>
-                                </button>
-                            </div>
-                            <div class="cal-week-labels">
-                                <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-                            </div>
-                            <div class="cal-days-grid" id="calDaysGrid"></div>
-                            <div class="cal-footer-range">
-                                <span class="range-hint" id="calRangeHint">Chọn ngày bắt đầu</span>
-                                <div class="cal-btns">
-                                    <button type="button" class="btn-cal-back" onclick="backToPresets()">Quay lại</button>
-                                    <button type="button" class="btn-cal-apply" onclick="applyCustomRange()">Áp dụng</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <?php
+            $dateFilterFrom  = $from_date;
+            $dateFilterTo    = $to_date;
+            $dateFilterTitle = 'Ngày tạo';
+            include __DIR__ . '/../../layout/date_filter.php';
+            ?>
 
             <input type="hidden" name="keyword" value="<?= htmlspecialchars($keyword) ?>">
         </form>
@@ -202,7 +144,7 @@ include __DIR__ . '/../../layout/header.php';
             <div class="tb-left">
                 <button type="button" class="btn-tb-filter" id="btnToggleSidebar">
                     <i class="ri-equalizer-line"></i>
-                    <span id="txtToggleSidebar">Hide Filters</span>
+                    <span id="txtToggleSidebar">Ẩn bộ lọc</span>
                 </button>
                 <div class="tb-dropdown-badge">
                     <span>Tất cả phiếu xuất (<?= number_format($total_rows) ?>)</span>
@@ -472,6 +414,8 @@ include __DIR__ . '/../../layout/header.php';
 <meta name="csrf-token" content="<?= htmlspecialchars($csrfToken) ?>">
 <script>document.body.dataset.page = 'outbound-index';</script>
 <script src="<?= BASE_URL ?>/js/utils.js"></script>
+<script src="<?= BASE_URL ?>/js/filter-sidebar.js"></script>
+<script src="<?= BASE_URL ?>/js/date-picker.js"></script>
 <script src="<?= BASE_URL ?>/js/suppliers.js"></script>
 <script src="<?= BASE_URL ?>/js/outbound.js"></script>
 

@@ -63,8 +63,7 @@ $page        = $result['page'];
 $limit       = $result['limit'];
 
 $filterCount = count($statuses) + count($entityOrigins) + count($hasTransactions)
-             + (!empty($fromDate)  ? 1 : 0)
-             + (!empty($toDate)    ? 1 : 0)
+             + ((!empty($fromDate) || !empty($toDate)) ? 1 : 0)
              + (!empty($province)  ? 1 : 0)
              + (!empty($ward)      ? 1 : 0)
              + (!empty($keyword)   ? 1 : 0);
@@ -75,15 +74,8 @@ include __DIR__ . '/../../layout/header.php';
 ?>
 <!-- Font Be Vietnam Pro & Style Chuẩn -->
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/suppliers.css">
+<link rel="stylesheet" href="<?= BASE_URL ?>/css/filter-sidebar.css">
 
-<!-- Script chống giật layout filter -->
-<script>
-    (function () {
-        if (localStorage.getItem('supplier_filter_hidden') === 'true') {
-            document.documentElement.classList.add('supplier-filter-hidden');
-        }
-    })();
-</script>
 
 <div class="task-app-wrapper">
     <!-- CỘT BỘ LỌC TRÁI (FILTER SIDEBAR) -->
@@ -168,79 +160,12 @@ include __DIR__ . '/../../layout/header.php';
                 </div>
             </div>
 
-            <!-- 5. BỘ CHỌN NGÀY TẠO -->
-            <div class="filter-section" data-filter-key="date">
-                <div class="filter-sec-title">
-                    <span><i class="ri-calendar-line"></i> Ngày tạo</span>
-                    <i class="ri-arrow-down-s-line"></i>
-                </div>
-
-                <div class="neo-datepicker-container" id="neoDatePicker">
-                    <input type="hidden" name="from" id="neoDateFrom" value="<?= htmlspecialchars($fromDate) ?>">
-                    <input type="hidden" name="to" id="neoDateTo" value="<?= htmlspecialchars($toDate) ?>">
-
-                    <button type="button" class="neo-datepicker-trigger" onclick="toggleDatePickerPopover(event)">
-                        <span class="trigger-left">
-                            <i class="ri-calendar-line"></i>
-                            <span id="neoDatePickerText">Hôm nay</span>
-                        </span>
-                        <i class="ri-arrow-down-s-line arrow-icon"></i>
-                    </button>
-
-                    <div class="neo-datepicker-popover" id="neoDatePickerPopover" onclick="event.stopPropagation()">
-                        <div class="datepicker-preset-list" id="datepickerPresetList">
-                            <button type="button" class="preset-pill-item" onclick="selectQuickDate('today')">Hôm nay</button>
-                            <button type="button" class="preset-pill-item" onclick="selectQuickDate('yesterday')">Hôm qua</button>
-                            <button type="button" class="preset-pill-item" onclick="selectQuickDate('last7')">7 ngày trước</button>
-                            <button type="button" class="preset-pill-item" onclick="selectQuickDate('last14')">14 ngày trước</button>
-                            <button type="button" class="preset-pill-item" onclick="selectQuickDate('last30')">30 ngày trước</button>
-                            <button type="button" class="preset-pill-item custom-btn" onclick="openCalendarPicker()">
-                                <span>Tùy chỉnh (Start - End)</span>
-                                <i class="ri-arrow-right-s-line"></i>
-                            </button>
-                        </div>
-
-                        <div class="datepicker-calendar-panel" id="datepickerCalendarPanel" style="display: none;">
-                            <div class="cal-header-bar">
-                                <button type="button" class="btn-cal-nav" onclick="changeCalStep(-1)">
-                                    <i class="ri-arrow-left-s-line"></i>
-                                </button>
-                                
-                                <button type="button" class="cal-title-btn" id="calMainTitleBtn" onclick="onCalTitleClick()">
-                                    Tháng 10 2026
-                                </button>
-
-                                <button type="button" class="btn-cal-nav" onclick="changeCalStep(1)">
-                                    <i class="ri-arrow-right-s-line"></i>
-                                </button>
-                            </div>
-
-                            <div class="cal-view-section" id="calDaysView">
-                                <div class="cal-week-labels">
-                                    <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-                                </div>
-                                <div class="cal-days-grid" id="calDaysGrid"></div>
-
-                                <div class="cal-footer-range">
-                                    <span class="range-hint" id="calRangeHint">Chọn ngày bắt đầu</span>
-                                    <div class="cal-btns">
-                                        <button type="button" class="btn-cal-back" onclick="backToPresets()">Quay lại</button>
-                                        <button type="button" class="btn-cal-apply" onclick="applyCustomRange()">Áp dụng</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="cal-view-section" id="calMonthsView" style="display: none;">
-                                <div class="cal-grid-3x4" id="calMonthsGrid"></div>
-                            </div>
-
-                            <div class="cal-view-section" id="calYearsView" style="display: none;">
-                                <div class="cal-grid-3x4" id="calYearsGrid"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <?php
+            $dateFilterFrom  = $fromDate;
+            $dateFilterTo    = $toDate;
+            $dateFilterTitle = 'Ngày tạo';
+            include __DIR__ . '/../../layout/date_filter.php';
+            ?>
             <input type="hidden" name="keyword" value="<?= htmlspecialchars($keyword) ?>">
         </form>
     </aside>
@@ -252,7 +177,7 @@ include __DIR__ . '/../../layout/header.php';
             <div class="tb-left">
                 <button type="button" class="btn-tb-filter" id="btnToggleSidebar">
                     <i class="ri-equalizer-line"></i>
-                    <span id="txtToggleSidebar">Hide Filters</span>
+                    <span id="txtToggleSidebar">Ẩn bộ lọc</span>
                 </button>
                 <div class="tb-dropdown-badge">
                     <span>Tất cả đối tác (<?= number_format($totalRows) ?>)</span>
@@ -517,6 +442,8 @@ include __DIR__ . '/../../layout/header.php';
     window._supplierTotalRows = <?= (int) $totalRows ?>;
 </script>
 <script src="<?= BASE_URL ?>/js/utils.js"></script>
+<script src="<?= BASE_URL ?>/js/filter-sidebar.js"></script>
+<script src="<?= BASE_URL ?>/js/date-picker.js"></script>
 <script src="<?= BASE_URL ?>/js/suppliers.js"></script>
 
 <?php include __DIR__ . '/../../layout/footer.php'; ?>

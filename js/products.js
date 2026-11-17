@@ -429,78 +429,7 @@ function exportSelectedExcel() {
 
 // ── 6. KHỞI TẠO SỰ KIỆN DOM ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
-    // 6.1 Bật/tắt Sidebar bộ lọc
-    const toggleBtn     = document.getElementById('btnToggleSidebar');
-    const filterSidebar = document.getElementById('taskFilterSidebar');
-    const toggleTxt     = document.getElementById('txtToggleSidebar');
-
-    const isFilterHidden = localStorage.getItem('product_filter_hidden') === 'true';
-    if (toggleTxt) {
-        toggleTxt.textContent = isFilterHidden ? 'Hiện bộ lọc' : 'Ẩn bộ lọc';
-    }
-
-    if (isFilterHidden) {
-        if (filterSidebar) filterSidebar.classList.add('hidden');
-        document.documentElement.classList.add('product-filter-hidden');
-    } else {
-        if (filterSidebar) filterSidebar.classList.remove('hidden');
-        document.documentElement.classList.remove('product-filter-hidden');
-    }
-
-    if (toggleBtn && filterSidebar) {
-        toggleBtn.addEventListener('click', function () {
-            const currentlyHidden = document.documentElement.classList.contains('product-filter-hidden') 
-                                 || filterSidebar.classList.contains('hidden');
-            const willHide = !currentlyHidden;
-
-            if (willHide) {
-                filterSidebar.classList.add('hidden');
-                document.documentElement.classList.add('product-filter-hidden');
-                if (toggleTxt) toggleTxt.textContent = 'Hiện bộ lọc';
-            } else {
-                filterSidebar.classList.remove('hidden');
-                document.documentElement.classList.remove('product-filter-hidden');
-                if (toggleTxt) toggleTxt.textContent = 'Ẩn bộ lọc';
-            }
-            localStorage.setItem('product_filter_hidden', willHide);
-        });
-    }
-
-    // 6.2 Accordion bộ lọc (Đọc trạng thái đã lưu để gán class ban đầu)
-    let collapsedSections = [];
-    try {
-        collapsedSections = JSON.parse(localStorage.getItem('collapsed_filter_sections') || '[]');
-    } catch (e) {
-        collapsedSections = [];
-    }
-
-    document.querySelectorAll('.filter-section[data-filter-key]').forEach(section => {
-        const key = section.getAttribute('data-filter-key');
-        if (collapsedSections.includes(key)) {
-            section.classList.add('is-collapsed');
-        } else {
-            section.classList.remove('is-collapsed');
-        }
-    });
-
-    document.querySelectorAll('.filter-sec-title').forEach(title => {
-        title.addEventListener('click', function () {
-            const section = this.closest('.filter-section');
-            if (!section) return;
-
-            const isCollapsed = section.classList.toggle('is-collapsed');
-            const key = section.getAttribute('data-filter-key');
-
-            if (key) {
-                if (isCollapsed) {
-                    if (!collapsedSections.includes(key)) collapsedSections.push(key);
-                } else {
-                    collapsedSections = collapsedSections.filter(k => k !== key);
-                }
-                localStorage.setItem('collapsed_filter_sections', JSON.stringify(collapsedSections));
-            }
-        });
-    });
+    // 6.1/6.2 Ẩn-hiện & thu gọn bộ lọc: đã chuyển sang js/filter-sidebar.js (dùng chung mọi trang)
 
     // 6.3 Checkbox & Select All
     const selectAllCheckbox = document.getElementById('selectAll');
@@ -613,27 +542,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // ── ĐỒNG BỘ CHIỀU CAO SIDEBAR FILTER BẰNG KHUNG BẢNG ─────────────────────
-    function syncSidebarHeight() {
-        const tableCard = document.querySelector('.task-table-card');
-        const toolbar   = document.querySelector('.task-top-toolbar');
-        const sidebar   = document.getElementById('taskFilterSidebar');
-
-        if (tableCard && toolbar && sidebar) {
-            const targetHeight = toolbar.offsetHeight + 16 + tableCard.offsetHeight;
-            sidebar.style.height = `${targetHeight}px`;
-        }
-    }
-    syncSidebarHeight();
-    window.addEventListener('resize', syncSidebarHeight);
-    // Font web / ảnh tải xong hoặc bảng đổi kích thước (đổi số dòng, ẩn/hiện sidebar) → đồng bộ lại.
-    window.addEventListener('load', syncSidebarHeight);
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncSidebarHeight);
-    if (window.ResizeObserver) {
-        const ro = new ResizeObserver(syncSidebarHeight);
-        [document.querySelector('.task-table-card'), document.querySelector('.task-top-toolbar')]
-            .forEach(el => { if (el) ro.observe(el); });
-    }
+    // (Đã bỏ syncSidebarHeight: thanh lọc tự co giãn theo nội dung, xem css/filter-sidebar.css)
 
     restoreSearchFocus();
 });

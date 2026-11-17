@@ -1138,30 +1138,7 @@ function viewInboundDetail(id) {
 
 // ── DOM INITIALIZATION ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
-    // 1. Toggle Sidebar Filter
-    const toggleBtn     = document.getElementById('btnToggleSidebar');
-    const filterSidebar = document.getElementById('taskFilterSidebar');
-    const toggleTxt     = document.getElementById('txtToggleSidebar');
-
-    const isFilterHidden = localStorage.getItem('inbound_filter_hidden') === 'true';
-    if (toggleTxt) toggleTxt.textContent = isFilterHidden ? 'Show Filters' : 'Hide Filters';
-    if (isFilterHidden && filterSidebar) filterSidebar.classList.add('hidden');
-
-    if (toggleBtn && filterSidebar) {
-        toggleBtn.addEventListener('click', function () {
-            const willHide = !filterSidebar.classList.contains('hidden');
-            if (willHide) {
-                filterSidebar.classList.add('hidden');
-                document.documentElement.classList.add('inbound-filter-hidden');
-                if (toggleTxt) toggleTxt.textContent = 'Show Filters';
-            } else {
-                filterSidebar.classList.remove('hidden');
-                document.documentElement.classList.remove('inbound-filter-hidden');
-                if (toggleTxt) toggleTxt.textContent = 'Hide Filters';
-            }
-            localStorage.setItem('inbound_filter_hidden', willHide);
-        });
-    }
+    // 1. Ẩn/hiện bộ lọc: xem js/filter-sidebar.js (dùng chung)
 
     // 2. Tự khởi tạo dòng đầu tiên ở trang tạo
     const tbody = document.getElementById('itemsBody');

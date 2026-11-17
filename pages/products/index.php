@@ -67,15 +67,8 @@ include __DIR__ . '/../../layout/header.php';
 ?>
 <!-- Font Be Vietnam Pro & Stylesheet -->
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/products.css">
+<link rel="stylesheet" href="<?= BASE_URL ?>/css/filter-sidebar.css">
 
-<!-- Script chống giật layout khi lưu trạng thái sidebar -->
-<script>
-    (function () {
-        if (localStorage.getItem('product_filter_hidden') === 'true') {
-            document.documentElement.classList.add('product-filter-hidden');
-        }
-    })();
-</script>
 
 <div class="task-app-wrapper">
     <!-- CỘT BỘ LỌC TRÁI (FILTER SIDEBAR) -->
@@ -91,7 +84,7 @@ include __DIR__ . '/../../layout/header.php';
             <!-- 1. TRẠNG THÁI HÀNG HÓA -->
             <div class="filter-section" data-filter-key="status">
                 <div class="filter-sec-title">
-                    <span><i class="ri-checkbox-circle-line"></i> Trạng thái kho</span>
+                    <span><i class="ri-checkbox-circle-line"></i> Trạng thái</span>
                     <i class="ri-arrow-down-s-line"></i>
                 </div>
                 <div class="filter-checkbox-list">
@@ -539,6 +532,7 @@ include __DIR__ . '/../../layout/header.php';
     window._productTotalRows = <?= (int) $totalRows ?>;
 </script>
 <script src="<?= BASE_URL ?>/js/utils.js"></script>
+<script src="<?= BASE_URL ?>/js/filter-sidebar.js"></script>
 <script src="<?= BASE_URL ?>/js/products.js"></script>
 
 <?php include __DIR__ . '/../../layout/footer.php'; ?>

@@ -42,12 +42,14 @@ function navActive(string $path, string $segment): string {
     <link rel="stylesheet" href="<?= BASE_URL ?>/css/theme.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>/css/layout.css">
 
-    <!-- ĐOẠN SCRIPT CHẶN GIẬT SIDEBAR ĐẶT NGAY TẠI ĐÂY -->
+    <!-- CHỐNG GIẬT: gắn sẵn trạng thái sidebar menu + thanh bộ lọc trước khi trình duyệt vẽ -->
     <script>
         (function () {
-            if (localStorage.getItem("sidebar_collapsed") === "true") {
-                document.documentElement.classList.add("sidebar-collapsed");
-            }
+            try {
+                var d = document.documentElement;
+                if (localStorage.getItem("sidebar_collapsed") === "true") d.classList.add("sidebar-collapsed");
+                if (localStorage.getItem("sw_filter_hidden") === "true")  d.classList.add("filter-hidden");
+            } catch (e) { /* localStorage bị chặn: dùng mặc định */ }
         })();
     </script>
 </head>

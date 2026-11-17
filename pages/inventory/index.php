@@ -57,15 +57,8 @@ include __DIR__ . '/../../layout/header.php';
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/suppliers.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/inbound.css">
 <link rel="stylesheet" href="<?= BASE_URL ?>/css/inventory.css">
+<link rel="stylesheet" href="<?= BASE_URL ?>/css/filter-sidebar.css">
 
-<!-- Chống giật sidebar filter giống Inbound -->
-<script>
-    (function () {
-        if (localStorage.getItem('inventory_filter_hidden') === 'true') {
-            document.documentElement.classList.add('inbound-filter-hidden');
-        }
-    })();
-</script>
 
 <div class="task-app-wrapper">
     <!-- CỘT BỘ LỌC TRÁI (FILTER SIDEBAR) -->
@@ -143,7 +136,7 @@ include __DIR__ . '/../../layout/header.php';
             <div class="tb-left">
                 <button type="button" class="btn-tb-filter" id="btnToggleSidebar">
                     <i class="ri-equalizer-line"></i>
-                    <span id="txtToggleSidebar">Hide Filters</span>
+                    <span id="txtToggleSidebar">Ẩn bộ lọc</span>
                 </button>
                 <div class="tb-dropdown-badge">
                     <span>Tất cả lô hàng (<?= number_format($total_rows) ?>)</span>
@@ -353,6 +346,7 @@ include __DIR__ . '/../../layout/header.php';
 
 <meta name="csrf-token" content="<?= htmlspecialchars($csrfToken) ?>">
 <script src="<?= BASE_URL ?>/js/utils.js"></script>
+<script src="<?= BASE_URL ?>/js/filter-sidebar.js"></script>
 <script src="<?= BASE_URL ?>/js/inventory.js"></script>
 
 <?php include __DIR__ . '/../../layout/footer.php'; ?>

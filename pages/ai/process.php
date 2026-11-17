@@ -28,6 +28,11 @@ if (in_array($action, $writeActions)) {
     }
 }
 
+// Nhả khóa session NGAY: phần dưới có thể chờ AI tới 120s. Nếu giữ khóa, mọi request khác
+// của cùng người dùng (chuyển trang, tải bảng…) sẽ bị treo cho tới khi AI trả lời.
+// Từ đây trở xuống chỉ ĐỌC $_SESSION, không ghi.
+session_write_close();
+
 /**
  * Proxy call tới FastAPI.
  */
@@ -74,6 +79,11 @@ switch ($action) {
     case 'chat':
         $msg = trim($body['message'] ?? '');
         if (!$msg) { echo json_encode(['error' => 'Thiếu message']); exit; }
+        if (mb_strlen($msg) > 1000) {          // giới hạn để tránh đốt token LLM
+            http_response_code(413);
+            echo json_encode(['error' => 'Câu hỏi quá dài (tối đa 1000 ký tự)'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
         $result = proxyAI('chat', [
             'message'    => $msg,
             'context'    => null,
@@ -182,10 +192,14 @@ switch ($action) {
 
     // ── Batch analyze ─────────────────────────────────────────────
     case 'batch_analyze':
+        $stockStatus = $body['stock_status'] ?? null;
+        if (!is_string($stockStatus) || $stockStatus === '' || strlen($stockStatus) > 30) {
+            $stockStatus = null;               // không chuyển nguyên giá trị client tuỳ ý sang AI Service
+        }
         $result = proxyAI('analyze/batch', [
-        'supplier_id'  => 0,  
-        'limit'        => 500,
-        'stock_status' => $body['stock_status'] ?? null,
+            'supplier_id'  => 0,
+            'limit'        => 500,
+            'stock_status' => $stockStatus,
         ], $AI_BASE, $AI_KEY);
         echo json_encode($result, JSON_UNESCAPED_UNICODE);
         break;
